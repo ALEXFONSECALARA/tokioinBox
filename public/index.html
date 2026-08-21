@@ -287,6 +287,17 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .vopt-chip-price{font-size:11.5px;color:var(--muted);margin-top:2px;display:block;}
 .vopt-chip-price.included{color:#4ade80;font-weight:600;letter-spacing:.3px;}
 .vopt-chip.selected .vopt-chip-price:not(.included){color:var(--gold);}
+/* v107a — Prompt "Evolução do cadastro de pratos": stepper de quantidade por opção (usado quando
+   a opção permite mais de 1 unidade, ex: "Salmão 0-8 peças") e progresso do grupo por quantidade
+   total (ex: "Total: 14 / 24 peças"). Reaproveita as mesmas cores douradas já usadas nos chips. */
+.vopt-chip.qtymode{cursor:default;}
+.vopt-stepper{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:50px;overflow:hidden;flex-shrink:0;}
+.vopt-stepper button{background:none;border:none;color:var(--white);width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
+.vopt-stepper button:disabled{opacity:.3;cursor:not-allowed;}
+.vopt-stepper button:not(:disabled):hover{background:var(--red-dk);}
+.vopt-stepper span{min-width:22px;text-align:center;font-size:13px;font-weight:700;}
+.vgroup-progress{font-size:11px;color:var(--gold);font-weight:600;margin-left:auto;white-space:nowrap;}
+.vgroup-title{justify-content:space-between;}
 .coupon-chip{background:var(--card);border:1px solid var(--gold);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--gold);cursor:pointer;transition:background .15s;white-space:nowrap;animation:couponGlow 2s ease-in-out infinite;}
 @keyframes couponGlow{0%,100%{box-shadow:0 0 0 rgba(201,168,76,0);}50%{box-shadow:0 0 10px rgba(201,168,76,.5);}}
 @keyframes couponFlash{0%{transform:scale(1);}30%{transform:scale(1.08);}100%{transform:scale(1);}}
@@ -3166,7 +3177,15 @@ function changeQty(key, delta) {
 // ═══════════════════════════════════════════
 // VARIAÇÕES (tamanho, sabor, complementos...)
 // ═══════════════════════════════════════════
-let variantPicker = null; // { key, item, selections: { groupId: [optionIdx,...] }, qty }
+// v107a — Prompt "Evolução do cadastro de pratos": o formato salvo pelo Painel pode trazer, além
+// do que já existia (name/type/required/options[].name/priceDelta), estes campos NOVOS e
+// OPCIONAIS por grupo: min, max (quantidade total mínima/máxima somando todas as opções — ex:
+// "escolha entre 6 e 24 peças"), includedQty + overagePrice ("as 4 primeiras inclusas, a partir
+// da 5ª +R$5,00 cada"); e por opção: priceMode ('incluido'|'adicional'|'fixo') e maxQty (máximo
+// de unidades daquela opção — >1 vira um stepper +/- em vez de um chip simples). Um item salvo
+// ANTES desta versão não tem nenhum desses campos — os "||" abaixo cobrem esse caso e o
+// comportamento fica idêntico ao de sempre (chip único, priceDelta somado direto).
+let variantPicker = null; // { key, item, selections: { groupId: { optionIdx: qty } }, qty }
 function openVariantPicker(key) {
   const item = getItemByKey(key);
   if (!item) return;
@@ -3182,57 +3201,127 @@ function closeVariantPicker() {
   document.getElementById('variant-drawer').classList.remove('open');
   variantPicker = null;
 }
+function variantGroupTotalQty(g) {
+  const sel = variantPicker.selections[g.id] || {};
+  return Object.values(sel).reduce((s, n) => s + (Number(n) || 0), 0);
+}
+// Clique num chip simples (opção com maxQty<=1, comportamento igual ao de sempre: liga/desliga).
 function toggleVariantOption(gi, oi) {
   const item = variantPicker.item;
   const group = item.variants[gi];
-  const sel = variantPicker.selections[group.id] || [];
+  const sel = variantPicker.selections[group.id] || {};
   if (group.type === 'multiple') {
-    const idx = sel.indexOf(oi);
-    if (idx === -1) sel.push(oi); else sel.splice(idx, 1);
-    variantPicker.selections[group.id] = sel;
+    sel[oi] = sel[oi] ? 0 : 1;
   } else {
-    variantPicker.selections[group.id] = [oi];
+    Object.keys(sel).forEach(k => delete sel[k]);
+    sel[oi] = 1;
   }
+  variantPicker.selections[group.id] = sel;
   renderVariantPicker();
 }
+// Stepper +/- (opção com maxQty>1, ex: "Salmão 0-8 peças"), respeitando o máximo da opção e,
+// se o grupo tiver um total máximo (ex: "até 24 peças"), também o quanto ainda cabe no grupo.
+function changeVariantOptionQty(gi, oi, delta) {
+  const item = variantPicker.item;
+  const group = item.variants[gi];
+  const option = group.options[oi];
+  const sel = variantPicker.selections[group.id] || {};
+  const current = Number(sel[oi]) || 0;
+  const optionMax = Number(option.maxQty) > 1 ? Number(option.maxQty) : Infinity;
+  const groupMax = Number(group.max) > 0 ? Number(group.max) : Infinity;
+  const remainingInGroup = groupMax - (variantGroupTotalQty(group) - current);
+  const next = Math.max(0, Math.min(current + delta, optionMax, current + Math.max(0, remainingInGroup)));
+  sel[oi] = next;
+  variantPicker.selections[group.id] = sel;
+  renderVariantPicker();
+}
+// Preço extra de uma unidade da opção `o`, dentro do grupo `g`.
 function variantUnitPrice() {
   const item = variantPicker.item;
   let extra = 0;
   item.variants.forEach(g => {
-    const sel = variantPicker.selections[g.id] || [];
-    sel.forEach(oi => { extra += Number(g.options[oi].priceDelta) || 0; });
+    const sel = variantPicker.selections[g.id] || {};
+    // Grupo com "incluídas + excedente" (seção 13.4): as N primeiras unidades do GRUPO INTEIRO
+    // (somando todas as opções, não por opção) saem de graça; da N+1ª em diante cobra o valor
+    // por unidade configurado no grupo — substitui o preço individual das opções desse grupo.
+    const groupOverage = Number(g.includedQty) >= 0 && g.overagePrice;
+    let unitPos = 0;
+    g.options.forEach((o, oi) => {
+      const qty = Number(sel[oi]) || 0;
+      if (!qty) return;
+      if (groupOverage) {
+        for (let u = 0; u < qty; u++) { extra += unitPos < Number(g.includedQty) ? 0 : (Number(g.overagePrice) || 0); unitPos++; }
+      } else if (o.priceMode === 'fixo') {
+        extra += Number(o.priceDelta) || 0; // preço fixo: cobra o valor inteiro 1x, não multiplica pela quantidade
+      } else if (o.priceMode === 'incluido') {
+        // já está no preço base, não soma nada
+      } else {
+        extra += (Number(o.priceDelta) || 0) * qty; // 'adicional' (ou item antigo, sem priceMode) — cobra por unidade, igual sempre foi
+      }
+    });
   });
   return item.price + extra;
 }
 function variantCanConfirm() {
   const item = variantPicker.item;
-  return item.variants.every(g => !g.required || (variantPicker.selections[g.id] || []).length > 0);
+  return item.variants.every(g => {
+    const totalQty = variantGroupTotalQty(g);
+    const min = Number(g.min) || 0;
+    if (min > 0) return totalQty >= min; // grupo com mínimo por quantidade (novo)
+    if (g.required) return totalQty > 0; // comportamento de sempre
+    return true;
+  });
 }
 function changeVariantQty(delta) {
   variantPicker.qty = Math.max(1, variantPicker.qty + delta);
   renderVariantPicker();
+}
+function variantOptionPriceLabel(g, o) {
+  if (Number(g.includedQty) >= 0 && g.overagePrice) {
+    return `<span class="vopt-chip-price">até ${g.includedQty} inclusas · excedente + R$ ${Number(g.overagePrice).toFixed(2).replace('.', ',')}/un.</span>`;
+  }
+  if (o.priceMode === 'incluido' || !o.priceDelta) return `<span class="vopt-chip-price included">INCLUSO NO VALOR</span>`;
+  if (o.priceMode === 'fixo') return `<span class="vopt-chip-price">R$ ${Number(o.priceDelta).toFixed(2).replace('.', ',')}</span>`;
+  const d = Number(o.priceDelta) || 0;
+  return `<span class="vopt-chip-price">${d >= 0 ? '+' : '-'} R$ ${Math.abs(d).toFixed(2).replace('.', ',')}${Number(o.maxQty) > 1 ? '/un.' : ''}</span>`;
 }
 function renderVariantPicker() {
   const { item, selections, qty } = variantPicker;
   document.getElementById('variant-title').textContent = item.name;
   const unitPrice = variantUnitPrice();
   const groupsHTML = item.variants.map((g, gi) => {
-    const isSingleRequired = g.required && g.type !== 'multiple';
-    const subLabel = isSingleRequired ? 'Obrigatório • escolha 1' : (g.required ? 'Obrigatório' : 'Opcional');
+    const totalQty = variantGroupTotalQty(g);
+    const hasQtyMode = g.type === 'multiple' && (g.options.some(o => Number(o.maxQty) > 1) || Number(g.max) > 0);
+    const isSingleRequired = g.required && g.type !== 'multiple' && !hasQtyMode;
+    let subLabel = isSingleRequired ? 'Obrigatório • escolha 1' : (g.required || Number(g.min) > 0 ? 'Obrigatório' : 'Opcional');
+    if (Number(g.min) > 0) subLabel = `Escolha no mínimo ${g.min}${Number(g.max) > 0 ? ` (máximo ${g.max})` : ''}`;
+    const progressHTML = hasQtyMode ? `<span class="vgroup-progress">Total: ${totalQty}${Number(g.max) > 0 ? ' / ' + g.max : ''}</span>` : '';
     return `
-    <div class="vgroup-title">${g.name}</div>
+    <div class="vgroup-title">${g.name}${progressHTML}</div>
     <div class="vgroup-sub">${subLabel}</div>
     ${g.options.map((o, oi) => {
-      const isSel = (selections[g.id] || []).includes(oi);
-      const marker = isSel ? (g.type === 'multiple' ? '🔘' : '🔘') : '⚪';
-      let precoHTML;
-      if (!o.priceDelta) {
-        precoHTML = `<span class="vopt-chip-price included">INCLUSO NO VALOR</span>`;
-      } else if (o.priceDelta > 0) {
-        precoHTML = `<span class="vopt-chip-price">+ R$ ${o.priceDelta.toFixed(2).replace('.', ',')}</span>`;
-      } else {
-        precoHTML = `<span class="vopt-chip-price">- R$ ${Math.abs(o.priceDelta).toFixed(2).replace('.', ',')}</span>`;
+      const optQty = Number((selections[g.id] || {})[oi]) || 0;
+      const isSel = optQty > 0;
+      const usesStepper = g.type === 'multiple' && Number(o.maxQty) > 1;
+      const precoHTML = variantOptionPriceLabel(g, o);
+      if (usesStepper) {
+        const groupMax = Number(g.max) > 0 ? Number(g.max) : Infinity;
+        const canAdd = optQty < (Number(o.maxQty) || Infinity) && totalQty < groupMax;
+        return `
+        <div class="vopt-chip qtymode ${isSel ? 'selected' : ''}">
+          <span class="vopt-marker">${isSel ? '🔘' : '⚪'}</span>
+          <span class="vopt-chip-body">
+            <span class="vopt-chip-name">${o.name}</span>
+            ${precoHTML}
+          </span>
+          <span class="vopt-stepper">
+            <button type="button" onclick="changeVariantOptionQty(${gi},${oi},-1)" ${optQty <= 0 ? 'disabled' : ''}>−</button>
+            <span>${optQty}</span>
+            <button type="button" onclick="changeVariantOptionQty(${gi},${oi},1)" ${canAdd ? '' : 'disabled'}>+</button>
+          </span>
+        </div>`;
       }
+      const marker = isSel ? '🔘' : '⚪';
       return `
       <div class="vopt-chip ${isSel ? 'selected' : ''}" onclick="toggleVariantOption(${gi},${oi})">
         <span class="vopt-marker">${marker}</span>
@@ -3261,12 +3350,19 @@ function confirmVariantPicker() {
   const { key, item, selections, qty } = variantPicker;
   const parts = [];
   item.variants.forEach(g => {
-    const sel = (selections[g.id] || []).map(oi => g.options[oi].name);
-    if (sel.length) parts.push(`${g.name}: ${sel.join(', ')}`);
+    const sel = selections[g.id] || {};
+    const names = Object.keys(sel).map(oi => ({ oi, q: Number(sel[oi]) || 0 })).filter(x => x.q > 0)
+      .map(x => { const o = g.options[x.oi]; return o.maxQty > 1 ? `${o.name} x${x.q}` : o.name; });
+    if (names.length) parts.push(`${g.name}: ${names.join(', ')}`);
   });
   const suffix = parts.length ? ` (${parts.join(' · ')})` : '';
   const unitPrice = variantUnitPrice();
-  const comboKey = key + '::' + item.variants.map(g => (selections[g.id] || []).slice().sort().join(',')).join('|');
+  // combo key precisa refletir as quantidades escolhidas, não só quais opções — senão "8 Salmão"
+  // e "2 Salmão" cairiam no mesmo item agrupado do carrinho por engano
+  const comboKey = key + '::' + item.variants.map(g => {
+    const sel = selections[g.id] || {};
+    return Object.keys(sel).filter(oi => sel[oi] > 0).sort().map(oi => `${oi}:${sel[oi]}`).join(',');
+  }).join('|');
   if (!cart[comboKey]) cart[comboKey] = { baseKey: key, name: item.name + suffix, price: unitPrice, stations: stationsForItemKey(key, item), qty: 0 };
   cart[comboKey].qty += qty;
   closeVariantPicker();

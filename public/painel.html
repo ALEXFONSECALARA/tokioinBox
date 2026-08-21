@@ -313,7 +313,7 @@ table{max-width:100%;}
 .cancel-reason-chip:hover{border-color:var(--red-dk);}
 .cancel-reason-chip.selected{border-color:var(--red);background:var(--red-bg);color:var(--red-lt);}
 .vgroup{border:1px solid var(--border);border-radius:14px;padding:10px;background:var(--bg);}
-.vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
 .vgroup-head input[type=text]{flex:1;}
 .vopt-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
 .vopt-row input[type=text]{flex:1;}
@@ -1212,6 +1212,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <div style="display:flex;gap:6px;">
               <button class="btn secondary sm" onclick="openImportMenu()" title="Substituir o cardápio inteiro por um arquivo JSON">📥 Importar</button>
               <button class="btn secondary sm" onclick="openBulkPriceModal()" title="Ajustar preços de várias categorias/itens de uma vez">💰 Ajustar preços</button>
+              <button class="btn secondary sm" onclick="openLibGroupsModal()" title="Grupos de opções (tamanho, sabores, molhos...) reutilizáveis em vários itens">📚 Grupos Reutilizáveis</button>
               <button class="btn primary sm" onclick="openAddCategory()" title="Nova categoria de prato">+ Categoria</button>
             </div>
           </div>
@@ -2369,9 +2370,12 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         </div>
       </div>
       <div class="field" style="margin-top:6px;">
-        <label style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Variações (tamanho, sabor, complementos...)</span>
-          <button type="button" class="btn secondary sm" onclick="addVariantGroup()">+ Grupo de variação</button>
+        <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+          <span>Grupos de Opções (tamanho, sabor, montagem, molhos, adicionais...)</span>
+          <span style="display:flex;gap:6px;">
+            <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
+            <button type="button" class="btn secondary sm" onclick="addVariantGroup('item')">+ Grupo novo</button>
+          </span>
         </label>
         <div id="item-variants-list" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
       </div>
@@ -2383,8 +2387,46 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
   </div>
 </div>
 
-<!-- MODAL 🎨 FUNDO DO CHAT DO PAINEL (admin) -->
-<div class="modal-overlay" id="admin-chatbg-modal">
+<!-- MODAL "USAR GRUPO EXISTENTE" (v107a) — escolher um grupo da Biblioteca pra copiar pro item -->
+<div class="modal-overlay" id="use-libgroup-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <span class="modal-title">📚 Usar grupo existente</span>
+      <button class="modal-close" onclick="closeModal('use-libgroup-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Copia o grupo pra este item (não fica ligado — se editar aqui, não muda a Biblioteca nem outros itens que já usaram).</div>
+      <div id="use-libgroup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('use-libgroup-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 📚 BIBLIOTECA DE GRUPOS DE OPÇÕES REUTILIZÁVEIS (v107a) -->
+<div class="modal-overlay" id="libgroups-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📚 Grupos de Opções Reutilizáveis</span>
+      <button class="modal-close" onclick="closeModal('libgroups-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
+        Monte um grupo uma vez só (ex: "Molhos", "Sabores de Sushi") e reutilize em quantos pratos
+        precisar, sem digitar tudo de novo — em Editar Item, use o botão "📚 Usar grupo existente".
+        Alterar aqui não muda itens que já usaram o grupo antes (cada item guarda a própria cópia).
+      </div>
+      <button type="button" class="btn secondary sm" style="margin-bottom:10px;" onclick="addVariantGroup('lib')">+ Novo grupo reutilizável</button>
+      <div id="lib-groups-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('libgroups-modal')">Cancelar</button>
+      <button class="btn primary" onclick="saveLibraryGroups()">💾 Salvar Biblioteca</button>
+    </div>
+  </div>
+</div>
+
   <div class="modal" style="max-width:460px;">
     <div class="modal-header">
       <span class="modal-title">🎨 Fundo do chat do painel</span>
@@ -3587,6 +3629,7 @@ async function loadConfigAndMenu(){
   const data = await r.json();
   cfg = data.cfg;
   menu = data.menu;
+  editingLibraryGroups = JSON.parse(JSON.stringify(cfg.optionGroupsLibrary || [])); // v107a — biblioteca de grupos reutilizáveis, disponível assim que o painel carrega
   document.getElementById('store-toggle').checked = Boolean(Number(cfg.open));
   const autoSched = cfg.schedule && cfg.schedule.enabled;
   document.getElementById('store-toggle').disabled = !!autoSched;
@@ -7224,6 +7267,7 @@ function updateItemPhotoPos(){
 }
 
 let editingVariants=[];
+let editingLibraryGroups=[]; // v107a — biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚)
 function openAddItem(){
   if(!menu[activeCatIdx]){ alert('Crie uma categoria antes de adicionar itens.'); return; }
   document.getElementById('item-modal-title').textContent='Novo Item';
@@ -7234,7 +7278,7 @@ function openAddItem(){
   document.getElementById('item-badgemode-global').checked=true;
   resetItemPhotoPreview('', {x:50,y:50});
   editingVariants=[];
-  renderVariantGroups();
+  renderVariantGroups('item');
   openModal('item-modal');
 }
 function openEditItem(si,ii){
@@ -7250,83 +7294,176 @@ function openEditItem(si,ii){
   document.getElementById('item-badgemode-'+(item.badgeMode||'global')).checked=true;
   resetItemPhotoPreview(item.image||'', item.imagePos||{x:50,y:50});
   editingVariants=JSON.parse(JSON.stringify(item.variants||[]));
-  renderVariantGroups();
+  renderVariantGroups('item');
   openModal('item-modal');
 }
 // v75: BUG "Estações" saiu da edição do item — agora só existe em nível de Categoria
 // (Cardápio → editar categoria → "Imprime na(s) via(s) de:"). Todo item herda automaticamente
 // as vias da categoria; não existe mais controle por item.
-// ── Variações (grupos de opções, ex: Tamanho / Adicionais) ──
-function addVariantGroup(){
-  editingVariants.push({id:'g'+Date.now().toString(36),name:'',type:'single',required:false,options:[{name:'',priceDelta:0}]});
-  renderVariantGroups();
+// ═══════════════════════════════════════════
+// GRUPOS DE OPÇÕES (v107a — "Evolução do cadastro de pratos")
+// ═══════════════════════════════════════════
+// Motor genérico: os mesmos grupos/opções são editados tanto dentro de um item (editingVariants,
+// #item-variants-list) quanto na Biblioteca reutilizável (editingLibraryGroups, #lib-groups-list)
+// — `which` ('item'|'lib') escolhe qual das duas listas cada função mexe, sem duplicar código.
+// Formato do GRUPO (tudo novo é opcional, item salvo antes desta versão não tem esses campos e
+// continua funcionando exatamente igual): {id, name, type:'single'|'multiple', required,
+// min, max (quantidade total, ex: "escolha até 24 peças"), includedQty, overagePrice
+// (seção 13.4 — "as N primeiras inclusas, excedente +R$ por unidade"), options:[...]}.
+// Formato da OPÇÃO: {name, priceDelta, priceMode:'incluido'|'adicional'|'fixo', maxQty (>1 vira
+// stepper no cliente, ex: "Salmão 0-8")}.
+function groupsList(which){ return which==='lib' ? editingLibraryGroups : editingVariants; }
+function addVariantGroup(which){
+  groupsList(which).push({id:'g'+Date.now().toString(36),name:'',type:'single',required:false,min:'',max:'',includedQty:'',overagePrice:'',options:[{name:'',priceDelta:0,priceMode:'adicional',maxQty:1}]});
+  renderVariantGroups(which);
 }
-function removeVariantGroup(gi){
+function removeVariantGroup(which,gi){
   if(!confirm('Remover esse grupo de variação?'))return;
-  editingVariants.splice(gi,1);
-  renderVariantGroups();
+  groupsList(which).splice(gi,1);
+  renderVariantGroups(which);
+}
+function duplicateVariantGroup(which,gi){
+  const list=groupsList(which);
+  const clone=JSON.parse(JSON.stringify(list[gi]));
+  clone.id='g'+Date.now().toString(36);
+  clone.name=clone.name?clone.name+' (cópia)':'';
+  list.splice(gi+1,0,clone);
+  renderVariantGroups(which);
 }
 // v87: "Reordenar" pedido no editor de variações — grupos e opções, ambos com ↑/↓ (arrastar não
 // valia a pena pra listas curtas como essas; sobe/desce já resolve).
-function moveVariantGroup(gi,dir){
+function moveVariantGroup(which,gi,dir){
+  const list=groupsList(which);
   const ni=gi+dir;
-  if(ni<0||ni>=editingVariants.length)return;
-  [editingVariants[gi],editingVariants[ni]]=[editingVariants[ni],editingVariants[gi]];
-  renderVariantGroups();
+  if(ni<0||ni>=list.length)return;
+  [list[gi],list[ni]]=[list[ni],list[gi]];
+  renderVariantGroups(which);
 }
-function moveVariantOption(gi,oi,dir){
-  const opts=editingVariants[gi].options;
+function moveVariantOption(which,gi,oi,dir){
+  const opts=groupsList(which)[gi].options;
   const ni=oi+dir;
   if(ni<0||ni>=opts.length)return;
   [opts[oi],opts[ni]]=[opts[ni],opts[oi]];
-  renderVariantGroups();
+  renderVariantGroups(which);
 }
-function addVariantOption(gi){
-  editingVariants[gi].options.push({name:'',priceDelta:0});
-  renderVariantGroups();
+function addVariantOption(which,gi){
+  groupsList(which)[gi].options.push({name:'',priceDelta:0,priceMode:'adicional',maxQty:1});
+  renderVariantGroups(which);
 }
-function removeVariantOption(gi,oi){
-  editingVariants[gi].options.splice(oi,1);
-  renderVariantGroups();
+function removeVariantOption(which,gi,oi){
+  groupsList(which)[gi].options.splice(oi,1);
+  renderVariantGroups(which);
 }
-function updateVariantGroupField(gi,field,value){
-  editingVariants[gi][field] = value;
+function updateVariantGroupField(which,gi,field,value){
+  const g=groupsList(which)[gi];
+  g[field] = value;
+  if(['min','max','includedQty','overagePrice','type'].includes(field)) renderVariantGroups(which); // esses campos mudam o que aparece embaixo (progresso/rótulo/campos extra), então re-renderiza
 }
-function updateVariantOptionField(gi,oi,field,value){
-  editingVariants[gi].options[oi][field] = field==='priceDelta' ? (parseFloat(value)||0) : value;
+function updateVariantOptionField(which,gi,oi,field,value){
+  const o=groupsList(which)[gi].options[oi];
+  o[field] = (field==='priceDelta'||field==='maxQty') ? (parseFloat(value)||0) : value;
+  if(field==='priceMode'||field==='maxQty') renderVariantGroups(which);
 }
-function renderVariantGroups(){
-  const el=document.getElementById('item-variants-list');
+// "Usar grupo existente" — copia (clona, com id novo) um grupo da Biblioteca pra dentro do item
+// que está sendo editado agora. Não referencia o grupo original: se a Biblioteca mudar depois,
+// os itens que já usaram esse grupo não mudam sozinhos (evita quebrar pedidos/impressão antigos).
+function openUseLibraryGroupPicker(){
+  if(!editingLibraryGroups.length){ showToast('📚 Biblioteca vazia', 'Crie grupos reutilizáveis em Cardápio → 📚 Grupos de Opções Reutilizáveis primeiro.'); return; }
+  document.getElementById('use-libgroup-list').innerHTML = editingLibraryGroups.map((g,gi)=>`
+    <div class="vgroup" style="display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${(g.name||'(sem nome)').replace(/</g,'&lt;')}</div>
+        <div style="font-size:11px;color:var(--muted);">${g.type==='multiple'?'Múltipla escolha':'Escolha única'} · ${g.options.length} opção(ões)</div>
+      </div>
+      <button type="button" class="btn secondary sm" onclick="useLibraryGroup(${gi})">+ Usar</button>
+    </div>`).join('');
+  openModal('use-libgroup-modal');
+}
+function useLibraryGroup(gi){
+  const clone=JSON.parse(JSON.stringify(editingLibraryGroups[gi]));
+  clone.id='g'+Date.now().toString(36);
+  editingVariants.push(clone);
+  closeModal('use-libgroup-modal');
+  renderVariantGroups('item');
+  showToast('✅ Grupo adicionado', `"${clone.name}" copiado pra este item.`);
+}
+// "💾 Salvar como reutilizável" — copia UM grupo do item que está sendo editado agora pra
+// Biblioteca, pra poder usar em outros itens depois sem digitar tudo de novo.
+function saveGroupToLibrary(gi){
+  const clone=JSON.parse(JSON.stringify(editingVariants[gi]));
+  if(!clone.name || !clone.name.trim()){ alert('Dê um nome ao grupo antes de salvar na biblioteca.'); return; }
+  clone.id='g'+Date.now().toString(36);
+  editingLibraryGroups.push(clone);
+  saveLibraryGroups(true);
+  showToast('📚 Salvo na Biblioteca', `"${clone.name}" já pode ser reutilizado em outros itens.`);
+}
+function openLibGroupsModal(){
+  renderVariantGroups('lib');
+  openModal('libgroups-modal');
+}
+async function saveLibraryGroups(silent){
+  const clean = editingLibraryGroups
+    .map(g=>({...g, name:(g.name||'').trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
+    .filter(g=>g.options.length>0);
+  editingLibraryGroups = clean;
+  cfg.optionGroupsLibrary = clean;
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ alert(res.data.error||'Erro ao salvar biblioteca de grupos.'); return; }
+  if(!silent){ closeModal('libgroups-modal'); showToast('✅ Biblioteca salva!', `${clean.length} grupo(s) reutilizável(is).`); }
+}
+function renderVariantGroups(which){
+  which = which || 'item';
+  const list = groupsList(which);
+  const el=document.getElementById(which==='lib' ? 'lib-groups-list' : 'item-variants-list');
   if(!el)return;
-  el.innerHTML = editingVariants.length===0
-    ? '<div style="font-size:11px;color:var(--muted);">Nenhuma variação. Use pra tamanhos (P/G), sabores ou adicionais com preço extra.</div>'
-    : editingVariants.map((g,gi)=>`
+  el.innerHTML = list.length===0
+    ? '<div style="font-size:11px;color:var(--muted);">Nenhum grupo. Use pra tamanhos (P/G), sabores, montagem de combos, molhos ou adicionais.</div>'
+    : list.map((g,gi)=>{
+      const isMultiple = g.type==='multiple';
+      return `
       <div class="vgroup">
         <div class="vgroup-head">
           <div style="display:flex;flex-direction:column;gap:0;">
-            <button type="button" onclick="moveVariantGroup(${gi},-1)" ${gi===0?'disabled':''} title="Mover grupo pra cima" style="font-size:10px;padding:0 4px;line-height:1.4;">▲</button>
-            <button type="button" onclick="moveVariantGroup(${gi},1)" ${gi===editingVariants.length-1?'disabled':''} title="Mover grupo pra baixo" style="font-size:10px;padding:0 4px;line-height:1.4;">▼</button>
+            <button type="button" onclick="moveVariantGroup('${which}',${gi},-1)" ${gi===0?'disabled':''} title="Mover grupo pra cima" style="font-size:10px;padding:0 4px;line-height:1.4;">▲</button>
+            <button type="button" onclick="moveVariantGroup('${which}',${gi},1)" ${gi===list.length-1?'disabled':''} title="Mover grupo pra baixo" style="font-size:10px;padding:0 4px;line-height:1.4;">▼</button>
           </div>
-          <input type="text" placeholder="Nome do grupo (ex: Tamanho)" value="${g.name.replace(/"/g,'&quot;')}" oninput="updateVariantGroupField(${gi},'name',this.value)"/>
-          <select onchange="updateVariantGroupField(${gi},'type',this.value)">
+          <input type="text" placeholder="Nome do grupo (ex: Tamanho, Sabores, Molhos)" value="${(g.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantGroupField('${which}',${gi},'name',this.value)"/>
+          <select onchange="updateVariantGroupField('${which}',${gi},'type',this.value)">
             <option value="single" ${g.type==='single'?'selected':''}>Escolha única</option>
-            <option value="multiple" ${g.type==='multiple'?'selected':''}>Múltipla escolha</option>
+            <option value="multiple" ${isMultiple?'selected':''}>Múltipla escolha</option>
           </select>
           <label style="font-size:11px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
-            <input type="checkbox" ${g.required?'checked':''} onchange="updateVariantGroupField(${gi},'required',this.checked)"/> Obrigatório
+            <input type="checkbox" ${g.required?'checked':''} onchange="updateVariantGroupField('${which}',${gi},'required',this.checked)"/> Obrigatório
           </label>
-          <button type="button" onclick="removeVariantGroup(${gi})" title="Remover grupo">🗑</button>
+          ${which==='item'?`<button type="button" onclick="saveGroupToLibrary(${gi})" title="Salvar este grupo na Biblioteca reutilizável">📚</button>`:''}
+          <button type="button" onclick="duplicateVariantGroup('${which}',${gi})" title="Duplicar grupo">⧉</button>
+          <button type="button" onclick="removeVariantGroup('${which}',${gi})" title="Remover grupo">🗑</button>
         </div>
+        ${isMultiple?`
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;padding:10px;background:var(--bg2,rgba(0,0,0,.15));border-radius:8px;">
+          <div style="font-size:10px;color:var(--muted);width:100%;">Quantidade total no grupo (opcional — deixe em branco pra não limitar por quantidade, ex: molhos onde cada um só liga/desliga)</div>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
+        </div>`:''}
         ${g.options.map((o,oi)=>`
-          <div class="vopt-row">
-            <button type="button" onclick="moveVariantOption(${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
-            <button type="button" onclick="moveVariantOption(${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
-            <input type="text" placeholder="Opção (ex: Grande)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField(${gi},${oi},'name',this.value)"/>
-            <input type="number" step="0.01" placeholder="+R$" value="${o.priceDelta||0}" oninput="updateVariantOptionField(${gi},${oi},'priceDelta',this.value)"/>
-            <button type="button" onclick="removeVariantOption(${gi},${oi})" title="Remover opção">✕</button>
+          <div class="vopt-row" style="flex-wrap:wrap;">
+            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
+            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
+            <input type="text" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)" style="flex:1;min-width:110px;"/>
+            <select style="width:110px;" onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)">
+              <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
+              <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>Adicional</option>
+              <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>Preço fixo</option>
+            </select>
+            ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="${o.priceMode==='fixo'?'R$':'+R$'}" value="${o.priceDelta||0}" style="width:78px;" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
+            ${isMultiple?`<label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;white-space:nowrap;" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Máx.un <input type="number" min="1" style="width:52px;" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></label>`:''}
+            <button type="button" onclick="removeVariantOption('${which}',${gi},${oi})" title="Remover opção">✕</button>
           </div>`).join('')}
-        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption(${gi})">+ Opção</button>
-      </div>`).join('');
+        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption('${which}',${gi})">+ Opção</button>
+      </div>`;
+    }).join('');
 }
 async function saveItem(){
   const si=parseInt(document.getElementById('item-edit-si').value);
@@ -7334,7 +7471,7 @@ async function saveItem(){
   const name=document.getElementById('item-name').value.trim();
   if(!name){alert('Digite o nome do prato.');return;}
   const cleanVariants = editingVariants
-    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0})).filter(o=>o.name)}))
+    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
     .filter(g=>g.options.length>0);
   const [posX, posY] = document.getElementById('item-image-pos').value.split(',').map(n=>parseInt(n)||50);
   // v43: via de impressão e dias do rodízio saíram do modal de item (agora a via é definida por
