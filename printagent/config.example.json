@@ -1,0 +1,34 @@
+{
+  "serverUrl": "https://shogatsu-pedidos.onrender.com",
+  "username": "admin",
+  "password": "TROQUE_AQUI_pela_senha_do_painel",
+
+  "storeName": "Shogatsu Culinária Oriental",
+
+  "_stationId_comentario": "OPCIONAL (v90) — só preencha se este computador for ter um Painel próprio aberto nele e você quiser ativar a trava de 'Estação Ativa de Impressão' (evita 2 computadores imprimindo o mesmo pedido). Copie o código mostrado no Painel deste MESMO computador em Configurações → Central de Impressão → '🖥️ Estação deste computador'. Deixe em branco/remova pra manter o comportamento de sempre (sem trava).",
+  "stationId": "",
+
+  "printers": [
+    {
+      "label": "Caixa (USB)",
+      "type": "epson",
+      "interface": "printer:NOME_DA_IMPRESSORA_USB",
+      "width": 42,
+      "stations": ["caixa"]
+    },
+    {
+      "label": "Cozinha (Rede 1)",
+      "type": "epson",
+      "interface": "tcp://192.168.1.51:9100",
+      "width": 48,
+      "stations": ["cozinha"]
+    },
+    {
+      "label": "Sushibar (Rede 2)",
+      "type": "epson",
+      "interface": "tcp://192.168.1.52:9100",
+      "width": 48,
+      "stations": ["sushibar", "bar"]
+    }
+  ]
+}
