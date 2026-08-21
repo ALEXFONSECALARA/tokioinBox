@@ -705,7 +705,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     <button class="nav-item" data-page="cardapio" data-min-role="admin" onclick="goPage('cardapio')"><span class="ni">🍱</span> Cardápio</button>
     <button class="nav-item" data-page="custos" data-min-role="admin" onclick="goPage('custos')"><span class="ni">💰</span> Custos</button>
     <!-- v99 — ferramenta isolada, abre em nova aba; não usa goPage()/roteamento do SPA, não mexe em nenhum outro item -->
-    <button class="nav-item" data-min-role="admin" onclick="window.open('/nota-fiscal.html','_blank')"><span class="ni">📷</span> Ler Nota Fiscal</button>
+    <button class="nav-item" data-perm="notafiscal" data-min-role="admin" onclick="window.open('/nota-fiscal.html','_blank')"><span class="ni">📷</span> Ler Nota Fiscal</button>
     <button class="nav-item" data-page="ia" data-min-role="admin" onclick="goPage('ia')"><span class="ni">🤖</span> IA do Cardápio <span class="nb" id="nb-ia-aprovacoes" style="display:none">0</span></button>
     <button class="nav-item" data-page="qrlinks" data-min-role="admin" onclick="goPage('qrlinks')"><span class="ni">🔗</span> QR Code &amp; Links</button>
     <button class="nav-item" data-page="relatorios" data-min-role="admin" onclick="goPage('relatorios')"><span class="ni">📈</span> Relatórios</button>
@@ -2271,6 +2271,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <b>Master</b>: acesso total, inclusive gerenciar outros usuários.
             <b>Admin</b>: acesso total ao painel, menos gerenciar usuários.
             <b>Vendas</b>: só Dashboard, Pedidos e Kanban — ideal pra quem só bate pedido no balcão/telefone.
+            Além do cargo, dá pra afinar módulo por módulo em <b>🔐 Permissões</b> (não vale pra usuários master, que sempre têm acesso total).
           </div>
           <div id="users-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
           <div class="settings-card-title" style="font-size:13px;">+ Novo Usuário</div>
@@ -2500,6 +2501,35 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     </div>
   </div>
 </div>
+
+<!-- MODAL PERMISSÕES DE USUÁRIO (v107 — Prompt 1) -->
+<div class="modal-overlay" id="perm-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Permissões — <span id="perm-modal-username"></span></span>
+      <button class="modal-close" onclick="closeModal('perm-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="perm-modal-target-username"/>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
+        ✅ Marcado = esse usuário enxerga e acessa a opção no Painel dele. ❌ Desmarcado = a opção fica
+        oculta e bloqueada só pra ele — o resto do sistema continua igual pra todo mundo.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <button type="button" class="btn secondary sm" onclick="permSetAll(true)">☑️ Marcar Tudo</button>
+        <button type="button" class="btn secondary sm" onclick="permSetAll(false)">☐ Desmarcar Tudo</button>
+        <select id="perm-copy-from" style="flex:1;min-width:160px;"></select>
+        <button type="button" class="btn secondary sm" onclick="permCopyFromOther()">📋 Copiar Permissões</button>
+      </div>
+      <div id="perm-modal-groups" style="display:flex;flex-direction:column;gap:16px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('perm-modal')">Cancelar</button>
+      <button class="btn success" onclick="savePermissions()">💾 Salvar Permissões</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- MODAL AJUSTAR PREÇOS EM MASSA (v87) -->
 <div class="modal-overlay" id="bulk-price-modal">
@@ -2846,6 +2876,10 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&am
 let token = localStorage.getItem('shog_token') || null;
 let userRole = localStorage.getItem('shog_role') || 'admin';
 let userName = localStorage.getItem('shog_user') || '';
+// v107: permissões por usuário (sistema de Permissões, Prompt 1) — null = acesso total, igual
+// sempre foi. Só passa a restringir quando o master desliga algo explicitamente pra alguém.
+let userPermissions = null;
+try { userPermissions = JSON.parse(localStorage.getItem('shog_perms') || 'null'); } catch (e) { userPermissions = null; }
 let cfg = {};
 let menu = [];
 // v83: identifica esta aba/aparelho especificamente — só serve pra evitar imprimir 2x quando
@@ -3115,9 +3149,11 @@ async function doLogin(){
     token = data.token;
     userRole = data.role || 'admin';
     userName = data.username || user || 'admin';
+    userPermissions = data.permissions || null; // v107: null = acesso total (sem restrição)
     localStorage.setItem('shog_token', token);
     localStorage.setItem('shog_role', userRole);
     localStorage.setItem('shog_user', userName);
+    localStorage.setItem('shog_perms', JSON.stringify(userPermissions));
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
     boot();
@@ -3129,6 +3165,7 @@ function doLogout(){
   localStorage.removeItem('shog_token');
   localStorage.removeItem('shog_role');
   localStorage.removeItem('shog_user');
+  localStorage.removeItem('shog_perms');
   token=null;
   if(evtSource) evtSource.close();
   location.reload();
@@ -3142,7 +3179,7 @@ async function boot(){
   await loadOrders();
   updateNewBadge();
   applyRoleUI();
-  goPage('pedidos');
+  goPage(firstAllowedPage() || 'pedidos');
   connectSSE();
   updatePrintTerminalHeartbeat();
   registerPrintStation();
@@ -3524,8 +3561,25 @@ function applyRoleUI(){
   document.querySelectorAll('[data-min-role]').forEach(el=>{
     el.style.display = hasRole(el.dataset.minRole) ? '' : 'none';
   });
+  // v107: além do cargo (role), agora também respeita a permissão específica do usuário —
+  // some da barra lateral (mesmo que o cargo permitisse) sem tocar em mais nada da tela.
+  document.querySelectorAll('.nav-item[data-page],.nav-item[data-perm]').forEach(el=>{
+    const key = el.dataset.perm || el.dataset.page;
+    if(!hasPerm(key)) el.style.display='none';
+  });
   const badge=document.getElementById('sidebar-user-badge');
   if(badge) badge.textContent = `${userName||'admin'} · ${({master:'Master',admin:'Admin',vendas:'Vendas'})[userRole]||userRole}`;
+}
+// v107: primeira página visível pro usuário atual — usado no boot pra não abrir sozinho uma
+// página que ele não tem permissão de ver (em vez de sempre cair em "pedidos" de propósito).
+function firstAllowedPage(){
+  const order = ['pedidos','reservas','mensagens','motoboys','cardapio','custos','ia','qrlinks','relatorios','avaliacoes','configuracoes','impressao','usuarios'];
+  for(const id of order){
+    if(PAGE_MIN_ROLE[id] && !hasRole(PAGE_MIN_ROLE[id])) continue;
+    if(!hasPerm(id)) continue;
+    return id;
+  }
+  return null;
 }
 
 async function loadConfigAndMenu(){
@@ -3739,9 +3793,20 @@ setInterval(tick,1000);tick();
 // ═══════════════════════════════════════════
 const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',qrlinks:'QR Code & Links',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
 const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', qrlinks:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
+// v107: confere a permissão por usuário (Prompt 1) — só entra em ação se o master tiver
+// desligado explicitamente algum módulo pra esse usuário; sem isso (userPermissions === null),
+// o acesso continua sendo decidido só pelo cargo (role), exatamente como sempre foi.
+function hasPerm(moduleKey){
+  if(userRole==='master' || !userPermissions || !moduleKey) return true;
+  return userPermissions[moduleKey] !== false;
+}
 function goPage(id, silent){
   if(PAGE_MIN_ROLE[id] && !hasRole(PAGE_MIN_ROLE[id])){
     showToast('🔒 Acesso restrito','Seu usuário não tem permissão pra essa área.');
+    return;
+  }
+  if(!hasPerm(id)){
+    showToast('🔒 Acesso restrito','Seu usuário não tem permissão pra essa área. Fale com o administrador.');
     return;
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -9395,19 +9460,27 @@ async function toggleReviewVisibility(orderId, hide){
 async function loadUsersPage(){
   const res = await apiGet('/api/admin/users');
   if(!Array.isArray(res?.users)){ document.getElementById('users-list').innerHTML=`<div style="font-size:12px;color:var(--red-lt);">${res?.error||'Não foi possível carregar os usuários.'}</div>`; return; }
+  allPanelUsers = res.users; // v107: guardado pra alimentar o "Copiar Permissões de Outro Usuário"
   renderUsersList(res.users);
 }
+let allPanelUsers = [];
 function renderUsersList(users){
   const roleLabel={master:'👑 Master',admin:'🛠 Admin',vendas:'🛒 Vendas'};
-  document.getElementById('users-list').innerHTML = users.map(u=>`
-    <div class="vgroup" style="display:flex;align-items:center;gap:12px;">
-      <div style="flex:1;">
+  document.getElementById('users-list').innerHTML = users.map(u=>{
+    const permCount = u.permissions ? Object.values(u.permissions).filter(v=>v===false).length : 0;
+    const permBadge = u.role==='master' ? '' : (permCount>0 ? `<span style="font-size:10px;color:var(--gold);">🔐 ${permCount} módulo(s) restrito(s)</span>` : `<span style="font-size:10px;color:var(--muted);">🔐 acesso total</span>`);
+    return `
+    <div class="vgroup" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:140px;">
         <div style="font-weight:600;font-size:13px;">${u.username}${u.username===userName?' <span style="color:var(--gold);font-size:10px;">(você)</span>':''}</div>
         <div style="font-size:11px;color:var(--muted);">${roleLabel[u.role]||u.role}</div>
+        ${permBadge?`<div style="margin-top:2px;">${permBadge}</div>`:''}
       </div>
+      ${u.role!=='master'?`<button type="button" class="btn secondary sm" onclick="openPermModal('${u.username}')">🔐 Permissões</button>`:''}
       <button type="button" class="btn secondary sm" onclick="promptResetPassword('${u.username}')">🔑 Trocar senha</button>
       <button type="button" class="mi-btn del" onclick="deleteUser('${u.username}')" ${u.username===userName?'disabled title="Você não pode remover seu próprio usuário"':''}>🗑</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 async function createUser(){
   const username=document.getElementById('nu-username').value.trim();
@@ -9438,6 +9511,88 @@ async function deleteUser(username){
   if(!res.ok){ alert(data.error||'Erro ao remover usuário.'); return; }
   loadUsersPage();
   showToast('🗑 Usuário removido',username);
+}
+
+// ═══════════════════════════════════════════
+// v107 (Prompt 1) — MODAL DE PERMISSÕES POR USUÁRIO
+// ═══════════════════════════════════════════
+// Só decide o que aparece na tela desse usuário — não mexe em rota, API, Supabase nem em nenhuma
+// outra função do sistema. Categorias e módulos espelham 1:1 os itens de verdade da barra
+// lateral (nada inventado); "Usuários e Permissões" fica de fora porque só master acessa mesmo.
+const PERM_GROUPS = [
+  { label: '📋 Visão Geral', keys: [
+    { key:'pedidos', label:'📊 Pedidos (inclui Dashboard e Kanban)' },
+    { key:'reservas', label:'📅 Reservas' },
+    { key:'mensagens', label:'💬 Mensagens' },
+  ]},
+  { label: '🍱 Gestão', keys: [
+    { key:'motoboys', label:'🛵 Motoboys' },
+    { key:'cardapio', label:'🍱 Cardápio' },
+    { key:'custos', label:'💰 Custos & Ficha Técnica' },
+    { key:'notafiscal', label:'📷 Ler Nota Fiscal' },
+    { key:'ia', label:'🤖 IA do Cardápio' },
+    { key:'qrlinks', label:'🔗 QR Code & Links' },
+    { key:'relatorios', label:'📈 Relatórios' },
+    { key:'avaliacoes', label:'⭐ Avaliações' },
+  ]},
+  { label: '⚙️ Sistema', keys: [
+    { key:'configuracoes', label:'⚙️ Configurações' },
+    { key:'impressao', label:'🖨 Central de Impressão' },
+  ]},
+];
+let permModalUsername = null;
+function openPermModal(username){
+  const user = allPanelUsers.find(u=>u.username===username);
+  if(!user){ showToast('⚠️ Usuário não encontrado', ''); return; }
+  if(user.role==='master'){ showToast('👑 Usuário master', 'Master sempre tem acesso total — não dá pra restringir.'); return; }
+  permModalUsername = username;
+  document.getElementById('perm-modal-username').textContent = username;
+  document.getElementById('perm-modal-target-username').value = username;
+  const perms = user.permissions || {}; // ausência de chave = marcado (acesso total por padrão)
+  document.getElementById('perm-modal-groups').innerHTML = PERM_GROUPS.map(g=>`
+    <div>
+      <div style="font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">${g.label}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+        ${g.keys.map(m=>`
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:8px 10px;border-radius:6px;border:1px solid var(--border);">
+            <input type="checkbox" class="perm-check" data-perm-key="${m.key}" ${perms[m.key]===false?'':'checked'}/>
+            ${m.label}
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+  // "Copiar Permissões de Outro Usuário" — lista todo mundo, menos master (sempre total) e o próprio
+  const others = allPanelUsers.filter(u=>u.role!=='master' && u.username!==username);
+  const copySelect = document.getElementById('perm-copy-from');
+  copySelect.innerHTML = others.length
+    ? `<option value="">Copiar permissões de...</option>` + others.map(u=>`<option value="${u.username}">${u.username}</option>`).join('')
+    : `<option value="">(nenhum outro usuário pra copiar)</option>`;
+  openModal('perm-modal');
+}
+function permSetAll(value){
+  document.querySelectorAll('#perm-modal-groups .perm-check').forEach(cb=>{ cb.checked = value; });
+}
+function permCopyFromOther(){
+  const src = document.getElementById('perm-copy-from').value;
+  if(!src){ showToast('Escolha um usuário', 'pra copiar as permissões dele primeiro.'); return; }
+  const user = allPanelUsers.find(u=>u.username===src);
+  const perms = (user && user.permissions) || {};
+  document.querySelectorAll('#perm-modal-groups .perm-check').forEach(cb=>{
+    cb.checked = perms[cb.dataset.permKey] !== false;
+  });
+  showToast('📋 Permissões copiadas', `Copiado de "${src}" — confira e clique em Salvar Permissões.`);
+}
+async function savePermissions(){
+  const username = document.getElementById('perm-modal-target-username').value;
+  const checks = [...document.querySelectorAll('#perm-modal-groups .perm-check')];
+  const allChecked = checks.every(cb=>cb.checked);
+  // se marcou tudo, salva null (acesso total padrão) — senão salva só o que precisa mesmo,
+  // sem inflar o config.json com um objeto cheio de "true" desnecessário
+  const permissions = allChecked ? null : Object.fromEntries(checks.map(cb=>[cb.dataset.permKey, cb.checked]));
+  const res = await apiPut('/api/admin/users/'+encodeURIComponent(username)+'/permissions', { permissions });
+  if(!res.ok){ alert(res.data.error||'Erro ao salvar permissões.'); return; }
+  closeModal('perm-modal');
+  await loadUsersPage();
+  showToast('✅ Permissões salvas!', `${username} já usa o novo acesso no próximo login (ou ao recarregar o painel dele).`);
 }
 
 // ═══════════════════════════════════════════

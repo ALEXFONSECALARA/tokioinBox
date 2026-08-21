@@ -456,6 +456,19 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .form-group label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
 .form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Jost',sans-serif;font-size:14px;padding:12px;border-radius:4px;outline:none;transition:border-color .2s;}
 .form-group input:focus,.form-group select:focus{border-color:var(--red-dk);}
+/* v107 — Prompt 2 (otimização "Finalizar Pedido"): borda vermelha só pra sinalizar campo
+   obrigatório vazio quando falta algo; não muda nenhuma outra cor/estilo do formulário. */
+.form-group input.field-error{border-color:var(--red);box-shadow:0 0 0 1px var(--red);}
+.checkout-missing-hint{display:none;color:var(--red);font-size:12px;margin-top:2px;}
+.checkout-missing-hint.show{display:block;}
+/* destaque suave (dourado, mesmo tom do sistema) quando a rolagem automática chega em
+   Forma de Pagamento — só um pulso visual, some sozinho, não muda o layout nem as cores padrão */
+@keyframes shogatsuPaymentPulse{
+  0%{box-shadow:0 0 0 0 rgba(201,168,76,.55);}
+  70%{box-shadow:0 0 0 10px rgba(201,168,76,0);}
+  100%{box-shadow:0 0 0 0 rgba(201,168,76,0);}
+}
+#payment-section.payment-highlight{animation:shogatsuPaymentPulse 1.4s ease-out 1;border-radius:8px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
 /* ── Cartão de perfil "Minha Conta" (v55) ── */
@@ -501,6 +514,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .pay-opt-icon{font-size:24px;margin-bottom:6px;}
 .pay-opt-label{font-size:11px;letter-spacing:1px;color:var(--muted);}
 .pay-opt.selected .pay-opt-label{color:var(--white);}
+.pay-opt:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
 
 .order-summary-mini{background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:16px;margin-bottom:20px;box-shadow:0 2px 16px rgba(201,168,76,.08);}
 .order-summary-mini .summary-row{font-size:12px;}
@@ -1027,6 +1041,7 @@ button:active, .btn:active, [role="button"]:active, .pay-opt:active, .cat-tab:ac
       <div class="form-group"><label>Bairro *</label><input type="text" id="f-hood" placeholder="Costazul" onblur="onAddressChanged()"/></div>
       <div class="form-group"><label>Ponto de referência</label><input type="text" id="f-ref" placeholder="Próximo ao mercado"/></div>
       <p class="hint" id="fee-calc-status" style="font-size:12px;color:var(--muted);margin-top:4px;"></p>
+      <p class="checkout-missing-hint" id="checkout-missing-hint">Preencha os campos obrigatórios para continuar.</p>
       <div id="checkout-save-account-box" style="margin-top:10px;padding:12px;background:var(--card);border-radius:8px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
           <input type="checkbox" id="f-save-account" onchange="toggleSaveAccountBox()"/> 💾 Salvar meus dados pros próximos pedidos (criar senha de 4 dígitos)
@@ -1043,15 +1058,16 @@ button:active, .btn:active, [role="button"]:active, .pay-opt:active, .cat-tab:ac
       <div class="form-group"><label>Nome para retirada *</label><input type="text" id="f-name-r" placeholder="Seu nome"/></div>
       <div class="form-group"><label>WhatsApp / Telefone *</label><input type="tel" inputmode="numeric" id="f-phone-r" placeholder="(22) 99999-9999" maxlength="15" oninput="maskPhone(this)"/></div>
       <p style="font-size:12px;color:var(--muted);margin-top:4px;" id="retirada-addr-note"></p>
+      <p class="checkout-missing-hint" id="checkout-missing-hint-r">Preencha os campos obrigatórios para continuar.</p>
     </div>
 
-    <div class="form-section">
+    <div class="form-section" id="payment-section">
       <div class="form-section-title">💳 Forma de Pagamento</div>
       <div class="payment-grid">
-        <div class="pay-opt" onclick="selectPay('pix')" id="pay-pix"><div class="pay-opt-icon">📱</div><div class="pay-opt-label">PIX</div></div>
-        <div class="pay-opt" onclick="selectPay('credito')" id="pay-credito"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Crédito</div></div>
-        <div class="pay-opt" onclick="selectPay('debito')" id="pay-debito"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Débito</div></div>
-        <div class="pay-opt" onclick="selectPay('dinheiro')" id="pay-dinheiro"><div class="pay-opt-icon">💵</div><div class="pay-opt-label">Dinheiro</div></div>
+        <div class="pay-opt" onclick="selectPay('pix')" id="pay-pix" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('pix');}"><div class="pay-opt-icon">📱</div><div class="pay-opt-label">PIX</div></div>
+        <div class="pay-opt" onclick="selectPay('credito')" id="pay-credito" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('credito');}"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Crédito</div></div>
+        <div class="pay-opt" onclick="selectPay('debito')" id="pay-debito" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('debito');}"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Débito</div></div>
+        <div class="pay-opt" onclick="selectPay('dinheiro')" id="pay-dinheiro" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('dinheiro');}"><div class="pay-opt-icon">💵</div><div class="pay-opt-label">Dinheiro</div></div>
       </div>
       <div id="troco-wrap" style="display:none;margin-top:12px;">
         <div class="form-group"><label>Troco para quanto?</label><input type="number" id="f-troco" placeholder="ex: 100"/></div>
@@ -3365,6 +3381,7 @@ function openCheckout(silent) {
   }
   if (!silent) {
     openFullScreen('checkout-screen');
+    if (typeof resetCheckoutAutoAdvance === 'function') resetCheckoutAutoAdvance(); // v107: reabrir o checkout permite rolar pro pagamento de novo
     loadCheckoutDraft(); // v52: preenche com o rascunho salvo (só campos ainda vazios)
     if (mode === 'delivery') calcDeliveryFee(); // recalcula caso o cliente volte pra editar
     if (!autoCouponChecked) tryAutoApplyCoupon();
@@ -3525,7 +3542,10 @@ async function placeOrder() {
     const comp = document.getElementById('f-comp').value.trim();
     const ref = document.getElementById('f-ref').value.trim();
     const cep = document.getElementById('f-cep').value.trim();
-    if (!name || !phone || !street || !number || !hood) { alert('Preencha nome, telefone, rua, número e bairro.'); return; }
+    if (!name || !phone || !street || !number || !hood) {
+      if (typeof highlightMissingCheckoutFields === 'function') highlightMissingCheckoutFields('delivery'); // v107: mesma validação, só acrescenta a borda vermelha
+      alert('Preencha nome, telefone, rua, número e bairro.'); return;
+    }
     if (feeCalcBusy) { alert('Aguarde só um instante, ainda estamos calculando a taxa de entrega.'); return; }
     if (deliveryBlocked) { alert('Esse endereço está fora da nossa área de entrega. Fale com a gente pelo WhatsApp para verificar.'); return; }
     if (!customer && document.getElementById('f-save-account').checked) {
@@ -3542,7 +3562,10 @@ async function placeOrder() {
   } else {
     name = document.getElementById('f-name-r').value.trim();
     phone = document.getElementById('f-phone-r').value.trim();
-    if (!name || !phone) { alert('Preencha nome e telefone.'); return; }
+    if (!name || !phone) {
+      if (typeof highlightMissingCheckoutFields === 'function') highlightMissingCheckoutFields('retirada');
+      alert('Preencha nome e telefone.'); return;
+    }
     address = 'RETIRADA NO RESTAURANTE';
   }
   if (!payMethod) { alert('Escolha a forma de pagamento.'); return; }
@@ -4125,6 +4148,7 @@ function setMode(m) {
   const chipTime = document.getElementById('chip-time');
   if (chipTime) chipTime.textContent = m === 'retirada' ? (cfg.timeRetirada || cfg.time) : cfg.time;
   if (m === 'delivery') { onAddressChanged(); } else { deliveryBlocked = false; }
+  if (typeof resetCheckoutAutoAdvance === 'function') resetCheckoutAutoAdvance(); // v107: trocar entrega/retirada reavalia os campos obrigatórios do zero
   updateCartUI();
 }
 function scrollCat(id) {
@@ -4510,12 +4534,88 @@ updatePushButtonState();
     if (next) {
       next.focus();
     } else {
-      // último campo da lista: tira o foco do teclado e rola até o botão Finalizar Pedido,
-      // sem apertar sozinho — quem confirma o pedido continua sendo o cliente
+      // último campo da lista: tira o foco do teclado. Se os campos obrigatórios já estiverem
+      // completos, quem cuida de rolar até o pagamento é o setupCheckoutAutoAdvance (v107)
+      // logo abaixo — senão, mostra a validação em vez de rolar pra lugar nenhum.
       el.blur();
-      document.getElementById('place-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      if (typeof checkCheckoutAutoAdvance === 'function' && checkCheckoutAutoAdvance()) {
+        // já rolou pro pagamento
+      } else if (typeof highlightMissingCheckoutFields === 'function') {
+        highlightMissingCheckoutFields(currentOrder() === FIELD_ORDER.delivery ? 'delivery' : 'retirada');
+      } else {
+        document.getElementById('place-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
     }
   });
+})();
+
+// ═══════════════════════════════════════════
+// v107 (Prompt 2) — AVANÇO AUTOMÁTICO PRA "FORMA DE PAGAMENTO" NO CHECKOUT
+// ═══════════════════════════════════════════
+// Só usabilidade/velocidade — nenhuma regra de negócio muda: os campos obrigatórios continuam
+// exatamente os mesmos já validados em placeOrder() (nome, telefone, rua, número, bairro pra
+// entrega; nome e telefone pra retirada — CEP nunca foi obrigatório neste sistema). Quando todos
+// ficam preenchidos, a tela rola sozinha até 💳 Forma de Pagamento, abre/destaca a seção e leva o
+// foco pra primeira opção — sem precisar mais rolar manualmente. Se faltar algo, não rola: só
+// destaca em vermelho os campos vazios com uma mensagem discreta (não bloqueia nem altera nada
+// além da borda/mensagem).
+let checkoutAutoAdvanced = false;
+function resetCheckoutAutoAdvance() {
+  checkoutAutoAdvanced = false;
+  document.querySelectorAll('#checkout-screen .field-error').forEach(el => el.classList.remove('field-error'));
+  document.querySelectorAll('.checkout-missing-hint').forEach(el => el.classList.remove('show'));
+}
+function highlightMissingCheckoutFields(checkoutMode) {
+  const REQUIRED = {
+    delivery: ['f-name', 'f-phone', 'f-street', 'f-number', 'f-hood'],
+    retirada: ['f-name-r', 'f-phone-r']
+  };
+  const ids = REQUIRED[checkoutMode] || [];
+  let firstEmpty = null;
+  ids.forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const empty = !el.value.trim();
+    el.classList.toggle('field-error', empty);
+    if (empty && !firstEmpty) firstEmpty = el;
+  });
+  const hint = document.getElementById(checkoutMode === 'delivery' ? 'checkout-missing-hint' : 'checkout-missing-hint-r');
+  if (hint) hint.classList.toggle('show', !!firstEmpty);
+  return !firstEmpty;
+}
+// Confere se os campos obrigatórios do modo atual estão completos e, se estiverem (e ainda não
+// tiver rolado nesta visita ao checkout), rola pra Forma de Pagamento. Retorna true se rolou.
+function checkCheckoutAutoAdvance() {
+  const checkoutMode = document.getElementById('delivery-section')?.style.display !== 'none' ? 'delivery' : 'retirada';
+  const complete = highlightMissingCheckoutFields(checkoutMode);
+  if (!complete || checkoutAutoAdvanced) return false;
+  checkoutAutoAdvanced = true;
+  const paymentSection = document.getElementById('payment-section');
+  if (!paymentSection) return false;
+  setTimeout(() => {
+    paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    paymentSection.classList.add('payment-highlight');
+    setTimeout(() => paymentSection.classList.remove('payment-highlight'), 1500);
+    // foco na primeira opção de pagamento, sem escolher por conta própria — quem decide a forma
+    // de pagamento continua sendo o cliente
+    setTimeout(() => document.getElementById('pay-pix')?.focus({ preventScroll: true }), 350);
+  }, 250); // pequeno atraso pra não brigar com o scroll do campo que acabou de perder o foco
+  return true;
+}
+(function setupCheckoutAutoAdvance(){
+  const checkoutScreen = document.getElementById('checkout-screen');
+  if (!checkoutScreen) return;
+  const REQUIRED_IDS = ['f-name', 'f-phone', 'f-street', 'f-number', 'f-hood', 'f-name-r', 'f-phone-r'];
+  let debounceTimer = null;
+  function onFieldChange(e) {
+    const id = e.target && e.target.id;
+    if (!REQUIRED_IDS.includes(id)) return;
+    e.target.classList.remove('field-error'); // digitando de novo já tira o alerta daquele campo
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(checkCheckoutAutoAdvance, 200);
+  }
+  checkoutScreen.addEventListener('input', onFieldChange);
+  checkoutScreen.addEventListener('blur', onFieldChange, true); // captura, já que blur não borbulha
 })();
 
 </script>
