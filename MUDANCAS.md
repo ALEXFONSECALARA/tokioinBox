@@ -1,4 +1,48 @@
-# v107 — NOVO: Permissões de Usuários (Prompt 1) + Otimização da tela "Finalizar Pedido" (Prompt 2)
+# v107a — EVOLUÇÃO DO CADASTRO DE PRATOS: Grupos de Opções com quantidade e tipos de preço
+
+**Nada foi removido nem quebrado.** O sistema de "Variações" que já existia (grupos ➜ opções,
+usado pra tamanho/sabor/adicional) continua funcionando exatamente igual pra quem não mexer em
+nada — os campos novos abaixo são todos opcionais. Nenhuma rota, API, banco, impressão ou pedido
+existente foi alterado: o carrinho do cliente já salvava a seleção como um nome+preço prontos
+(ex: `"Combo Shogatsu (Sabores: Salmão x8, Atum x6)"`), então tudo que mudou fica contido no
+editor do Painel e na tela de personalizar prato do cliente — o pedido salvo, a impressão, a
+cozinha e os relatórios recebem o mesmo formato de sempre.
+
+## O que ficou mais poderoso
+
+**Grupos de Opções Reutilizáveis** — novo botão **Cardápio → 📚 Grupos Reutilizáveis**: monte um
+grupo uma vez (ex: "Molhos", "Sabores de Sushi") e use em quantos pratos quiser com **📚 Usar
+grupo existente** (dentro de Editar Item), sem digitar tudo de novo. Cada item guarda sua própria
+cópia — editar a Biblioteca depois não muda pratos que já usaram o grupo (não quebra pedido
+antigo nem duplica cobrança por engano). Também dá pra mandar um grupo de dentro de um item pra
+Biblioteca (📚 no cabeçalho do grupo) e **⧉ Duplicar** um grupo dentro do mesmo item.
+
+**Tipos de preço por opção** (Incluído / Adicional / Preço fixo) — antes só existia "+R$X" (ou
+grátis se X=0). Agora cada opção escolhe: **Incluído** (nunca cobra, nem mostra "+R$0,00"),
+**Adicional** (+R$X por unidade escolhida, igual sempre foi) ou **Preço fixo** (cobra R$X uma
+vez, não multiplica pela quantidade).
+
+**Escolha por quantidade (stepper)** — uma opção pode ter "Máx. un" > 1 (ex: Salmão até 8): no
+pedido do cliente vira um contador +/- em vez de um chip liga/desliga, permitindo montar um combo
+tipo "8 Salmão + 6 Atum + 4 Hot Filadélfia = 24 peças".
+
+**Quantidade total do grupo** (mín./máx.) — ex: "escolha entre 6 e 24 peças no total". O cliente
+vê "Total: 14 / 24" enquanto monta, e só consegue confirmar quando atinge o mínimo — sem
+inventar dezenas de produtos separados pra cada combinação de tamanho/sabor.
+
+**Incluídas + excedente** (seção 13.4 do pedido) — ex: "4 peças inclusas no combo, a partir da
+5ª cobra +R$5,00 cada": configurável por grupo (campo "# inclusas" + "+R$/excedente"), sem
+precisar mexer preço opção por opção.
+
+## O que NÃO mudou nesta versão
+
+Por ser uma evolução muito grande, priorizei o motor de verdade (preço, quantidade, reuso) sobre
+o reposicionamento visual. **Não fiz** o editor virar um assistente de 8 etapas em 3 colunas
+(Informações/Tamanhos/Montagem/Variações/Extras/Disponibilidade/Impressão/Resumo) nem uma prévia
+ao vivo dentro do modal — o cadastro continua no mesmo modal único de sempre, só que com o editor
+de grupos bem mais capaz. Se quiser, dá pra evoluir isso depois numa v107b.
+
+
 
 **Nenhuma função existente foi removida ou alterada** — pedidos, cardápio, impressoras, cozinha,
 caixa, motoboys, reservas, financeiro/custos, banco de dados, rotas, APIs, Supabase, Render e

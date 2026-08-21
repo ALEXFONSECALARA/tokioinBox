@@ -153,6 +153,10 @@ const DEFAULT_CFG = {
     { username: 'master', password: 'shogatsuMaster2026', role: 'master' },
     { username: 'admin', password: 'shogatsu2026', role: 'admin' }
   ],
+  // v107a — Biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚), pra montar um grupo
+  // (tamanho, sabores, molhos...) uma vez e reaproveitar em vários pratos. Cada item continua
+  // guardando sua PRÓPRIA cópia em variants — este array é só o "catálogo" pra copiar depois.
+  optionGroupsLibrary: [],
   logoUrl: '',
   // v70: avatar do Chat Express agora é separado da logo geral da marca (logoUrl acima) — o
   // restaurante pode usar um mascote/ícone diferente no chat sem mexer na logo do cabeçalho.
