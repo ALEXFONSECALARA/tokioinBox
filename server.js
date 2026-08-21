@@ -108,6 +108,20 @@ try { PKG_VERSION = require('./package.json').version || PKG_VERSION; } catch (e
 const APP_VERSION = PKG_VERSION + '-' + BUILD_COMMIT;
 
 // ─── Config / Menu padrão (usados só na primeira execução) ───
+// v107 — Prompt 1: módulo de Permissões de Usuários (só o usuário MASTER gerencia). Lista de
+// módulos/telas que podem ser ligados/desligados por usuário — mapeia 1:1 as páginas reais que já
+// existem no Painel (public/painel.html, data-page dos nav-item), pra não inventar telas que não
+// existem. "usuarios" fica de fora de propósito: só master acessa mesmo (data-min-role="master"),
+// então nunca é atribuível a outro usuário. Ausência do campo "permissions" num usuário = acesso
+// total (comportamento de sempre, ninguém perde acesso que já tinha antes desta versão).
+const PERMISSION_MODULES = ['pedidos', 'reservas', 'mensagens', 'motoboys', 'cardapio', 'custos', 'notafiscal', 'ia', 'qrlinks', 'relatorios', 'avaliacoes', 'configuracoes', 'impressao'];
+function normalizePermissions(perms) {
+  if (!perms || typeof perms !== 'object') return null;
+  const out = {};
+  for (const key of PERMISSION_MODULES) { if (key in perms) out[key] = !!perms[key]; }
+  return out;
+}
+
 const DEFAULT_CFG = {
   whats: '552227641333', storePhone: '(22) 2764-1333', fee: 8, min: 60,
   name: 'Shogatsu Culinária Oriental', days: 'Ter–Dom',
@@ -2401,7 +2415,8 @@ async function handleRequest(req, res) {
   if (pathname === '/api/admin/users' && req.method === 'GET') {
     if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
     const { cfg } = readConfig();
-    return sendJSON(res, 200, { users: (cfg.users || []).map(u => ({ username: u.username, role: u.role })) });
+    // v107: inclui permissions (null = acesso total, comportamento de sempre)
+    return sendJSON(res, 200, { users: (cfg.users || []).map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })), permissionModules: PERMISSION_MODULES });
   }
   if (pathname === '/api/admin/users' && req.method === 'POST') {
     if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
@@ -2420,7 +2435,24 @@ async function handleRequest(req, res) {
         data.cfg.users.push({ username: uname, password, role });
       }
       writeJSON(CONFIG_FILE, data);
-      return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role })) });
+      return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })) });
+    } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
+  }
+  // ── PUT /api/admin/users/:username/permissions — v107: liga/desliga módulos pra um usuário
+  // específico (só master). Não mexe em senha, nem em role, nem em mais nada do usuário. ──
+  if (pathname.startsWith('/api/admin/users/') && pathname.endsWith('/permissions') && req.method === 'PUT') {
+    if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
+    const uname = decodeURIComponent(pathname.split('/')[3] || '').toLowerCase();
+    try {
+      const { permissions } = await readBody(req);
+      const data = readConfig();
+      const target = data.cfg.users.find(u => String(u.username || '').toLowerCase() === uname);
+      if (!target) return sendJSON(res, 404, { error: 'Usuário não encontrado.' });
+      if (target.role === 'master') return sendJSON(res, 400, { error: 'O usuário master sempre tem acesso total — não dá pra restringir.' });
+      // null/undefined explícito = "marcar tudo" (remove a restrição, volta ao acesso total)
+      target.permissions = (permissions === null) ? null : normalizePermissions(permissions);
+      writeJSON(CONFIG_FILE, data);
+      return sendJSON(res, 200, { ok: true, username: target.username, permissions: target.permissions });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
   if (pathname.startsWith('/api/admin/users/') && req.method === 'DELETE') {
@@ -2792,14 +2824,17 @@ async function handleRequest(req, res) {
       if (uname) {
         const user = (cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
         if (user && password === user.password) {
-          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username });
+          // v107: permissões por usuário vão junto no login pro Painel aplicar a UI na hora —
+          // master sempre null (acesso total), independente do que estiver salvo.
+          const permissions = user.role === 'master' ? null : normalizePermissions(user.permissions);
+          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username, permissions });
         }
         return sendJSON(res, 401, { error: 'Usuário ou senha incorretos.' });
       }
 
       // Compatibilidade: login sem usuário (só senha) continua funcionando como antes.
-      if (password === cfg.adminPass) return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin' });
-      if (password === cfg.masterPass) return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master' });
+      if (password === cfg.adminPass) return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null });
+      if (password === cfg.masterPass) return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null });
       return sendJSON(res, 401, { error: 'senha incorreta' });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }

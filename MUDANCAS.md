@@ -1,4 +1,52 @@
-# v104 — BUG CORRIGIDO: quadro "⚠️ Últimas falhas de impressão" sempre dizia "Não consegui carregar."
+# v107 — NOVO: Permissões de Usuários (Prompt 1) + Otimização da tela "Finalizar Pedido" (Prompt 2)
+
+**Nenhuma função existente foi removida ou alterada** — pedidos, cardápio, impressoras, cozinha,
+caixa, motoboys, reservas, financeiro/custos, banco de dados, rotas, APIs, Supabase, Render e
+GitHub continuam exatamente como estavam. As duas mudanças abaixo são só camadas novas por cima
+do que já existe.
+
+## Prompt 1 — Permissões de Usuários
+
+Novo menu **Configurações → Usuários e Permissões → 🔐 Permissões** (botão por usuário, só
+aparece pra quem não é master). Lista todos os módulos reais do Painel (os mesmos itens da barra
+lateral: Pedidos, Reservas, Mensagens, Motoboys, Cardápio, Custos, Ler Nota Fiscal, IA do
+Cardápio, QR Code & Links, Relatórios, Avaliações, Configurações, Central de Impressão) com um
+checkbox ✅/❌ por módulo, mais os botões **Marcar Tudo**, **Desmarcar Tudo**, **Copiar
+Permissões de Outro Usuário** e **Salvar Permissões**.
+
+- Só o usuário **MASTER** acessa essa tela (reforça o `data-min-role="master"` que a aba
+  "Usuários" já tinha desde antes).
+- **Master sempre tem acesso total** — não dá pra restringir um master, nem o servidor aceita.
+- **Usuário sem nenhuma restrição salva continua exatamente como sempre foi**: ausência do campo
+  `permissions` (ou salvar com tudo marcado) = acesso total decidido só pelo cargo (role), igual
+  ao sistema atual. Ninguém perde acesso que já tinha antes desta versão.
+- Aplicado automaticamente no login: `POST /api/login` agora devolve também `permissions` (salvo
+  no Supabase junto com o resto de `config.json`, que já sincroniza sozinho) e o Painel esconde
+  da barra lateral (e bloqueia a navegação direta) qualquer módulo desmarcado pra aquele usuário —
+  sem tocar em nenhuma rota, API ou lógica de negócio já existente.
+- Novo endpoint `PUT /api/admin/users/:username/permissions` (só master, reaproveita
+  `requireRole` já existente). `GET`/`POST /api/admin/users` passaram a devolver também
+  `permissions` de cada usuário, sem mudar o formato usado antes.
+
+## Prompt 2 — Rolagem automática pra "Forma de Pagamento" no checkout
+
+Só usabilidade — os campos obrigatórios continuam sendo exatamente os mesmos já validados em
+`placeOrder()` (nome, telefone, rua, número e bairro pra entrega; nome e telefone pra retirada —
+CEP nunca foi obrigatório neste sistema, então não virou obrigatório agora). Cálculo de taxa,
+cupom, PIX/cartão/dinheiro e agendamento **não mudaram em nada**.
+
+- Assim que os campos obrigatórios ficam completos, a tela do cliente rola sozinha (suave) até
+  💳 Forma de Pagamento, dá um destaque visual breve (mesmo dourado do sistema) e leva o foco pra
+  primeira opção — sem escolher a forma de pagamento sozinho, quem decide continua sendo o
+  cliente.
+- Some campo obrigatório: não rola pra pagamento — só destaca em vermelho os campos vazios e
+  mostra "Preencha os campos obrigatórios para continuar." (reaproveita a mesma validação que já
+  existia em `placeOrder()`, só acrescentou o destaque visual).
+- Convive sem conflito com a rolagem campo-a-campo que já existia (Enter avança pro próximo
+  campo do formulário, testada em Android/iPhone/tablet/desktop) — só reaproveitada no fim da
+  sequência.
+
+
 
 **Achado enquanto conferíamos o v103, não relacionado a ele.** `apiGet()` devolve o JSON puro da
 resposta do servidor, mas o código desse quadro esperava um envelope `{ok, data}` (formato usado
