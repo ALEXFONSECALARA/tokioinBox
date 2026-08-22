@@ -1,4 +1,28 @@
-# v107b — CADASTRO DE PRATOS VIROU UM EDITOR EM ETAPAS (wizard), com prévia ao vivo
+# v107f — 🏷 Badge Global removido de vez + Biblioteca de Badges com as 7 cores pedidas
+
+Build usada como base: `shogatsu-v107e-completo.zip` (enviada pelo usuário — já trazia, prontos
+e funcionando, os itens 3/4/5 do prompt de evolução: "+ Adicionar Opção" com mini-janela própria,
+"+ Novo Grupo" com atalhos prontos [Sabores/Molhos/Bebidas/Extras/Tamanho/Complementos], e
+"🧩 Copiar de outro produto" com os 3 modos — grupo inteiro / apenas opções / apenas preços).
+Faltava só isto:
+
+**🏷 Badge Global removido por completo (de novo, agora nesta base).** A aba "Cardápio → 🏷 Badge
+Global" ainda existia aqui (tela, botão `switchMenuMainTab`, funções `phUpdateField`/
+`phBadgeHTML`/`savePlaceholderBadgeSettings`) — tudo excluído. As 3 opções de rádio "Herdar Badge
+Global / Personalizar / Sem badge" no editor de item também saíram — agora é só "tem texto no
+campo = mostra o badge" / "vazio = não mostra", que é o que a Biblioteca de Badges já preenche.
+Item que dependia só do Badge Global (sem texto próprio) migra automaticamente o texto e a cor ao
+ser reaberto no editor, pra não sumir do cardápio do cliente sem aviso.
+
+**Biblioteca de Badges com as 7 badges e cores exatas pedidas**, substituindo a lista genérica que
+estava ali antes: 🔥 Mais Vendido (dourado), 🌱 Vegano (verde), ⭐ Chef Recomenda (amarelo),
+🆕 Novidade (azul), 🌶 Picante (vermelho), 🎁 Promoção (laranja), ❤️ Favorito (rosa). Os botões da
+biblioteca agora mostram a cor de verdade preenchida (não só a borda), e a prévia ao vivo — tanto
+no card lateral do wizard quanto um mini-preview novo logo abaixo do campo de badge no formulário
+— atualiza na hora que você clica num badge pronto ou muda a cor manualmente. Continua dando pra
+salvar badges personalizadas (texto + cor) na Biblioteca pra reusar depois, como já existia.
+
+
 
 Reorganização visual do MESMO modal de Editar/Novo Item — mesmos campos, mesmas funções de
 salvar, foto e grupos de opções (v107a) — em **5 etapas com barra lateral, prévia do cliente ao
