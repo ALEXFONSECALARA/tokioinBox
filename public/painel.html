@@ -367,6 +367,10 @@ table{max-width:100%;}
 .wizard-preview-price{color:var(--gold);font-weight:700;font-size:14px;}
 .wizard-preview-price .old{text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;}
 .wizard-preview-badge{display:inline-block;font-size:10px;background:var(--red-dk);padding:2px 7px;border-radius:20px;margin-bottom:6px;color:#fff;}
+/* v107e — Biblioteca de Badges: os botões prontos mostram a cor de verdade (preenchida, não só
+   a borda), pra já dar uma prévia de como o badge fica antes mesmo de aplicar no item. */
+.badge-lib-preset-btn{border:none;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);cursor:pointer;}
+.badge-lib-preset-btn:hover{filter:brightness(1.1);}
 .wizard-preview-summary{margin-top:12px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px;}
 .wizard-preview-status-list{margin-top:12px;font-size:11px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:10px;}
 .wizard-preview-status-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);}
@@ -1329,10 +1333,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <span class="panel-title" id="menu-active-cat-title">Selecione uma categoria</span>
             <button class="btn primary sm" onclick="openAddItem()">+ Novo Item</button>
           </div>
-          <div style="padding:8px 14px 0;border-bottom:1px solid var(--border);display:flex;gap:6px;">
-            <button type="button" class="btn sm" id="menu-tabbtn-itens" onclick="switchMenuMainTab('itens')" style="border-radius:6px 6px 0 0;">📋 Edição</button>
-            <button type="button" class="btn sm secondary" id="menu-tabbtn-photos" onclick="switchMenuMainTab('photos')" style="border-radius:6px 6px 0 0;">🏷 Badge Global</button>
-          </div>
           <div id="menu-tab-content-itens">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
               <input id="menu-search" placeholder="🔎 Buscar prato em todo o cardápio..." oninput="onMenuSearch(this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--white);font-size:12px;"/>
@@ -1349,7 +1349,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               <div style="text-align:center;padding:40px;color:var(--muted)">Selecione uma categoria</div>
             </div>
           </div>
-          <div id="menu-tab-content-photos" class="menu-items-body" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -2605,12 +2604,8 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/>
           </div>
           <div class="field" style="margin-top:-4px;">
-            <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
-            <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global" onchange="updateWizardPreview()"/> Herdar Badge Global</label>
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual" onchange="updateWizardPreview()"/> Personalizar (usa o texto acima)</label>
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off" onchange="updateWizardPreview()"/> Sem badge</label>
-            </div>
+            <label style="font-size:10px;">🏷 Preview do badge deste item <span style="font-weight:400;color:var(--muted);">(vazio = sem badge; use a Biblioteca de Badges acima ou digite o seu)</span></label>
+            <div id="item-badge-mini-preview" style="margin-top:6px;"></div>
           </div>
           <div class="field-row">
             <div class="field"><label>Cor do Badge <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
@@ -7273,148 +7268,6 @@ function setupCatDragDrop(){
   });
 }
 
-// ═══════════════════════════════════════════
-// v73: 🏷 BADGE GLOBAL — selo global aplicado a todo o cardápio
-// v84 — FERRAMENTA REMOVIDA ("Foto Provisória Global"): essa aba tinha DUAS ferramentas —
-// Foto Provisória Global e Badge Global. A foto provisória era uma ferramenta DUPLICADA: cada
-// prato já tem seu próprio upload de foto individual (campo "Foto do Prato" na aba Edição, ver
-// modal de item), então ter uma segunda ferramenta de upload de imagem só pra cobrir os pratos
-// sem foto confundia o admin sobre qual usar. Removida por completo (aqui, no editor do
-// cardápio, e também a aplicação dela no cardápio do cliente em index.html) — restou só o
-// Badge Global, que é uma ferramenta diferente (selo/etiqueta, não é upload de imagem) e não
-// tem equivalente duplicado em nenhum outro lugar do sistema.
-// ═══════════════════════════════════════════
-function switchMenuMainTab(tab){
-  document.getElementById('menu-tabbtn-itens').className = 'btn sm' + (tab==='itens'?'':' secondary');
-  document.getElementById('menu-tabbtn-photos').className = 'btn sm' + (tab==='photos'?'':' secondary');
-  document.getElementById('menu-tab-content-itens').style.display = tab==='itens' ? '' : 'none';
-  document.getElementById('menu-tab-content-photos').style.display = tab==='photos' ? '' : 'none';
-  if(tab==='photos') renderPlaceholderBadgePanel();
-}
-
-let phBadgeState = null;
-function initPhBadgeState(){
-  phBadgeState = {
-    badge: Object.assign({ enabled:false, text:'Mais vendido', icon:'🔥', bgColor:'#c0392b', textColor:'#ffffff', fontSize:11, fontWeight:700, opacity:100, borderEnabled:false, borderColor:'#ffffff', borderRadius:6, padding:6, shadow:true, position:'canto-superior-esquerdo' }, JSON.parse(JSON.stringify(cfg.globalBadge||{})))
-  };
-}
-
-function renderPlaceholderBadgePanel(){
-  if(!phBadgeState) initPhBadgeState();
-  const el = document.getElementById('menu-tab-content-photos');
-  const b = phBadgeState.badge;
-  el.innerHTML = `
-    <div style="padding:16px;display:flex;flex-direction:column;gap:18px;max-width:900px;">
-      <div style="font-size:11px;color:var(--muted);">
-        Ferramenta global que vale pro cardápio inteiro — sem mexer item por item. A aba de edição normal continua exatamente igual.
-      </div>
-
-      <div class="settings-card">
-        <div class="settings-card-title">🏷 Badge Global</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
-          Selo exibido automaticamente nos produtos (ex: 🔥 Mais vendido, ⭐ Novidade, 💎 Premium). Em cada item, escolha "Herdar Badge Global" ou "Personalizar" (na edição do item).
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px;">
-          <input type="checkbox" ${b.enabled?'checked':''} onchange="phUpdateField('badge','enabled',this.checked)"/> Badge Global ativo
-        </label>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
-          <div class="field"><label style="font-size:10px;">Ícone</label><input value="${esc(b.icon)}" maxlength="4" oninput="phUpdateField('badge','icon',this.value)"/></div>
-          <div class="field" style="grid-column:span 2;"><label style="font-size:10px;">Texto</label><input value="${esc(b.text)}" maxlength="30" oninput="phUpdateField('badge','text',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Cor do fundo</label><input type="color" value="${b.bgColor}" oninput="phUpdateField('badge','bgColor',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Cor da fonte</label><input type="color" value="${b.textColor}" oninput="phUpdateField('badge','textColor',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Tamanho da fonte (px)</label><input type="number" min="8" max="24" value="${b.fontSize}" oninput="phUpdateField('badge','fontSize',parseInt(this.value)||11)"/></div>
-          <div class="field"><label style="font-size:10px;">Peso da fonte</label>
-            <select onchange="phUpdateField('badge','fontWeight',parseInt(this.value))">
-              <option value="400" ${b.fontWeight==400?'selected':''}>Normal</option>
-              <option value="600" ${b.fontWeight==600?'selected':''}>Semi-negrito</option>
-              <option value="700" ${b.fontWeight==700?'selected':''}>Negrito</option>
-              <option value="900" ${b.fontWeight==900?'selected':''}>Extra-negrito</option>
-            </select>
-          </div>
-          <div class="field"><label style="font-size:10px;">Transparência (%)</label><input type="range" min="30" max="100" value="${b.opacity}" oninput="phUpdateField('badge','opacity',parseInt(this.value))"/></div>
-          <div class="field"><label style="font-size:10px;">Raio da borda (px)</label><input type="number" min="0" max="30" value="${b.borderRadius}" oninput="phUpdateField('badge','borderRadius',parseInt(this.value)||0)"/></div>
-          <div class="field"><label style="font-size:10px;">Espaçamento interno (px)</label><input type="number" min="0" max="20" value="${b.padding}" oninput="phUpdateField('badge','padding',parseInt(this.value)||0)"/></div>
-          <div class="field">
-            <label style="display:flex;align-items:center;gap:6px;font-size:10px;"><input type="checkbox" ${b.borderEnabled?'checked':''} onchange="phUpdateField('badge','borderEnabled',this.checked)"/> Borda</label>
-            <input type="color" value="${b.borderColor}" oninput="phUpdateField('badge','borderColor',this.value)" style="margin-top:4px;"/>
-          </div>
-          <div class="field"><label style="display:flex;align-items:center;gap:6px;font-size:10px;margin-top:18px;"><input type="checkbox" ${b.shadow?'checked':''} onchange="phUpdateField('badge','shadow',this.checked)"/> Sombra</label></div>
-          <div class="field" style="grid-column:span 2;"><label style="font-size:10px;">Posição do badge</label>
-            <select onchange="phUpdateField('badge','position',this.value)">
-              <option value="acima-foto" ${b.position==='acima-foto'?'selected':''}>Acima da foto</option>
-              <option value="abaixo-foto" ${b.position==='abaixo-foto'?'selected':''}>Abaixo da foto</option>
-              <option value="sobre-foto" ${b.position==='sobre-foto'?'selected':''}>Sobre a foto</option>
-              <option value="acima-nome" ${b.position==='acima-nome'?'selected':''}>Acima do nome</option>
-              <option value="abaixo-nome" ${b.position==='abaixo-nome'?'selected':''}>Abaixo do nome</option>
-              <option value="canto-superior-esquerdo" ${b.position==='canto-superior-esquerdo'?'selected':''}>Canto superior esquerdo</option>
-              <option value="canto-superior-direito" ${b.position==='canto-superior-direito'?'selected':''}>Canto superior direito</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-card">
-        <div class="settings-card-title">👁 Pré-visualização</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Atualiza instantaneamente conforme você muda qualquer opção acima.</div>
-        <div id="ph-preview-wrap" style="display:flex;justify-content:center;padding:10px;"></div>
-      </div>
-
-      <div>
-        <button class="btn primary" onclick="savePlaceholderBadgeSettings()">💾 Salvar Badge Global</button>
-      </div>
-    </div>`;
-  updatePhPreview();
-}
-
-function phUpdateField(group, field, value){
-  phBadgeState[group][field] = value;
-  updatePhPreview();
-}
-
-function phBadgeHTML(b){
-  if(!b.enabled) return '';
-  const style = `display:inline-flex;align-items:center;gap:4px;background:${b.bgColor};color:${b.textColor};font-size:${b.fontSize}px;font-weight:${b.fontWeight};opacity:${(b.opacity==null?100:b.opacity)/100};border-radius:${b.borderRadius}px;padding:${b.padding}px ${Number(b.padding)+4}px;white-space:nowrap;${b.borderEnabled?`border:1px solid ${b.borderColor};`:''}${b.shadow?'box-shadow:0 2px 6px rgba(0,0,0,.35);':''}`;
-  return `<span style="${style}">${b.icon?esc(b.icon)+' ':''}${esc(b.text)}</span>`;
-}
-
-function updatePhPreview(){
-  const wrap = document.getElementById('ph-preview-wrap');
-  if(!wrap) return;
-  const b = phBadgeState.badge;
-  // v84: sem mais Foto Provisória — a caixa de foto na pré-visualização agora é sempre o
-  // placeholder genérico (mesmo estilo do cardápio real quando um prato ainda não tem foto).
-  const photoBox = `<div style="width:90px;height:90px;flex:0 0 auto;border-radius:12px;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted);">🍽️</div>`;
-
-  const aboveBadge = b.position==='acima-foto' ? `<div style="margin-bottom:6px;">${phBadgeHTML(b)}</div>` : '';
-  const belowBadge = b.position==='abaixo-foto' ? `<div style="margin-top:6px;">${phBadgeHTML(b)}</div>` : '';
-  const overBadge = b.position==='sobre-foto' ? `<div style="position:absolute;top:4px;left:4px;">${phBadgeHTML(b)}</div>` : '';
-  const cornerBadge = (b.position==='canto-superior-esquerdo'||b.position==='canto-superior-direito')
-    ? `<div style="position:absolute;top:8px;${b.position==='canto-superior-esquerdo'?'left':'right'}:8px;z-index:2;">${phBadgeHTML(b)}</div>` : '';
-
-  const photoBlock = `<div style="position:relative;">${photoBox}${overBadge}</div>`;
-
-  const nameBlock = `
-    ${b.position==='acima-nome'?`<div style="margin-bottom:4px;">${phBadgeHTML(b)}</div>`:''}
-    <div style="font-weight:700;font-size:14px;color:var(--white);">Rodízio Master</div>
-    ${b.position==='abaixo-nome'?`<div style="margin-top:4px;">${phBadgeHTML(b)}</div>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-top:2px;">10 sashimis de salmão, 5 sashimis haddock, 5 sashimis peixe branco...</div>
-    <div style="font-weight:700;color:var(--green-lt);margin-top:6px;">R$ 159,90</div>`;
-
-  const inner = `<div style="display:flex;gap:12px;align-items:flex-start;">
-      <div>${aboveBadge}${photoBlock}${belowBadge}</div>
-      <div style="flex:1;">${nameBlock}</div>
-    </div>`;
-
-  wrap.innerHTML = `<div style="position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;width:100%;max-width:360px;">${cornerBadge}${inner}</div>`;
-}
-
-async function savePlaceholderBadgeSettings(){
-  cfg.globalBadge = { ...phBadgeState.badge };
-  const res = await apiPost('/api/config', { cfg, menu });
-  if(!res.ok){ alert(res.data.error||'Erro ao salvar.'); return; }
-  showToast('✅ Salvo!', 'Badge global atualizado — já vale pro cardápio.');
-}
-
 function selectCat(i){activeCatIdx=i;document.getElementById('menu-search').value='';menuSearchQuery='';renderMenuEditor();}
 function moveCategory(i,dir){
   const j=i+dir;
@@ -7740,7 +7593,6 @@ function openAddItem(){
   document.getElementById('item-promo-price').value='';
   document.getElementById('item-stock').value='';
   document.getElementById('item-badge-color').value='#D9383A';
-  document.getElementById('item-badgemode-global').checked=true;
   document.getElementById('item-available-check').checked=true;
   document.getElementById('item-available').value='true';
   document.getElementById('item-featured-check').checked=false;
@@ -7773,9 +7625,17 @@ function openEditItem(si,ii){
   document.getElementById('item-ean').value=item.ean||'';
   document.getElementById('item-tags').value=(item.tags||[]).join(', ');
   document.getElementById('item-stock').value=(item.stock===null||item.stock===undefined)?'':item.stock;
-  document.getElementById('item-badge').value=item.badge||'';
-  document.getElementById('item-badge-color').value=item.badgeColor||'#D9383A';
-  document.getElementById('item-badgemode-'+(item.badgeMode||'global')).checked=true;
+  // v107e: "Herdar Badge Global" saiu (a tela que configurava isso foi removida). Item antigo que
+  // ainda estava em badgeMode:'global' e dependia só do texto/cor configurados lá: traz esse
+  // valor pro campo manual agora (senão o badge visível desaparecia sem aviso ao reabrir).
+  let badgeValue = item.badge||'';
+  let badgeColorValue = item.badgeColor||'#D9383A';
+  if(!badgeValue && (item.badgeMode||'global')==='global' && cfg.globalBadge && cfg.globalBadge.enabled){
+    badgeValue = `${cfg.globalBadge.icon||''} ${cfg.globalBadge.text||''}`.trim();
+    badgeColorValue = cfg.globalBadge.bgColor || badgeColorValue;
+  }
+  document.getElementById('item-badge').value=badgeValue;
+  document.getElementById('item-badge-color').value=badgeColorValue;
   document.getElementById('item-available-check').checked = item.available!==false;
   document.getElementById('item-available').value = item.available!==false ? 'true' : 'false';
   document.getElementById('item-featured-check').checked = !!item.featured;
@@ -7938,7 +7798,8 @@ function updateWizardPreview(){
     lucroRow.style.display='';
   } else { lucroRow.style.display='none'; }
   const image = document.getElementById('item-image').value.trim();
-  const badgeMode = (document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global';
+  // v107e: badgeMode não vem mais de radio (a tela "Badge Global" foi removida) — é só
+  // "tem texto = mostra" / "vazio = não mostra", com a cor escolhida na Biblioteca de Badges.
   const badgeText = document.getElementById('item-badge').value.trim();
   const badgeColor = document.getElementById('item-badge-color').value||'#D9383A';
   const available = document.getElementById('item-available-check').checked;
@@ -7954,7 +7815,10 @@ function updateWizardPreview(){
   const photoEl = document.getElementById('wizard-preview-photo');
   if(image){ photoEl.style.backgroundImage = `url(${JSON.stringify(image).slice(1,-1)})`; photoEl.textContent=''; }
   else { photoEl.style.backgroundImage=''; photoEl.textContent='🍽️'; }
-  document.getElementById('wizard-preview-badge-wrap').innerHTML = (badgeMode==='manual'&&badgeText) ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : (badgeMode==='global' ? `<span class="wizard-preview-badge" style="opacity:.6;">🏷 badge global</span>` : '');
+  const badgeHTML = badgeText ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : '';
+  document.getElementById('wizard-preview-badge-wrap').innerHTML = badgeHTML;
+  const miniPreviewEl = document.getElementById('item-badge-mini-preview');
+  if(miniPreviewEl) miniPreviewEl.innerHTML = badgeHTML || '<span style="font-size:11px;color:var(--muted);">Sem badge</span>';
   const pill = document.getElementById('wizard-status-pill');
   pill.className = 'wizard-status-pill '+(available?'available':'unavailable');
   pill.textContent = available ? '✅ Disponível' : '🚫 Esgotado';
@@ -8236,18 +8100,17 @@ function submitAddOptionModal(){
 // (novo v107e) 🏷 Biblioteca de Badges — prontas (fixas) + personalizadas (salvas em
 // cfg.badgeLibrary, persistidas junto com o resto da configuração — mesmo /api/config de sempre).
 const BADGE_PRESETS = [
-  {label:'🔥 Destaque', color:'#D9383A'},
-  {label:'👑 Premium', color:'#D4A373'},
-  {label:'⭐ Mais Vendido', color:'#C5A059'},
-  {label:'🆕 Novidade', color:'#2f9e44'},
-  {label:'🌶️ Picante', color:'#C83232'},
-  {label:'🌱 Vegano', color:'#2f9e44'},
-  {label:'⏰ Por Tempo Limitado', color:'#D9383A'},
-  {label:'♻️ Sustentável', color:'#2f9e44'},
+  {label:'🔥 Mais Vendido', color:'#D4A373'},   // dourado (cor principal do Shogatsu)
+  {label:'🌱 Vegano', color:'#2f9e44'},          // verde
+  {label:'⭐ Chef Recomenda', color:'#eab308'},  // amarelo
+  {label:'🆕 Novidade', color:'#3b82f6'},        // azul
+  {label:'🌶 Picante', color:'#D9383A'},         // vermelho (cor principal do Shogatsu)
+  {label:'🎁 Promoção', color:'#f97316'},        // laranja
+  {label:'❤️ Favorito', color:'#ec4899'},        // rosa
 ];
 function openBadgeLibrary(){
   document.getElementById('badge-lib-presets').innerHTML = BADGE_PRESETS.map((b,i)=>`
-    <button type="button" class="btn secondary sm" style="border-color:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>`).join('');
+    <button type="button" class="badge-lib-preset-btn" style="background:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>`).join('');
   renderCustomBadgeLibrary();
   openModal('badge-library-modal');
 }
@@ -8256,14 +8119,13 @@ function renderCustomBadgeLibrary(){
   const el = document.getElementById('badge-lib-custom');
   el.innerHTML = list.length ? list.map((b,i)=>`
     <span style="display:inline-flex;align-items:center;gap:4px;">
-      <button type="button" class="btn secondary sm" style="border-color:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>
+      <button type="button" class="badge-lib-preset-btn" style="background:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>
       <button type="button" class="vopt-icon-btn" onclick="removeCustomBadgeFromLibrary(${i})" title="Remover da biblioteca">🗑</button>
     </span>`).join('') : '<div style="font-size:11px;color:var(--muted);">Nenhuma badge personalizada salva ainda.</div>';
 }
 function applyBadgeFromLibrary(label,color){
   document.getElementById('item-badge').value = label;
   document.getElementById('item-badge-color').value = color;
-  document.getElementById('item-badgemode-manual').checked = true;
   closeModal('badge-library-modal');
   updateWizardPreview();
 }
@@ -8468,7 +8330,9 @@ async function saveItem(andNew){
     price:parseFloat(document.getElementById('item-price').value)||0,
     qty:document.getElementById('item-qty').value.trim(),
     badge:document.getElementById('item-badge').value.trim(),
-    badgeMode:(document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global',
+    // v107e: "Herdar Badge Global" saiu junto com a tela que configurava isso — agora é só "tem
+    // texto = manual" / "vazio = sem badge".
+    badgeMode: document.getElementById('item-badge').value.trim() ? 'manual' : 'off',
     badgeColor: document.getElementById('item-badge-color').value||'#D9383A', // (novo)
     image:document.getElementById('item-image').value.trim(),
     imagePos:{x:posX,y:posY,zoom:posZoom,rotate:posRotate},
