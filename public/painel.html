@@ -7357,12 +7357,18 @@ function removeVariantOption(which,gi,oi){
 function updateVariantGroupField(which,gi,field,value){
   const g=groupsList(which)[gi];
   g[field] = value;
-  if(['min','max','includedQty','overagePrice','type'].includes(field)) renderVariantGroups(which); // esses campos mudam o que aparece embaixo (progresso/rótulo/campos extra), então re-renderiza
+  // v107a-fix: só "type" muda o que aparece na tela (mostra/esconde o bloco de quantidade total
+  // e o campo "Máx.un" de cada opção) — os campos numéricos (min/max/# inclusas/+R$ excedente)
+  // usam oninput a cada tecla digitada; re-renderizar neles fazia o campo perder o foco no meio
+  // da digitação (só dava pra digitar 1 dígito por vez). BUG CORRIGIDO.
+  if(field==='type') renderVariantGroups(which);
 }
 function updateVariantOptionField(which,gi,oi,field,value){
   const o=groupsList(which)[gi].options[oi];
   o[field] = (field==='priceDelta'||field==='maxQty') ? (parseFloat(value)||0) : value;
-  if(field==='priceMode'||field==='maxQty') renderVariantGroups(which);
+  // v107a-fix: só "priceMode" muda o que aparece na tela (mostra/esconde o campo de preço) —
+  // "maxQty" também usava oninput e reiniciava o campo a cada dígito (mesmo bug do de cima).
+  if(field==='priceMode') renderVariantGroups(which);
 }
 // "Usar grupo existente" — copia (clona, com id novo) um grupo da Biblioteca pra dentro do item
 // que está sendo editado agora. Não referencia o grupo original: se a Biblioteca mudar depois,

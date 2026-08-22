@@ -298,6 +298,8 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .vopt-stepper span{min-width:22px;text-align:center;font-size:13px;font-weight:700;}
 .vgroup-progress{font-size:11px;color:var(--gold);font-weight:600;margin-left:auto;white-space:nowrap;}
 .vgroup-title{justify-content:space-between;}
+.vopt-chip.disabled{opacity:.4;cursor:not-allowed;}
+.vopt-chip.disabled:hover{border-color:var(--border);}
 .coupon-chip{background:var(--card);border:1px solid var(--gold);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--gold);cursor:pointer;transition:background .15s;white-space:nowrap;animation:couponGlow 2s ease-in-out infinite;}
 @keyframes couponGlow{0%,100%{box-shadow:0 0 0 rgba(201,168,76,0);}50%{box-shadow:0 0 10px rgba(201,168,76,.5);}}
 @keyframes couponFlash{0%{transform:scale(1);}30%{transform:scale(1.08);}100%{transform:scale(1);}}
@@ -3206,12 +3208,22 @@ function variantGroupTotalQty(g) {
   return Object.values(sel).reduce((s, n) => s + (Number(n) || 0), 0);
 }
 // Clique num chip simples (opção com maxQty<=1, comportamento igual ao de sempre: liga/desliga).
+// v107a-fix: BUG — quando o grupo tinha um "Máx. total" (ex: "Escolha até 2 molhos"), esse limite
+// só era respeitado pelos steppers (+/-), não pelos chips simples de liga/desliga: dava pra
+// marcar quantos molhos quisesse, sem parar em 2. Agora, ao tentar LIGAR um chip com o grupo já
+// no total máximo, o clique não faz nada (chip fica visualmente desabilitado — ver renderVariantPicker).
 function toggleVariantOption(gi, oi) {
   const item = variantPicker.item;
   const group = item.variants[gi];
   const sel = variantPicker.selections[group.id] || {};
   if (group.type === 'multiple') {
-    sel[oi] = sel[oi] ? 0 : 1;
+    if (sel[oi]) {
+      sel[oi] = 0;
+    } else {
+      const groupMax = Number(group.max) > 0 ? Number(group.max) : Infinity;
+      if (variantGroupTotalQty(group) >= groupMax) return; // grupo já no máximo — não deixa marcar mais
+      sel[oi] = 1;
+    }
   } else {
     Object.keys(sel).forEach(k => delete sel[k]);
     sel[oi] = 1;
@@ -3235,6 +3247,15 @@ function changeVariantOptionQty(gi, oi, delta) {
   variantPicker.selections[group.id] = sel;
   renderVariantPicker();
 }
+// v107a-fix: BUG — `Number(g.includedQty) >= 0` dava `true` mesmo com o campo "# inclusas"
+// vazio (Number('')===0, e 0>=0 é verdadeiro). Resultado: bastava preencher só "+R$/excedente" e
+// deixar "# inclusas" em branco que o grupo inteiro passava a ignorar o preço individual de cada
+// opção (Incluído/Adicional/Preço fixo) e cobrar tudo pelo valor de excedente, mesmo sem o
+// administrador ter pedido isso. Agora só ativa esse modo quando os DOIS campos foram
+// preenchidos de verdade pelo administrador.
+function groupUsesOverage(g) {
+  return g.includedQty !== '' && g.includedQty != null && g.overagePrice !== '' && g.overagePrice != null && Number(g.overagePrice) > 0;
+}
 // Preço extra de uma unidade da opção `o`, dentro do grupo `g`.
 function variantUnitPrice() {
   const item = variantPicker.item;
@@ -3244,7 +3265,7 @@ function variantUnitPrice() {
     // Grupo com "incluídas + excedente" (seção 13.4): as N primeiras unidades do GRUPO INTEIRO
     // (somando todas as opções, não por opção) saem de graça; da N+1ª em diante cobra o valor
     // por unidade configurado no grupo — substitui o preço individual das opções desse grupo.
-    const groupOverage = Number(g.includedQty) >= 0 && g.overagePrice;
+    const groupOverage = groupUsesOverage(g);
     let unitPos = 0;
     g.options.forEach((o, oi) => {
       const qty = Number(sel[oi]) || 0;
@@ -3277,7 +3298,7 @@ function changeVariantQty(delta) {
   renderVariantPicker();
 }
 function variantOptionPriceLabel(g, o) {
-  if (Number(g.includedQty) >= 0 && g.overagePrice) {
+  if (groupUsesOverage(g)) {
     return `<span class="vopt-chip-price">até ${g.includedQty} inclusas · excedente + R$ ${Number(g.overagePrice).toFixed(2).replace('.', ',')}/un.</span>`;
   }
   if (o.priceMode === 'incluido' || !o.priceDelta) return `<span class="vopt-chip-price included">INCLUSO NO VALOR</span>`;
@@ -3322,8 +3343,12 @@ function renderVariantPicker() {
         </div>`;
       }
       const marker = isSel ? '🔘' : '⚪';
+      // v107a-fix: mesmo limite de "Máx. total" do grupo, agora refletido visualmente — chip
+      // desmarcado fica opaco/sem clique quando o grupo já está no máximo (antes parecia travado
+      // sem explicação nenhuma, porque o clique simplesmente não fazia nada).
+      const groupMaxReached = !isSel && g.type === 'multiple' && Number(g.max) > 0 && totalQty >= Number(g.max);
       return `
-      <div class="vopt-chip ${isSel ? 'selected' : ''}" onclick="toggleVariantOption(${gi},${oi})">
+      <div class="vopt-chip ${isSel ? 'selected' : ''} ${groupMaxReached ? 'disabled' : ''}" onclick="${groupMaxReached ? '' : `toggleVariantOption(${gi},${oi})`}">
         <span class="vopt-marker">${marker}</span>
         <span class="vopt-chip-body">
           <span class="vopt-chip-name">${o.name}</span>
