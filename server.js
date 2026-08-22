@@ -2446,7 +2446,7 @@ async function handleRequest(req, res) {
   // específico (só master). Não mexe em senha, nem em role, nem em mais nada do usuário. ──
   if (pathname.startsWith('/api/admin/users/') && pathname.endsWith('/permissions') && req.method === 'PUT') {
     if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
-    const uname = decodeURIComponent(pathname.split('/')[3] || '').toLowerCase();
+    const uname = decodeURIComponent(pathname.split('/')[4] || '').toLowerCase();
     try {
       const { permissions } = await readBody(req);
       const data = readConfig();
