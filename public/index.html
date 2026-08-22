@@ -3321,6 +3321,7 @@ function renderVariantPicker() {
     <div class="vgroup-title">${g.name}${progressHTML}</div>
     <div class="vgroup-sub">${subLabel}</div>
     ${g.options.map((o, oi) => {
+      if (o.hidden) return ''; // (novo v107d) opção oculta no painel — não aparece pro cliente, mas o índice oi continua igual (não afeta seleções/preço de quem já tinha escolhido antes de ser ocultada)
       const optQty = Number((selections[g.id] || {})[oi]) || 0;
       const isSel = optQty > 0;
       const usesStepper = g.type === 'multiple' && Number(o.maxQty) > 1;

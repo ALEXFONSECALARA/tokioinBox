@@ -388,8 +388,25 @@ table{max-width:100%;}
 }
 .vopt-row input[type=text]{flex:1;}
 .vopt-row input[type=number]{width:90px;}
-.vopt-row button,.vgroup-head button{border:none;background:var(--red-bg);color:var(--red-lt);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.vopt-row button,.vgroup-head button{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.vopt-row button:hover,.vgroup-head button:hover{border-color:var(--gold);color:var(--gold);}
 .vgroup input,.vgroup select{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:var(--white);font-size:13px;}
+/* v107d: linha de opção redesenhada — handle pra arrastar, campos compactos, ícones de ação
+   neutros (nada de botão vermelho pequeno) no lugar do ✕ solto de antes. */
+.vopt-row2{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;}
+.vopt-row2.hidden-opt{opacity:.45;}
+.vopt-row2[draggable="true"]{cursor:grab;}
+.vopt-row2.drag-over{border-color:var(--gold);}
+.vopt-drag{color:var(--muted);font-size:13px;user-select:none;flex-shrink:0;}
+.vopt-row2 .vopt-name-input{flex:1;min-width:100px;}
+.vopt-price-cell{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.vopt-price-cell select{width:84px;font-size:10.5px;padding:5px 4px;}
+.vopt-price-cell input[type=number]{width:66px;padding:5px 6px;}
+.vopt-maxqty-cell{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.vopt-maxqty-cell input{width:44px;padding:5px 4px;}
+.vopt-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px 5px;border-radius:5px;line-height:1;flex-shrink:0;}
+.vopt-icon-btn:hover{background:rgba(212,163,115,.12);color:var(--gold);}
+.btn-add-option-big{width:100%;padding:11px;font-size:13px;font-weight:700;margin-top:2px;}
 .cat-reorder{display:flex;gap:2px;}
 .cat-reorder button{border:none;background:var(--border2);color:var(--muted);font-size:10px;width:16px;height:16px;line-height:16px;padding:0;border-radius:3px;cursor:pointer;}
 .cat-reorder button:hover:not(:disabled){color:var(--white);background:var(--gold);}
@@ -2478,7 +2495,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Tamanho</span>
-              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','tamanho')">+ Novo Tamanho</button>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','tamanho')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','tamanho')">+ Novo Tamanho</button>
+              </span>
             </label>
             <div id="item-variants-list-tamanho" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
           </div>
@@ -2492,10 +2512,14 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             grupo de <b>Múltipla escolha</b> com quantidade total — o cliente vê um contador
             +/- por sabor até bater no total configurado aqui.
           </div>
+          <div id="montagem-total-pecas" style="font-size:11px;color:var(--gold);margin-bottom:10px;font-weight:600;"></div>
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Montagem</span>
-              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','montagem')">+ Novo Grupo de Montagem</button>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','montagem')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','montagem')">+ Novo Grupo de Montagem</button>
+              </span>
             </label>
             <div id="item-variants-list-montagem" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
           </div>
@@ -2511,9 +2535,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Variações</span>
-              <span style="display:flex;gap:6px;">
-                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
-                <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','variacao')">+ Grupo novo</button>
+              <span style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar da Biblioteca</button>
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','variacao')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','variacao')">+ Grupo novo</button>
               </span>
             </label>
             <div id="item-variants-list-variacao" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
@@ -2647,6 +2672,70 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- v51: modal "Escolher Impressora" foi removido — o botão 🖨 agora sempre imprime direto em
      todas as vias configuradas (que tiverem itens desse pedido), sem esse passo extra. -->
 
+
+<!-- MODAL (novo v107d) "+ ADICIONAR OPÇÃO" — mini-janela dentro do grupo, salva sem fechar a etapa -->
+<div class="modal-overlay" id="add-option-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">➕ Adicionar Opção</span>
+      <button class="modal-close" onclick="closeModal('add-option-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="aom-which"/><input type="hidden" id="aom-gi"/>
+      <div class="field"><label>Nome</label><input type="text" id="aom-name" placeholder="ex: Salmão, Grande, Molho shoyu"/></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:6px 0 10px;">
+        <input type="checkbox" id="aom-free" onchange="onAomFreeToggle()"/> Gratuito (sem cobrar nada)
+      </label>
+      <div class="field"><label>Valor R$</label><input type="number" step="0.01" id="aom-price" placeholder="0,00"/></div>
+      <div class="field-row">
+        <div class="field"><label>Qtd. mínima</label><input type="number" min="0" id="aom-minqty" placeholder="—"/></div>
+        <div class="field"><label>Qtd. máxima</label><input type="number" min="1" id="aom-maxqty" value="1"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('add-option-modal')">Cancelar</button>
+      <button class="btn success" onclick="submitAddOptionModal()">💾 Salvar Opção</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (novo v107d) "+ NOVO GRUPO" — atalhos prontos (Sabores/Molhos/Bebidas/Extras/Tamanho/Complementos) -->
+<div class="modal-overlay" id="new-group-preset-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">✨ Novo Grupo de Opções</span>
+      <button class="modal-close" onclick="closeModal('new-group-preset-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ngp-which"/><input type="hidden" id="ngp-kind"/>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Escolha um atalho pra já criar com nome e tipo comuns, ou comece em branco.</div>
+      <div id="ngp-presets" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('new-group-preset-modal')">Cancelar</button>
+      <button class="btn primary" onclick="createBlankGroupFromModal()">+ Grupo em branco</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (novo v107d) 🧩 COPIAR GRUPO DE OUTRO PRODUTO -->
+<div class="modal-overlay" id="copy-group-product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🧩 Copiar Grupo de Outro Produto</span>
+      <button class="modal-close" onclick="closeModal('copy-group-product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cgp-which"/><input type="hidden" id="cgp-kind"/>
+      <div class="field"><label>Buscar produto</label><input type="text" id="cgp-search" placeholder="Digite o nome do prato..." oninput="cgpSearch(this.value)"/></div>
+      <div id="cgp-results" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:10px;"></div>
+      <div id="cgp-groups"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('copy-group-product-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL "USAR GRUPO EXISTENTE" (v107a) — escolher um grupo da Biblioteca pra copiar pro item -->
 <div class="modal-overlay" id="use-libgroup-modal">
@@ -7723,9 +7812,21 @@ function updateWizardPreview(){
   const pct = computeWizardProgress();
   document.getElementById('wizard-progress-fill').style.width = pct+'%';
   document.getElementById('wizard-progress-pct').textContent = pct+'% completo';
+  // (novo) resumo lateral mais completo — grupos, opções, obrigatórios, extras pagos e total de
+  // peças configurado nos grupos de Montagem (soma de Máx.total, ou # inclusas quando não tem máx).
+  const totalOptions = editingVariants.reduce((s,g)=>s+g.options.length,0);
+  const requiredGroups = editingVariants.filter(g=>g.required || Number(g.min)>0).length;
+  const paidExtras = editingVariants.reduce((s,g)=>s+g.options.filter(o=>!o.hidden && o.priceMode!=='incluido' && Number(o.priceDelta)>0).length,0);
+  const montagemGroups = editingVariants.filter(g=>(g.kind||'variacao')==='montagem');
+  const totalPecasCombo = montagemGroups.reduce((s,g)=>s+(Number(g.max)||Number(g.includedQty)||0),0);
   document.getElementById('wizard-preview-summary').innerHTML = `
-    <div>🍱 ${editingVariants.length} grupo(s) de opções</div>
-    <div>${document.getElementById('item-qty').value.trim() ? '🍣 '+document.getElementById('item-qty').value.trim() : ''}</div>`;
+    <div>🍱 ${editingVariants.length} grupo(s) de opções · ${totalOptions} opção(ões)</div>
+    <div>⚠️ ${requiredGroups} grupo(s) obrigatório(s)</div>
+    <div>💰 ${paidExtras} extra(s) pago(s)</div>
+    ${totalPecasCombo>0?`<div>🍣 ${totalPecasCombo} peça(s) no total do combo</div>`:''}
+    <div>${document.getElementById('item-qty').value.trim() ? '🍽️ '+document.getElementById('item-qty').value.trim() : ''}</div>`;
+  const montagemTotalEl = document.getElementById('montagem-total-pecas');
+  if(montagemTotalEl) montagemTotalEl.textContent = montagemGroups.length ? `🍣 Total configurado: ${totalPecasCombo} peça(s) somando ${montagemGroups.length} grupo(s) de montagem` : '';
   const nutriCal = document.getElementById('item-nutri-calories').value.trim();
   const nutriProt = document.getElementById('item-nutri-protein').value.trim();
   const nutriCarb = document.getElementById('item-nutri-carbs').value.trim();
@@ -7903,6 +8004,173 @@ async function saveLibraryGroups(silent){
   if(!res.ok){ alert(res.data.error||'Erro ao salvar biblioteca de grupos.'); return; }
   if(!silent){ closeModal('libgroups-modal'); showToast('✅ Biblioteca salva!', `${clean.length} grupo(s) reutilizável(is).`); }
 }
+// v107d — reordenar opção arrastando (☰). Mantém tudo dentro do MESMO grupo/lista de sempre,
+// só troca a posição no array `options` (não duplica, não perde dado — se soltar fora ou no
+// grupo errado, a função simplesmente não faz nada).
+let _optionDragData = null;
+function optionDragStart(e,which,gi,oi){
+  _optionDragData = {which,gi,oi};
+  e.dataTransfer.effectAllowed='move';
+  try{ e.dataTransfer.setData('text/plain', JSON.stringify(_optionDragData)); }catch(err){}
+  e.currentTarget.style.opacity='.4';
+}
+function optionDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function optionDragEnd(e){ e.currentTarget.style.opacity=''; document.querySelectorAll('.vopt-row2.drag-over').forEach(el=>el.classList.remove('drag-over')); }
+function optionDrop(e,which,gi,targetOi){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const data = _optionDragData;
+  _optionDragData = null;
+  if(!data || data.which!==which || data.gi!==gi || data.oi===targetOi) return;
+  const opts = groupsList(which)[gi].options;
+  const [moved] = opts.splice(data.oi,1);
+  opts.splice(targetOi,0,moved);
+  refreshGroupsUI(which);
+}
+// (novo) 👁 Ocultar opção — some do cardápio do cliente (ver public/index.html), mas continua
+// salva aqui no editor pra reativar quando quiser. Diferente de excluir (que apaga de vez).
+function toggleOptionHidden(which,gi,oi){
+  const o = groupsList(which)[gi].options[oi];
+  o.hidden = !o.hidden;
+  refreshGroupsUI(which);
+}
+// (novo) 📋 Duplicar opção
+function duplicateVariantOption(which,gi,oi){
+  const opts = groupsList(which)[gi].options;
+  const clone = JSON.parse(JSON.stringify(opts[oi]));
+  clone.name = clone.name ? clone.name+' (cópia)' : '';
+  opts.splice(oi+1,0,clone);
+  refreshGroupsUI(which);
+}
+// (novo) "+ Adicionar Opção" — mini-modal dentro da própria etapa (não fecha o grupo, só essa
+// janelinha). Salva direto no grupo indicado por (which,gi), guardados em campos escondidos.
+function openAddOptionModal(which,gi){
+  document.getElementById('aom-which').value = which;
+  document.getElementById('aom-gi').value = gi;
+  document.getElementById('aom-name').value = '';
+  document.getElementById('aom-price').value = '';
+  document.getElementById('aom-free').checked = false;
+  document.getElementById('aom-price').disabled = false;
+  document.getElementById('aom-minqty').value = '';
+  document.getElementById('aom-maxqty').value = '1';
+  openModal('add-option-modal');
+  setTimeout(()=>document.getElementById('aom-name').focus(),50);
+}
+function onAomFreeToggle(){
+  const free = document.getElementById('aom-free').checked;
+  document.getElementById('aom-price').disabled = free;
+  if(free) document.getElementById('aom-price').value='';
+}
+function submitAddOptionModal(){
+  const which = document.getElementById('aom-which').value;
+  const gi = parseInt(document.getElementById('aom-gi').value);
+  const name = document.getElementById('aom-name').value.trim();
+  if(!name){ alert('Digite o nome da opção.'); return; }
+  const free = document.getElementById('aom-free').checked;
+  const option = {
+    name,
+    priceMode: free ? 'incluido' : 'adicional',
+    priceDelta: free ? 0 : (parseFloat(document.getElementById('aom-price').value)||0),
+    maxQty: parseInt(document.getElementById('aom-maxqty').value)||1,
+    minQty: parseInt(document.getElementById('aom-minqty').value)||0, // (novo, opcional — reservado pra regra futura de mínimo por opção)
+  };
+  groupsList(which)[gi].options.push(option);
+  closeModal('add-option-modal');
+  refreshGroupsUI(which);
+  showToast('✅ Opção adicionada', `"${name}" adicionada ao grupo.`);
+}
+// (novo) "+ Novo Grupo" com atalhos prontos — cria o grupo já com nome/tipo comuns preenchidos,
+// pra não digitar do zero toda vez. "Grupo em branco" continua disponível igual sempre foi.
+const GROUP_PRESETS = [
+  {label:'🍣 Sabores', name:'Sabores', type:'single'},
+  {label:'🥫 Molhos', name:'Molhos', type:'multiple'},
+  {label:'🥤 Bebidas', name:'Bebidas', type:'single'},
+  {label:'➕ Extras', name:'Extras', type:'multiple'},
+  {label:'📏 Tamanho', name:'Tamanho', type:'single'},
+  {label:'🧩 Complementos', name:'Complementos', type:'multiple'},
+];
+function openNewGroupPresets(which,kind){
+  document.getElementById('ngp-which').value = which;
+  document.getElementById('ngp-kind').value = kind||'';
+  document.getElementById('ngp-presets').innerHTML = GROUP_PRESETS.map((p,pi)=>`
+    <button type="button" class="btn secondary sm" onclick="createGroupFromPreset(${pi})" style="text-align:left;">${p.label}</button>`).join('');
+  openModal('new-group-preset-modal');
+}
+function createGroupFromPreset(pi){
+  const which = document.getElementById('ngp-which').value;
+  const kind = document.getElementById('ngp-kind').value || 'variacao';
+  const p = GROUP_PRESETS[pi];
+  const list = groupsList(which);
+  addVariantGroup(which,kind);
+  const g = list[list.length-1];
+  g.name = p.name; g.type = p.type;
+  closeModal('new-group-preset-modal');
+  refreshGroupsUI(which);
+}
+function createBlankGroupFromModal(){
+  const which = document.getElementById('ngp-which').value;
+  const kind = document.getElementById('ngp-kind').value || 'variacao';
+  addVariantGroup(which,kind);
+  closeModal('new-group-preset-modal');
+}
+// (novo) 🧩 Copiar Grupo de Outro Produto — busca qualquer prato do cardápio que já tenha
+// grupos de opções, e copia SEM referenciar o original (clone com id novo — se o produto de
+// origem mudar depois, o que já foi copiado pra cá não muda sozinho).
+function openCopyGroupFromProductModal(which,kind){
+  document.getElementById('cgp-which').value = which;
+  document.getElementById('cgp-kind').value = kind||'';
+  document.getElementById('cgp-search').value = '';
+  document.getElementById('cgp-results').innerHTML = '<div style="font-size:11px;color:var(--muted);">Digite ao menos 2 letras pra buscar.</div>';
+  document.getElementById('cgp-groups').innerHTML = '';
+  openModal('copy-group-product-modal');
+}
+function cgpSearch(q){
+  q = (q||'').trim().toLowerCase();
+  const resultsEl = document.getElementById('cgp-results');
+  document.getElementById('cgp-groups').innerHTML = '';
+  if(q.length<2){ resultsEl.innerHTML = '<div style="font-size:11px;color:var(--muted);">Digite ao menos 2 letras pra buscar.</div>'; return; }
+  const results = [];
+  menu.forEach((sec,si)=>{
+    (sec.items||[]).forEach((it,ii)=>{
+      if((it.variants||[]).length && it.name.toLowerCase().includes(q)) results.push({si,ii,name:it.name,cat:sec.title||''});
+    });
+  });
+  resultsEl.innerHTML = results.length ? results.slice(0,20).map(r=>`
+    <button type="button" class="btn secondary sm" style="display:block;width:100%;text-align:left;margin-bottom:4px;" onclick="cgpPickProduct(${r.si},${r.ii})">
+      ${esc(r.name)} <span style="color:var(--muted);font-size:10px;">· ${esc(r.cat)}</span>
+    </button>`).join('') : '<div style="font-size:11px;color:var(--muted);">Nenhum prato com grupos de opções encontrado com esse nome.</div>';
+}
+function cgpPickProduct(si,ii){
+  const it = menu[si].items[ii];
+  document.getElementById('cgp-groups').innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Grupos de "${esc(it.name)}":</div>` + (it.variants||[]).map((g,gi)=>`
+    <div class="vgroup" style="padding:10px;margin-bottom:8px;">
+      <div style="font-weight:600;font-size:12.5px;margin-bottom:6px;">${esc(g.name||'(sem nome)')} <span style="font-size:10px;color:var(--muted);font-weight:400;">· ${g.options.length} opção(ões)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'full')" title="Copia o grupo inteiro (nome, regras e opções)">Grupo inteiro</button>
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'options')" title="Copia só a lista de opções, pra um grupo novo">Apenas opções</button>
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'prices')" title="Copia só a estrutura de preços (você preenche os nomes)">Apenas preços</button>
+      </div>
+    </div>`).join('');
+}
+function cgpApply(si,ii,gi,mode){
+  const which = document.getElementById('cgp-which').value;
+  const kind = document.getElementById('cgp-kind').value || 'variacao';
+  const src = menu[si].items[ii].variants[gi];
+  let clone;
+  if(mode==='full'){
+    clone = JSON.parse(JSON.stringify(src));
+    clone.id = 'g'+Date.now().toString(36);
+  } else if(mode==='options'){
+    clone = {id:'g'+Date.now().toString(36),name:'Opções copiadas',type:src.type,required:false,min:'',max:'',includedQty:'',overagePrice:'',options:JSON.parse(JSON.stringify(src.options))};
+  } else {
+    clone = {id:'g'+Date.now().toString(36),name:'',type:src.type,required:false,min:'',max:'',includedQty:'',overagePrice:'',options:src.options.map(o=>({name:'',priceDelta:o.priceDelta,priceMode:o.priceMode,maxQty:o.maxQty}))};
+  }
+  if(which==='item') clone.kind = kind;
+  groupsList(which).push(clone);
+  closeModal('copy-group-product-modal');
+  refreshGroupsUI(which);
+  showToast('✅ Grupo copiado', mode==='full'?'Grupo inteiro copiado.':mode==='options'?'Opções copiadas pra um grupo novo.':'Estrutura de preços copiada pra um grupo novo.');
+}
 function renderVariantGroups(which, kindFilter){
   which = which || 'item';
   const list = groupsList(which);
@@ -7948,20 +8216,27 @@ function renderVariantGroups(which, kindFilter){
           <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
         </div>`:''}
         ${g.options.map((o,oi)=>`
-          <div class="vopt-row" style="flex-wrap:wrap;">
-            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
-            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
-            <input type="text" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)" style="flex:1;min-width:110px;"/>
-            <select style="width:110px;" onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)">
-              <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
-              <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>Adicional</option>
-              <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>Preço fixo</option>
-            </select>
-            ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="${o.priceMode==='fixo'?'R$':'+R$'}" value="${o.priceDelta||0}" style="width:78px;" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
-            ${isMultiple?`<label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;white-space:nowrap;" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Máx.un <input type="number" min="1" style="width:52px;" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></label>`:''}
-            <button type="button" onclick="removeVariantOption('${which}',${gi},${oi})" title="Remover opção">✕</button>
+          <div class="vopt-row2 ${o.hidden?'hidden-opt':''}" draggable="true"
+               ondragstart="optionDragStart(event,'${which}',${gi},${oi})"
+               ondragover="optionDragOver(event)"
+               ondrop="optionDrop(event,'${which}',${gi},${oi})"
+               ondragend="optionDragEnd(event)">
+            <span class="vopt-drag" title="Arrastar pra reordenar">☰</span>
+            <input type="text" class="vopt-name-input" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)"/>
+            <span class="vopt-price-cell">
+              <select onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)" title="Como esta opção é cobrada">
+                <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
+                <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>+ R$</option>
+                <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>R$ fixo</option>
+              </select>
+              ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="0,00" value="${o.priceDelta||0}" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
+            </span>
+            ${isMultiple?`<span class="vopt-maxqty-cell" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Qtd. máx <input type="number" min="1" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></span>`:''}
+            <button type="button" class="vopt-icon-btn" onclick="toggleOptionHidden('${which}',${gi},${oi})" title="${o.hidden?'Reexibir opção no cardápio':'Ocultar opção do cardápio (some da loja, continua salva aqui)'}">${o.hidden?'🙈':'👁'}</button>
+            <button type="button" class="vopt-icon-btn" onclick="duplicateVariantOption('${which}',${gi},${oi})" title="Duplicar opção">📋</button>
+            <button type="button" class="vopt-icon-btn" onclick="removeVariantOption('${which}',${gi},${oi})" title="Excluir opção">🗑</button>
           </div>`).join('')}
-        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption('${which}',${gi})">+ Opção</button>
+        <button type="button" class="btn success btn-add-option-big" onclick="openAddOptionModal('${which}',${gi})">+ Adicionar Opção</button>
       </div>`;
     }).join('');
 }
