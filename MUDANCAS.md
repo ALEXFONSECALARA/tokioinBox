@@ -1,4 +1,27 @@
-# v107a — EVOLUÇÃO DO CADASTRO DE PRATOS: Grupos de Opções com quantidade e tipos de preço
+# v107a-fix — 3 BUGS CORRIGIDOS na evolução do cadastro de pratos (v107a)
+
+Revisão do que foi entregue na v107a, sem esperar o usuário achar em produção. Nenhuma
+funcionalidade nova, só correção.
+
+**1. Campo perdia o foco a cada dígito digitado.** Os campos numéricos novos do editor de grupos
+(Mín./Máx. total, # inclusas, +R$/excedente, Máx.un por opção) redesenhavam a tela inteira a
+cada tecla, então só dava pra digitar um dígito por vez sem clicar de novo no campo. Corrigido:
+agora só redesenha quando a mudança realmente precisa mostrar/esconder outro campo (trocar
+"Escolha única"↔"Múltipla" ou mudar o tipo de preço) — os campos numéricos digitam normalmente.
+
+**2. "Incluídas + excedente" podia ligar sozinho.** Bug de JavaScript: `Number('') >= 0` dá
+`true` (string vazia vira `0`), então bastava preencher só o campo "+R$/excedente" e deixar
+"# inclusas" em branco que o grupo inteiro passava a ignorar o preço configurado em cada opção
+(Incluído/Adicional/Preço fixo) e cobrar tudo pelo valor de excedente — sem o administrador ter
+pedido isso. Corrigido: só ativa esse modo quando os dois campos foram preenchidos de verdade.
+
+**3. "Escolha até X" não travava em opções simples.** O limite total do grupo (ex: "Escolha até
+2 molhos") só era respeitado pelos contadores +/- (stepper); em opções liga/desliga simples
+(checkbox) dava pra marcar quantas quisesse, sem parar no máximo. Corrigido: agora o grupo trava
+no máximo também pra esse tipo de opção, e a opção não marcada fica visualmente apagada (opacity)
+quando o grupo já está no total máximo, pra ficar claro que não é possível marcar mais.
+
+
 
 **Nada foi removido nem quebrado.** O sistema de "Variações" que já existia (grupos ➜ opções,
 usado pra tamanho/sabor/adicional) continua funcionando exatamente igual pra quem não mexer em
