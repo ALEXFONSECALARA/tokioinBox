@@ -1,4 +1,39 @@
-# v107a-fix — 3 BUGS CORRIGIDOS na evolução do cadastro de pratos (v107a)
+# v107b — CADASTRO DE PRATOS VIROU UM EDITOR EM ETAPAS (wizard), com prévia ao vivo
+
+Reorganização visual do MESMO modal de Editar/Novo Item — mesmos campos, mesmas funções de
+salvar, foto e grupos de opções (v107a) — em **5 etapas com barra lateral, prévia do cliente ao
+lado e barra de progresso**, seguindo a referência visual pedida. Nada de dados, API, banco ou
+impressão mudou; é só como o formulário se organiza na tela. Cores e fonte do Shogatsu mantidas
+(dourado nas etapas ativas, vermelho nas ações destrutivas, verde/dourado no status).
+
+**Cabeçalho**: breadcrumb "Cardápio › Categoria › Editar/Novo Item", selo ✅ Disponível / 🚫
+Esgotado (clicável), barra de progresso ("X% completo" — nome, preço, foto, descrição e grupos).
+
+**5 etapas** (menu lateral no desktop, abas roláveis no celular):
+1. **Informações** — foto, nome, descrição, preço, porção, badge (os mesmos campos de sempre).
+2. **Tamanhos, Montagem, Variações e Extras** — o editor de Grupos de Opções da v107a. O sistema
+   não tem estruturas separadas pra "tamanho" e "montagem" — os dois já são feitos com o mesmo
+   mecanismo de Grupos (um grupo "Tamanho" de escolha única já funciona como tamanho; um grupo
+   com quantidade total já funciona como montagem de combo) — juntei na mesma etapa em vez de
+   fingir que são coisas diferentes, pra não inventar uma segunda estrutura de dados.
+3. **Disponibilidade** — checkbox "Disponível para venda", o mesmo campo que já existia como
+   toggle rápido ✅/🚫 na listagem do cardápio, agora também editável aqui de dentro. Estoque com
+   quantidade, horário e pausa por dia da semana **não existem no sistema hoje** — não criei isso
+   agora pra não inventar um recurso pela metade; aviso disso aparece na própria tela.
+4. **Impressão** — texto explicando que a via de impressão é por categoria (não por item, já era
+   assim desde a v75) com atalho pra abrir a edição da categoria — sem duplicar a configuração.
+5. **Resumo** — preço, porção, quantidade de grupos/opções, disponibilidade e impressão herdada,
+   tudo num só lugar antes de salvar.
+
+**Prévia do cliente** (coluna à direita no desktop, abaixo no celular): foto, nome, descrição,
+badge e preço atualizando ao vivo enquanto você digita — sem cálculo de preço com variações
+selecionadas (isso é só na tela do cliente de verdade; aqui é a prévia de cadastro).
+
+**Ações**: Cancelar, **Excluir** e **Duplicar** (só aparecem editando um item existente),
+**Salvar e Novo** (salva e já abre um item novo em branco na mesma categoria) e Salvar Item —
+mantém tudo que já existia, só reorganizado no rodapé.
+
+
 
 Revisão do que foi entregue na v107a, sem esperar o usuário achar em produção. Nenhuma
 funcionalidade nova, só correção.
