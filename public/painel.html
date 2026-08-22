@@ -317,71 +317,73 @@ table{max-width:100%;}
 .vgroup-head input[type=text]{flex:1;}
 .vopt-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
 /* ═══════════════════════════════════════════
-   v107b — EDITOR DE PRODUTO (wizard) — Cardápio → Editar/Novo Item
+   v107c — EDITOR DE PRODUTO — Cardápio → Editar/Novo Item — PÁGINA CHEIA
    ═══════════════════════════════════════════
-   Reorganização visual do MESMO modal de sempre (mesmos campos, mesmas funções de salvar/
-   variações/foto) em etapas com prévia ao lado, seguindo a referência visual pedida. Nenhum
-   campo, API ou lógica de dados muda — só como eles ficam organizados na tela. */
-/* v107b.1 — correção cirúrgica: o modal não respeitava a viewport (cortava embaixo/nas
-   laterais) e a coluna central era feita com flex sem min-width:0, então em telas menores o
-   texto dos labels espremia e quebrava palavra por palavra. Trocado por width/height reais
-   (nunca passam da tela) e grid com minmax(0,1fr) na coluna do meio — mesmos campos, mesma
-   função de cada etapa, só a régua de medidas foi corrigida. */
-.wizard-modal{
-  width:min(1400px,calc(100vw - 40px));
-  max-width:1400px;
-  height:min(900px,calc(100vh - 40px));
-  max-height:calc(100vh - 40px);
-  display:flex;
-  flex-direction:column;
-  overflow:hidden; /* o scroll fica dentro do .modal-body, não no .modal inteiro */
-}
-.wizard-modal .modal-header{flex-shrink:0;}
-.wizard-modal .modal-body{flex:1;min-height:0;overflow-y:auto;}
-.wizard-header-top{display:flex;flex-direction:column;gap:4px;flex:1;min-width:0;}
+   Era um modal (v107b); virou página cheia dentro do painel (mesma navegação goPage() de
+   Pedidos/Cardápio/etc), com cabeçalho, 8 etapas e prévia lateral inspirados na referência
+   visual pedida. Campos/API continuam os mesmos + campos novos guardados como chaves extras
+   no mesmo objeto `item` (ver comentário no HTML da página). */
+.item-editor-page{max-width:1400px;margin:0 auto;}
+.item-editor-header{margin-bottom:18px;}
+.item-editor-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.item-editor-header-left{min-width:0;flex:1;}
+.item-editor-title{font-size:24px;font-weight:800;margin:2px 0 4px;color:var(--white);}
+.item-editor-meta-line{font-size:11px;color:var(--muted);}
+.item-editor-header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
 .wizard-breadcrumb{font-size:11px;color:var(--muted);}
 .wizard-breadcrumb b{color:var(--gold);font-weight:600;}
-.wizard-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:2px;}
-.wizard-status-pill{font-size:10px;padding:2px 8px;border-radius:20px;border:1px solid var(--border);cursor:pointer;}
+.wizard-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.wizard-status-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);cursor:pointer;background:var(--card);}
 .wizard-status-pill.available{color:#4ade80;border-color:#4ade8055;}
 .wizard-status-pill.unavailable{color:#f87171;border-color:#f8717155;}
-.wizard-progress-wrap{display:flex;align-items:center;gap:8px;margin-top:6px;}
+.wizard-status-pill.featured-on{color:var(--gold);border-color:var(--gold);}
+.wizard-progress-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;max-width:420px;}
 .wizard-progress-bar{flex:1;height:5px;background:var(--card);border-radius:3px;overflow:hidden;}
 .wizard-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-2,#C5A059),var(--gold));transition:width .25s;}
 .wizard-progress-pct{font-size:10px;color:var(--gold);font-weight:600;white-space:nowrap;}
-.wizard-layout{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;align-items:start;gap:0;}
+.wizard-layout{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;align-items:start;gap:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
 .wizard-steps{width:100%;min-width:0;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border);padding-right:12px;margin-right:16px;}
-.wizard-step-btn{display:flex;align-items:center;gap:8px;padding:9px 10px;border-radius:8px;background:none;border:none;border-left:3px solid transparent;color:var(--white);text-align:left;cursor:pointer;font-size:12.5px;width:100%;white-space:nowrap;}
+.wizard-step-btn{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:8px;background:none;border:none;border-left:3px solid transparent;color:var(--white);text-align:left;cursor:pointer;font-size:12.5px;width:100%;}
 .wizard-step-btn:hover{background:rgba(255,255,255,.04);}
 .wizard-step-btn.active{background:rgba(212,163,115,.12);color:var(--gold);font-weight:600;border-left-color:var(--gold);}
-.wizard-step-btn .wsn{width:20px;height:20px;border-radius:50%;background:var(--card);display:flex;align-items:center;justify-content:center;font-size:10.5px;flex-shrink:0;border:1px solid var(--border);}
+.wizard-step-btn .wsn{width:20px;height:20px;border-radius:50%;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:10.5px;flex-shrink:0;border:1px solid var(--border);margin-top:1px;}
 .wizard-step-btn.active .wsn{background:var(--gold);color:#1A1818;border-color:var(--gold);}
+.wizard-step-btn-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.wizard-step-btn-label{white-space:nowrap;}
+.wizard-step-btn-sub{font-size:10px;color:var(--muted);white-space:nowrap;font-weight:400;}
+.wizard-step-btn.active .wizard-step-btn-sub{color:var(--gold);opacity:.75;}
 .wizard-content{min-width:0;width:100%;}
 .wizard-content .field label,.wizard-content .field-row .field label{white-space:nowrap;}
 .wizard-step-panel{display:none;}
 .wizard-step-panel.active{display:block;}
 .wizard-preview{width:100%;min-width:0;border-left:1px solid var(--border);padding-left:14px;margin-left:16px;}
 .wizard-preview-title{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
-.wizard-preview-card{background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.wizard-preview-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
 .wizard-preview-photo{width:100%;aspect-ratio:4/3;background:var(--bg2,#121212);display:flex;align-items:center;justify-content:center;font-size:34px;background-size:cover;background-position:center;}
 .wizard-preview-body{padding:10px;}
 .wizard-preview-name{font-weight:700;font-size:13px;margin-bottom:2px;}
 .wizard-preview-desc{font-size:11px;color:var(--muted);margin-bottom:6px;max-height:48px;overflow:hidden;}
 .wizard-preview-price{color:var(--gold);font-weight:700;font-size:14px;}
-.wizard-preview-badge{display:inline-block;font-size:10px;background:var(--red-dk);padding:2px 7px;border-radius:20px;margin-bottom:6px;}
+.wizard-preview-price .old{text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;}
+.wizard-preview-badge{display:inline-block;font-size:10px;background:var(--red-dk);padding:2px 7px;border-radius:20px;margin-bottom:6px;color:#fff;}
 .wizard-preview-summary{margin-top:12px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px;}
+.wizard-preview-status-list{margin-top:12px;font-size:11px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:10px;}
+.wizard-preview-status-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);}
+.wizard-preview-status-row b{color:var(--white);font-weight:600;}
 .wizard-step-section-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;}
 /* breakpoint intermediário: antes de virar 1 coluna, só reduz a largura fixa das laterais
-   (o pedido explícito na correção: nunca deixar a coluna central ficar estreita a ponto de
-   quebrar palavra — então essa etapa some antes disso acontecer, não depois). */
+   (nunca deixar a coluna central ficar estreita a ponto de quebrar palavra). */
 @media (max-width:1050px){
   .wizard-layout{grid-template-columns:200px minmax(0,1fr) 280px;}
 }
 @media (max-width:900px){
-  .wizard-layout{grid-template-columns:1fr;}
+  .item-editor-header-actions{width:100%;}
+  .item-editor-header-actions .btn{flex:1;}
+  .wizard-layout{grid-template-columns:1fr;padding:14px;}
   .wizard-steps{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:8px;margin-right:0;margin-bottom:14px;}
-  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;white-space:nowrap;}
+  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;}
   .wizard-step-btn.active{border-left-color:transparent;border-bottom-color:var(--gold);}
+  .wizard-step-btn-sub{display:none;}
   .wizard-preview{width:100%;border-left:none;padding-left:0;margin-left:0;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
 }
 .vopt-row input[type=text]{flex:1;}
@@ -2373,6 +2375,269 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
       </div>
     </div>
 
+<!-- v107c: EDITOR DE ITEM VIROU PÁGINA CHEIA (não é mais modal) — mesmos dados e mesma API de
+     sempre (/api/config, o mesmo objeto `item` dentro de menu[si].items[ii]); os campos abaixo
+     marcados "novo" são só chaves novas dentro desse mesmo objeto (SKU, EAN, tags, alérgenos,
+     nutricional, estoque, cor do badge, destaque, preço promocional, aceita cupom) — o backend
+     já preserva qualquer chave extra do item (normalizeMenu faz spread), então não precisou
+     mudar nada no servidor pra isso ser salvo/carregado de verdade. -->
+<div class="page" id="page-item-editor">
+  <div class="item-editor-page">
+    <div class="item-editor-header">
+      <div class="item-editor-header-top">
+        <div class="item-editor-header-left">
+          <div class="wizard-breadcrumb">Cardápio › <span id="wizard-cat-name">Categoria</span> › <b id="wizard-title-crumb">Novo Item</b></div>
+          <h1 class="item-editor-title" id="item-modal-title">Novo Item</h1>
+          <div class="item-editor-meta-line" id="item-editor-meta-line">Novo item — ainda não salvo</div>
+        </div>
+        <div class="item-editor-header-actions">
+          <button type="button" class="btn secondary" onclick="cancelItemEditor()">Cancelar</button>
+          <button type="button" class="btn secondary" onclick="scrollToWizardPreview()">👁 Visualizar</button>
+          <button type="button" class="btn secondary" id="wizard-btn-duplicate" style="display:none;" onclick="duplicateCurrentWizardItem()">⧉ Duplicar</button>
+          <button type="button" class="btn secondary" id="wizard-btn-delete" style="display:none;" onclick="deleteCurrentWizardItem()">🗑 Excluir</button>
+          <button type="button" class="btn primary" onclick="saveItem(false)">💾 Salvar Item</button>
+        </div>
+      </div>
+      <div class="wizard-meta">
+        <span class="wizard-status-pill available" id="wizard-status-pill" onclick="toggleWizardAvailability()" title="Clique pra alternar disponibilidade">✅ Disponível</span>
+        <span class="wizard-status-pill" id="wizard-featured-pill" onclick="toggleWizardFeatured()" title="Clique pra alternar destaque">☆ Destaque</span>
+      </div>
+      <div class="wizard-progress-wrap">
+        <div class="wizard-progress-bar"><div class="wizard-progress-fill" id="wizard-progress-fill" style="width:0%;"></div></div>
+        <span class="wizard-progress-pct" id="wizard-progress-pct">0% completo</span>
+      </div>
+    </div>
+
+    <input type="hidden" id="item-edit-si"/>
+    <input type="hidden" id="item-edit-ii"/>
+    <input type="hidden" id="item-image"/>
+    <input type="hidden" id="item-image-pos" value="50,50"/>
+    <input type="hidden" id="item-available" value="true"/>
+    <input type="hidden" id="item-featured" value="false"/>
+
+    <div class="wizard-layout">
+      <div class="wizard-steps" id="wizard-steps"></div>
+      <div class="wizard-content">
+
+        <!-- ETAPA 1 — INFORMAÇÕES -->
+        <div class="wizard-step-panel" data-step="info">
+          <div class="wizard-step-section-title">1. Informações do Produto</div>
+          <div class="field">
+            <label>Foto do Prato</label>
+            <div class="photo-upload">
+              <div class="photo-preview-wrap" id="item-photo-wrap">
+                <img class="photo-preview" id="item-photo-preview" alt="Foto do prato"/>
+                <span class="photo-placeholder-icon" id="item-photo-placeholder">🍽️</span>
+              </div>
+              <div class="photo-upload-actions">
+                <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
+                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
+                <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
+                <span class="photo-upload-status" id="item-photo-status"></span>
+              </div>
+            </div>
+            <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
+              <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
+              <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
+                <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
+                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
+                <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
+                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato" oninput="updateWizardPreview()"/></div>
+          <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview()"></textarea></div>
+          <div class="field-row">
+            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="updateWizardPreview()"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Categoria</label><input id="item-category-display" disabled style="opacity:.7;"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>SKU <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input id="item-sku" placeholder="ex: COMBO-0245" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>EAN (opcional) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input id="item-ean" placeholder="789..." oninput="updateWizardPreview()"/></div>
+          </div>
+          <div class="field">
+            <label>Tags / palavras-chave <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo — separe por vírgula)</span></label>
+            <input id="item-tags" placeholder="ex: combo, premium, 24 peças" oninput="updateWizardPreview()"/>
+          </div>
+        </div>
+
+        <!-- ETAPA 2 — TAMANHOS -->
+        <div class="wizard-step-panel" data-step="tamanhos">
+          <div class="wizard-step-section-title">2. Tamanhos do Produto</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Use um grupo de <b>Escolha única</b> pra P/M/G/Família — o motor é o mesmo de
+            "Variações" (Grupos de Opções), só fica separado aqui pra ficar mais fácil de achar.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Tamanho</span>
+              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','tamanho')">+ Novo Tamanho</button>
+            </label>
+            <div id="item-variants-list-tamanho" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 3 — MONTAGEM -->
+        <div class="wizard-step-panel" data-step="montagem">
+          <div class="wizard-step-section-title">3. Montagem do Combo</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Pra combos montados por peça (ex: "escolha até 24 peças entre os sabores"), use um
+            grupo de <b>Múltipla escolha</b> com quantidade total — o cliente vê um contador
+            +/- por sabor até bater no total configurado aqui.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Montagem</span>
+              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','montagem')">+ Novo Grupo de Montagem</button>
+            </label>
+            <div id="item-variants-list-montagem" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 4 — VARIAÇÕES (+ extras/molhos) -->
+        <div class="wizard-step-panel" data-step="variacoes">
+          <div class="wizard-step-section-title">4. Variações, Adicionais e Molhos</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Sabores, adicionais e molhos — qualquer grupo de opções que não seja tamanho nem
+            montagem de combo entra aqui.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Variações</span>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
+                <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','variacao')">+ Grupo novo</button>
+              </span>
+            </label>
+            <div id="item-variants-list-variacao" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 5 — APARÊNCIA -->
+        <div class="wizard-step-panel" data-step="aparencia">
+          <div class="wizard-step-section-title">5. Aparência — Badges e Etiquetas</div>
+          <div class="field">
+            <label>Badge (destaque no cardápio)</label>
+            <input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/>
+          </div>
+          <div class="field" style="margin-top:-4px;">
+            <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global" onchange="updateWizardPreview()"/> Herdar Badge Global</label>
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual" onchange="updateWizardPreview()"/> Personalizar (usa o texto acima)</label>
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off" onchange="updateWizardPreview()"/> Sem badge</label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Cor do Badge <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="color" id="item-badge-color" value="#D9383A" oninput="updateWizardPreview()" style="width:44px;height:36px;padding:2px;"/>
+                <span style="font-size:11px;color:var(--muted);">cor de fundo do badge no cardápio do cliente</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Destaque <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:9px 12px;border-radius:6px;border:1px solid var(--border);width:fit-content;">
+                <input type="checkbox" id="item-featured-check" onchange="onWizardFeaturedToggle()"/> Item em destaque
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Alérgenos <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+            <div id="item-allergens-checks" style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin-top:4px;"></div>
+          </div>
+          <div class="field">
+            <label>Informações Nutricionais <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo — por porção)</span></label>
+            <div class="field-row">
+              <div class="field"><label style="font-size:10px;">Calorias (kcal)</label><input type="number" min="0" id="item-nutri-calories" oninput="updateWizardPreview()"/></div>
+              <div class="field"><label style="font-size:10px;">Proteínas (g)</label><input type="number" min="0" id="item-nutri-protein" oninput="updateWizardPreview()"/></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label style="font-size:10px;">Carboidratos (g)</label><input type="number" min="0" id="item-nutri-carbs" oninput="updateWizardPreview()"/></div>
+              <div class="field"><label style="font-size:10px;">Gorduras (g)</label><input type="number" min="0" id="item-nutri-fat" oninput="updateWizardPreview()"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 6 — DISPONIBILIDADE -->
+        <div class="wizard-step-panel" data-step="disponibilidade">
+          <div class="wizard-step-section-title">6. Disponibilidade</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+            <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
+          </label>
+          <div class="field" style="margin-top:14px;max-width:260px;">
+            <label>Estoque (unidades) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="updateWizardPreview()"/>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">
+            Desmarcado = aparece como "esgotado" pro cliente (mesmo toggle rápido ✅/🚫 que já
+            existe na listagem do cardápio — aqui é só outro jeito de mexer na mesma opção).
+            Horário e pausa programada por dia da semana ainda não existem neste sistema — não
+            criei essa parte agora pra não inventar um recurso novo de meio caminho; me avisa se
+            quiser que eu desenvolva isso numa próxima rodada.
+          </div>
+        </div>
+
+        <!-- ETAPA 7 — IMPRESSÃO -->
+        <div class="wizard-step-panel" data-step="impressao">
+          <div class="wizard-step-section-title">7. Impressão</div>
+          <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            🖨 A via de impressão (Caixa / Cozinha / SushiBar) é configurada uma vez <b>por
+            categoria</b>, não por item — todo prato desta categoria já herda automaticamente
+            pra onde imprime. Isso evita configurar a mesma coisa prato por prato.
+            <div style="margin-top:10px;">
+              <button type="button" class="btn secondary sm" onclick="goPage('cardapio');openEditCategory(parseInt(document.getElementById('item-edit-si').value))">⚙️ Configurar vias de impressão da categoria</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 8 — PROMOÇÕES -->
+        <div class="wizard-step-panel" data-step="promocoes">
+          <div class="wizard-step-section-title">8. Promoções e Descontos</div>
+          <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
+            O <b>Preço Promocional</b> fica na etapa 1 (Informações), junto com o Preço de Venda —
+            quando preenchido, ele aparece riscado/promocional aqui no painel e na prévia ao
+            lado. <b>Ainda não conectei esse preço à vitrine pública nem ao carrinho do cliente</b>
+            pra não arriscar mexer no cálculo do checkout sem seu ok — se quiser que eu ligue
+            isso de verdade no cardápio que o cliente vê, me avisa que eu faço numa próxima etapa.
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+            <input type="checkbox" id="item-accepts-coupon" checked onchange="updateWizardPreview()"/> Aceita cupom de desconto
+          </label>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">
+            Os cupons em si continuam cadastrados em <b>Configurações → 🎟️ Cupons</b> (sistema
+            global, sem restrição por prato hoje) — esse campo aqui é <b>(novo)</b> e só marca se
+            este item participa ou não quando um cupom geral for aplicado; ainda não bloqueia o
+            cupom no checkout automaticamente, é informativo por enquanto.
+          </div>
+        </div>
+
+      </div>
+      <div class="wizard-preview">
+        <div class="wizard-preview-title">👁 Prévia no Cardápio do Cliente</div>
+        <div class="wizard-preview-card">
+          <div class="wizard-preview-photo" id="wizard-preview-photo">🍽️</div>
+          <div class="wizard-preview-body">
+            <div id="wizard-preview-badge-wrap"></div>
+            <div class="wizard-preview-name" id="wizard-preview-name">Nome do prato</div>
+            <div class="wizard-preview-desc" id="wizard-preview-desc"></div>
+            <div class="wizard-preview-price" id="wizard-preview-price">R$ 0,00</div>
+          </div>
+        </div>
+        <div class="wizard-preview-summary" id="wizard-preview-summary"></div>
+        <div class="wizard-preview-status-list" id="wizard-preview-status-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -2382,161 +2647,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- v51: modal "Escolher Impressora" foi removido — o botão 🖨 agora sempre imprime direto em
      todas as vias configuradas (que tiverem itens desse pedido), sem esse passo extra. -->
 
-<!-- MODAL ITEM -->
-<div class="modal-overlay" id="item-modal">
-  <div class="modal wizard-modal">
-    <div class="modal-header">
-      <div class="wizard-header-top">
-        <div class="wizard-breadcrumb">Cardápio › <span id="wizard-cat-name">Categoria</span> › <b id="wizard-title-crumb">Novo Item</b></div>
-        <div class="wizard-meta">
-          <span class="modal-title" id="item-modal-title" style="font-size:15px;">Novo Item</span>
-          <span class="wizard-status-pill available" id="wizard-status-pill" onclick="toggleWizardAvailability()" title="Clique pra alternar disponibilidade">✅ Disponível</span>
-        </div>
-        <div class="wizard-progress-wrap">
-          <div class="wizard-progress-bar"><div class="wizard-progress-fill" id="wizard-progress-fill" style="width:0%;"></div></div>
-          <span class="wizard-progress-pct" id="wizard-progress-pct">0% completo</span>
-        </div>
-      </div>
-      <button class="modal-close" onclick="closeModal('item-modal')">✕</button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="item-edit-si"/>
-      <input type="hidden" id="item-edit-ii"/>
-      <input type="hidden" id="item-image"/>
-      <input type="hidden" id="item-image-pos" value="50,50"/>
-      <input type="hidden" id="item-available" value="true"/>
-      <div class="wizard-layout">
-        <div class="wizard-steps" id="wizard-steps"></div>
-        <div class="wizard-content">
-
-          <!-- ETAPA 1 — INFORMAÇÕES -->
-          <div class="wizard-step-panel" data-step="info">
-            <div class="wizard-step-section-title">1. Informações do Produto</div>
-            <div class="field">
-              <label>Foto do Prato</label>
-              <div class="photo-upload">
-                <div class="photo-preview-wrap" id="item-photo-wrap">
-                  <img class="photo-preview" id="item-photo-preview" alt="Foto do prato"/>
-                  <span class="photo-placeholder-icon" id="item-photo-placeholder">🍽️</span>
-                </div>
-                <div class="photo-upload-actions">
-                  <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
-                  <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
-                  <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
-                  <span class="photo-upload-status" id="item-photo-status"></span>
-                </div>
-              </div>
-              <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
-                <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
-                <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
-                  <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
-                  <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
-                </div>
-                <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
-                  <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
-                  <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
-                </div>
-              </div>
-            </div>
-            <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato" oninput="updateWizardPreview()"/></div>
-            <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview()"></textarea></div>
-            <div class="field-row">
-              <div class="field"><label>Preço R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
-              <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças" oninput="updateWizardPreview()"/></div>
-            </div>
-            <div class="field-row">
-              <div class="field"><label>Badge (destaque)</label><input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/></div>
-            </div>
-            <div class="field" style="margin-top:-4px;">
-              <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
-              <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
-                <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global" onchange="updateWizardPreview()"/> Herdar Badge Global</label>
-                <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual" onchange="updateWizardPreview()"/> Personalizar (usa o texto acima)</label>
-                <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off" onchange="updateWizardPreview()"/> Sem badge</label>
-              </div>
-            </div>
-          </div>
-
-          <!-- ETAPA 2 — GRUPOS DE OPÇÕES (tamanho/montagem/variações/extras — tudo usa o mesmo motor) -->
-          <div class="wizard-step-panel" data-step="grupos">
-            <div class="wizard-step-section-title">2. Tamanhos, Montagem, Variações e Extras</div>
-            <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
-              No Shogatsu, tamanho (P/M/G), montagem de combo, sabores e extras/molhos usam o
-              mesmo mecanismo: <b>Grupos de Opções</b>. Um grupo "Tamanho" com escolha única faz
-              o papel de tamanho; um grupo "Sabores" com quantidade faz o papel de montagem — sem
-              precisar de telas separadas pra cada coisa.
-            </div>
-            <div class="field" style="margin-top:6px;">
-              <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
-                <span>Grupos de Opções</span>
-                <span style="display:flex;gap:6px;">
-                  <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
-                  <button type="button" class="btn secondary sm" onclick="addVariantGroup('item')">+ Grupo novo</button>
-                </span>
-              </label>
-              <div id="item-variants-list" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
-            </div>
-          </div>
-
-          <!-- ETAPA 3 — DISPONIBILIDADE -->
-          <div class="wizard-step-panel" data-step="disponibilidade">
-            <div class="wizard-step-section-title">3. Disponibilidade</div>
-            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
-              <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
-            </label>
-            <div style="font-size:11px;color:var(--muted);margin-top:10px;">
-              Desmarcado = aparece como "esgotado" pro cliente (mesmo toggle rápido ✅/🚫 que já
-              existe na listagem do cardápio — aqui é só outro jeito de mexer na mesma opção).
-              Estoque com quantidade, horários e pausa programada por dia da semana ainda não
-              existem neste sistema — não criei essa parte agora pra não inventar um recurso novo
-              de meio caminho; me avisa se quiser que eu desenvolva isso numa próxima rodada.
-            </div>
-          </div>
-
-          <!-- ETAPA 4 — IMPRESSÃO -->
-          <div class="wizard-step-panel" data-step="impressao">
-            <div class="wizard-step-section-title">4. Impressão</div>
-            <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;">
-              🖨 A via de impressão (Caixa / Cozinha / SushiBar) é configurada uma vez <b>por
-              categoria</b>, não por item — todo prato desta categoria já herda automaticamente
-              pra onde imprime. Isso evita configurar a mesma coisa prato por prato.
-              <div style="margin-top:10px;">
-                <button type="button" class="btn secondary sm" onclick="closeModal('item-modal');openEditCategory(parseInt(document.getElementById('item-edit-si').value))">⚙️ Configurar vias de impressão da categoria</button>
-              </div>
-            </div>
-          </div>
-
-          <!-- ETAPA 5 — RESUMO -->
-          <div class="wizard-step-panel" data-step="resumo">
-            <div class="wizard-step-section-title">5. Resumo do Item</div>
-            <div id="wizard-summary" style="display:flex;flex-direction:column;gap:8px;font-size:12.5px;"></div>
-          </div>
-
-        </div>
-        <div class="wizard-preview">
-          <div class="wizard-preview-title">👁 Prévia do cliente</div>
-          <div class="wizard-preview-card">
-            <div class="wizard-preview-photo" id="wizard-preview-photo">🍽️</div>
-            <div class="wizard-preview-body">
-              <div id="wizard-preview-badge-wrap"></div>
-              <div class="wizard-preview-name" id="wizard-preview-name">Nome do prato</div>
-              <div class="wizard-preview-desc" id="wizard-preview-desc"></div>
-              <div class="wizard-preview-price" id="wizard-preview-price">R$ 0,00</div>
-            </div>
-          </div>
-          <div class="wizard-preview-summary" id="wizard-preview-summary"></div>
-        </div>
-      </div>
-    </div>
-    <div class="modal-footer" style="flex-wrap:wrap;">
-      <button class="btn secondary" onclick="closeModal('item-modal')">Cancelar</button>
-      <button class="btn secondary" id="wizard-btn-delete" style="display:none;" onclick="deleteCurrentWizardItem()">🗑 Excluir</button>
-      <button class="btn secondary" id="wizard-btn-duplicate" style="display:none;" onclick="duplicateCurrentWizardItem()">⧉ Duplicar</button>
-      <button class="btn secondary" onclick="saveItem(true)">Salvar e Novo</button>
-      <button class="btn primary" onclick="saveItem(false)">💾 Salvar Item</button>
-    </div>
-  </div>
-</div>
 
 <!-- MODAL "USAR GRUPO EXISTENTE" (v107a) — escolher um grupo da Biblioteca pra copiar pro item -->
 <div class="modal-overlay" id="use-libgroup-modal">
@@ -3987,7 +4097,7 @@ setInterval(tick,1000);tick();
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',qrlinks:'QR Code & Links',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
+const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio','item-editor':'Editar Item',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',qrlinks:'QR Code & Links',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
 const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', qrlinks:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
 // v107: confere a permissão por usuário (Prompt 1) — só entra em ação se o master tiver
 // desligado explicitamente algum módulo pra esse usuário; sem isso (userPermissions === null),
@@ -7425,37 +7535,63 @@ let editingLibraryGroups=[]; // v107a — biblioteca de Grupos de Opções Reuti
 function openAddItem(){
   if(!menu[activeCatIdx]){ alert('Crie uma categoria antes de adicionar itens.'); return; }
   document.getElementById('item-modal-title').textContent='Novo Item';
+  document.getElementById('item-editor-meta-line').textContent='Novo item — ainda não salvo';
   document.getElementById('item-edit-si').value=activeCatIdx;
   document.getElementById('item-edit-ii').value=-1;
-  ['item-name','item-desc','item-qty','item-badge'].forEach(id=>document.getElementById(id).value='');
+  ['item-name','item-desc','item-qty','item-badge','item-sku','item-ean','item-tags'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('item-price').value='';
+  document.getElementById('item-promo-price').value='';
+  document.getElementById('item-stock').value='';
+  document.getElementById('item-badge-color').value='#D9383A';
   document.getElementById('item-badgemode-global').checked=true;
   document.getElementById('item-available-check').checked=true;
   document.getElementById('item-available').value='true';
+  document.getElementById('item-featured-check').checked=false;
+  document.getElementById('item-featured').value='false';
+  document.getElementById('item-accepts-coupon').checked=true;
+  ['item-nutri-calories','item-nutri-protein','item-nutri-carbs','item-nutri-fat'].forEach(id=>document.getElementById(id).value='');
+  renderAllergenChecks([]);
   resetItemPhotoPreview('', {x:50,y:50});
   editingVariants=[];
-  renderVariantGroups('item');
   initWizard(false);
-  openModal('item-modal');
+  renderAllItemGroups();
+  goPage('item-editor', true);
 }
 function openEditItem(si,ii){
   const item=menu[si].items[ii];
   document.getElementById('item-modal-title').textContent='Editar Item';
+  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')):null].filter(Boolean);
+  document.getElementById('item-editor-meta-line').textContent = metaBits.join(' · ');
   document.getElementById('item-edit-si').value=si;
   document.getElementById('item-edit-ii').value=ii;
   document.getElementById('item-name').value=item.name;
   document.getElementById('item-desc').value=item.desc||'';
   document.getElementById('item-price').value=item.price;
+  document.getElementById('item-promo-price').value=item.promoPrice||'';
   document.getElementById('item-qty').value=item.qty||'';
+  document.getElementById('item-sku').value=item.sku||'';
+  document.getElementById('item-ean').value=item.ean||'';
+  document.getElementById('item-tags').value=(item.tags||[]).join(', ');
+  document.getElementById('item-stock').value=(item.stock===null||item.stock===undefined)?'':item.stock;
   document.getElementById('item-badge').value=item.badge||'';
+  document.getElementById('item-badge-color').value=item.badgeColor||'#D9383A';
   document.getElementById('item-badgemode-'+(item.badgeMode||'global')).checked=true;
   document.getElementById('item-available-check').checked = item.available!==false;
   document.getElementById('item-available').value = item.available!==false ? 'true' : 'false';
+  document.getElementById('item-featured-check').checked = !!item.featured;
+  document.getElementById('item-featured').value = item.featured ? 'true' : 'false';
+  document.getElementById('item-accepts-coupon').checked = item.acceptsCoupon!==false;
+  const nutri = item.nutrition||{};
+  document.getElementById('item-nutri-calories').value = nutri.calories==null?'':nutri.calories;
+  document.getElementById('item-nutri-protein').value = nutri.protein==null?'':nutri.protein;
+  document.getElementById('item-nutri-carbs').value = nutri.carbs==null?'':nutri.carbs;
+  document.getElementById('item-nutri-fat').value = nutri.fat==null?'':nutri.fat;
+  renderAllergenChecks(item.allergens||[]);
   resetItemPhotoPreview(item.image||'', item.imagePos||{x:50,y:50});
   editingVariants=JSON.parse(JSON.stringify(item.variants||[]));
-  renderVariantGroups('item');
   initWizard(true);
-  openModal('item-modal');
+  renderAllItemGroups();
+  goPage('item-editor', true);
 }
 // v75: BUG "Estações" saiu da edição do item — agora só existe em nível de Categoria
 // (Cardápio → editar categoria → "Imprime na(s) via(s) de:"). Todo item herda automaticamente
@@ -7467,11 +7603,14 @@ function openEditItem(si,ii){
 // além da checkbox de disponibilidade (que já existia como toggle rápido na listagem; aqui é só
 // outro jeito de mexer na mesma propriedade `item.available`).
 const WIZARD_STEPS = [
-  { id:'info', label:'Informações', icon:'📝' },
-  { id:'grupos', label:'Tamanhos e Opções', icon:'🍱' },
-  { id:'disponibilidade', label:'Disponibilidade', icon:'✅' },
-  { id:'impressao', label:'Impressão', icon:'🖨' },
-  { id:'resumo', label:'Resumo', icon:'📋' },
+  { id:'info', label:'Informações', sub:'Básicas do produto', icon:'📝' },
+  { id:'tamanhos', label:'Tamanhos', sub:'P, M, G, Família...', icon:'📏' },
+  { id:'montagem', label:'Montagem', sub:'Peças do combo', icon:'🧩' },
+  { id:'variacoes', label:'Variações', sub:'Sabores, adicionais...', icon:'🎛️' },
+  { id:'aparencia', label:'Aparência', sub:'Badges e etiquetas', icon:'🎨' },
+  { id:'disponibilidade', label:'Disponibilidade', sub:'Horários e estoque', icon:'✅' },
+  { id:'impressao', label:'Impressão', sub:'Estações e impressoras', icon:'🖨' },
+  { id:'promocoes', label:'Promoções', sub:'Descontos e ofertas', icon:'🏷️' },
 ];
 let wizardCurrentStep = 'info';
 function initWizard(isEdit){
@@ -7479,9 +7618,11 @@ function initWizard(isEdit){
   const si = parseInt(document.getElementById('item-edit-si').value);
   document.getElementById('wizard-cat-name').textContent = (menu[si]&&menu[si].title) || 'Categoria';
   document.getElementById('wizard-title-crumb').textContent = isEdit ? 'Editar Item' : 'Novo Item';
+  document.getElementById('item-category-display').value = (menu[si]&&menu[si].title) || '';
   document.getElementById('wizard-steps').innerHTML = WIZARD_STEPS.map((s,i)=>`
     <button type="button" class="wizard-step-btn" data-wizard-step="${s.id}" onclick="goToWizardStep('${s.id}')">
-      <span class="wsn">${i+1}</span> ${s.icon} ${s.label}
+      <span class="wsn">${i+1}</span>
+      <span class="wizard-step-btn-text"><span class="wizard-step-btn-label">${s.icon} ${s.label}</span><span class="wizard-step-btn-sub">${s.sub}</span></span>
     </button>`).join('');
   document.getElementById('wizard-btn-delete').style.display = isEdit ? '' : 'none';
   document.getElementById('wizard-btn-duplicate').style.display = isEdit ? '' : 'none';
@@ -7492,7 +7633,15 @@ function goToWizardStep(id){
   wizardCurrentStep=id;
   document.querySelectorAll('.wizard-step-panel').forEach(p=>p.classList.toggle('active', p.dataset.step===id));
   document.querySelectorAll('.wizard-step-btn').forEach(b=>b.classList.toggle('active', b.dataset.wizardStep===id));
-  if(id==='resumo') renderWizardSummary();
+  const layoutEl = document.querySelector('.wizard-layout');
+  if(layoutEl) layoutEl.scrollIntoView({block:'nearest'});
+}
+function scrollToWizardPreview(){
+  const el = document.querySelector('.wizard-preview');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function cancelItemEditor(){
+  goPage('cardapio');
 }
 function onWizardAvailabilityToggle(){
   const checked = document.getElementById('item-available-check').checked;
@@ -7503,6 +7652,33 @@ function toggleWizardAvailability(){
   const cb=document.getElementById('item-available-check');
   cb.checked=!cb.checked;
   onWizardAvailabilityToggle();
+}
+function onWizardFeaturedToggle(){
+  const checked = document.getElementById('item-featured-check').checked;
+  document.getElementById('item-featured').value = checked ? 'true' : 'false';
+  updateWizardPreview();
+}
+function toggleWizardFeatured(){
+  const cb=document.getElementById('item-featured-check');
+  cb.checked=!cb.checked;
+  onWizardFeaturedToggle();
+}
+// Lista fixa de alérgenos comuns em culinária japonesa/oriental — cada um vira um checkbox;
+// o que fica marcado vai pra item.allergens (array de strings), campo novo e opcional.
+const ALLERGEN_OPTIONS = [
+  {id:'peixe',label:'🐟 Peixe'},{id:'crustaceos',label:'🦐 Crustáceos'},{id:'gluten',label:'🌾 Glúten'},
+  {id:'soja',label:'🫘 Soja'},{id:'gergelim',label:'◦ Gergelim'},{id:'ovo',label:'🥚 Ovo'},
+  {id:'lactose',label:'🥛 Lactose'},{id:'amendoim',label:'🥜 Amendoim/Castanhas'},
+];
+function renderAllergenChecks(selected){
+  const sel = new Set(selected||[]);
+  document.getElementById('item-allergens-checks').innerHTML = ALLERGEN_OPTIONS.map(a=>`
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="checkbox" class="item-allergen-check" value="${a.id}" ${sel.has(a.id)?'checked':''} onchange="updateWizardPreview()"/> ${a.label}
+    </label>`).join('');
+}
+function getSelectedAllergens(){
+  return Array.from(document.querySelectorAll('.item-allergen-check:checked')).map(c=>c.value);
 }
 // 0-100%: nome, preço, foto, descrição e ao menos 1 grupo — pesos simples, só pra dar um norte
 // visual de "o que falta"; não bloqueia salvar (salvar continua exigindo só nome+preço, igual sempre foi).
@@ -7519,36 +7695,52 @@ function updateWizardPreview(){
   const name = document.getElementById('item-name').value.trim() || 'Nome do prato';
   const desc = document.getElementById('item-desc').value.trim();
   const price = parseFloat(document.getElementById('item-price').value)||0;
+  const promoPrice = parseFloat(document.getElementById('item-promo-price').value)||0;
   const image = document.getElementById('item-image').value.trim();
   const badgeMode = (document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global';
   const badgeText = document.getElementById('item-badge').value.trim();
+  const badgeColor = document.getElementById('item-badge-color').value||'#D9383A';
   const available = document.getElementById('item-available-check').checked;
+  const featured = document.getElementById('item-featured-check').checked;
+  const stock = document.getElementById('item-stock').value.trim();
+  const acceptsCoupon = document.getElementById('item-accepts-coupon').checked;
+  const allergens = getSelectedAllergens();
   document.getElementById('wizard-preview-name').textContent = name;
   document.getElementById('wizard-preview-desc').textContent = desc;
-  document.getElementById('wizard-preview-price').textContent = 'R$ ' + price.toFixed(2).replace('.',',');
+  document.getElementById('wizard-preview-price').innerHTML = (promoPrice>0 && promoPrice<price)
+    ? `<span class="old">R$ ${price.toFixed(2).replace('.',',')}</span>R$ ${promoPrice.toFixed(2).replace('.',',')}`
+    : 'R$ ' + price.toFixed(2).replace('.',',');
   const photoEl = document.getElementById('wizard-preview-photo');
   if(image){ photoEl.style.backgroundImage = `url(${JSON.stringify(image).slice(1,-1)})`; photoEl.textContent=''; }
   else { photoEl.style.backgroundImage=''; photoEl.textContent='🍽️'; }
-  document.getElementById('wizard-preview-badge-wrap').innerHTML = (badgeMode==='manual'&&badgeText) ? `<span class="wizard-preview-badge">${badgeText}</span>` : (badgeMode==='global' ? `<span class="wizard-preview-badge" style="opacity:.6;">🏷 badge global</span>` : '');
+  document.getElementById('wizard-preview-badge-wrap').innerHTML = (badgeMode==='manual'&&badgeText) ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : (badgeMode==='global' ? `<span class="wizard-preview-badge" style="opacity:.6;">🏷 badge global</span>` : '');
   const pill = document.getElementById('wizard-status-pill');
   pill.className = 'wizard-status-pill '+(available?'available':'unavailable');
   pill.textContent = available ? '✅ Disponível' : '🚫 Esgotado';
+  const fpill = document.getElementById('wizard-featured-pill');
+  fpill.className = 'wizard-status-pill '+(featured?'featured-on':'');
+  fpill.textContent = featured ? '⭐ Destaque' : '☆ Destaque';
   const pct = computeWizardProgress();
   document.getElementById('wizard-progress-fill').style.width = pct+'%';
   document.getElementById('wizard-progress-pct').textContent = pct+'% completo';
   document.getElementById('wizard-preview-summary').innerHTML = `
     <div>🍱 ${editingVariants.length} grupo(s) de opções</div>
     <div>${document.getElementById('item-qty').value.trim() ? '🍣 '+document.getElementById('item-qty').value.trim() : ''}</div>`;
-}
-function renderWizardSummary(){
-  const price = parseFloat(document.getElementById('item-price').value)||0;
-  const totalOptions = editingVariants.reduce((s,g)=>s+g.options.length,0);
-  document.getElementById('wizard-summary').innerHTML = `
-    <div class="vgroup"><b>Preço base:</b> R$ ${price.toFixed(2).replace('.',',')}</div>
-    <div class="vgroup"><b>Porção:</b> ${document.getElementById('item-qty').value.trim()||'—'}</div>
-    <div class="vgroup"><b>Grupos de opções:</b> ${editingVariants.length} (${totalOptions} opções no total)</div>
-    <div class="vgroup"><b>Disponibilidade:</b> ${document.getElementById('item-available-check').checked?'✅ Disponível':'🚫 Esgotado'}</div>
-    <div class="vgroup"><b>Impressão:</b> herdada da categoria (não configurável por item)</div>`;
+  const nutriCal = document.getElementById('item-nutri-calories').value.trim();
+  const nutriProt = document.getElementById('item-nutri-protein').value.trim();
+  const nutriCarb = document.getElementById('item-nutri-carbs').value.trim();
+  const nutriFat = document.getElementById('item-nutri-fat').value.trim();
+  const hasNutri = nutriCal||nutriProt||nutriCarb||nutriFat;
+  const rows = [
+    ['Status', available ? 'Disponível' : 'Esgotado'],
+    ['Destaque', featured ? 'Sim' : 'Não'],
+    ['Aceita Cupom', acceptsCoupon ? 'Sim' : 'Não'],
+    ['Estoque', stock ? stock+' unidades' : 'Ilimitado'],
+  ];
+  if(allergens.length) rows.push(['Alérgenos', allergens.map(id=>(ALLERGEN_OPTIONS.find(a=>a.id===id)||{}).label||id).join(', ')]);
+  if(hasNutri) rows.push(['Nutricional', [nutriCal&&nutriCal+' kcal', nutriProt&&nutriProt+'g prot', nutriCarb&&nutriCarb+'g carb', nutriFat&&nutriFat+'g gord'].filter(Boolean).join(' · ')]);
+  document.getElementById('wizard-preview-status-list').innerHTML = rows.map(([k,v])=>`
+    <div class="wizard-preview-status-row"><span>${k}</span><b>${v}</b></div>`).join('');
 }
 async function duplicateCurrentWizardItem(){
   const si=parseInt(document.getElementById('item-edit-si').value);
@@ -7556,10 +7748,13 @@ async function duplicateCurrentWizardItem(){
   if(ii===-1)return;
   const clone=JSON.parse(JSON.stringify(menu[si].items[ii]));
   clone.name = clone.name+' (cópia)';
+  clone.id = 'item'+Date.now().toString(36);
+  clone.createdAt = new Date().toISOString();
+  clone.updatedAt = clone.createdAt;
   menu[si].items.splice(ii+1,0,clone);
   const res = await apiPost('/api/config', { cfg, menu });
   if(!res.ok){ alert(res.data.error||'Erro ao duplicar item.'); menu[si].items.splice(ii+1,1); return; }
-  closeModal('item-modal');
+  goPage('cardapio');
   renderMenuEditor();
   showToast('⧉ Item duplicado', clone.name);
 }
@@ -7568,11 +7763,11 @@ async function deleteCurrentWizardItem(){
   const ii=parseInt(document.getElementById('item-edit-ii').value);
   if(ii===-1)return;
   const removedItem = menu[si].items[ii];
-  if(!confirm(`Remover "${removedItem.name}"?`))return; // confirma ANTES de fechar o modal — cancelar mantém tudo como estava
+  if(!confirm(`Remover "${removedItem.name}"?`))return; // confirma ANTES de sair da página — cancelar mantém tudo como estava
   menu[si].items.splice(ii,1);
   const res = await apiPost('/api/config', { cfg, menu });
   if(!res.ok){ alert(res.data.error||'Erro ao remover item.'); menu[si].items.splice(ii,0,removedItem); return; }
-  closeModal('item-modal');
+  goPage('cardapio');
   renderMenuEditor();
 }
 // ═══════════════════════════════════════════
@@ -7588,14 +7783,29 @@ async function deleteCurrentWizardItem(){
 // Formato da OPÇÃO: {name, priceDelta, priceMode:'incluido'|'adicional'|'fixo', maxQty (>1 vira
 // stepper no cliente, ex: "Salmão 0-8")}.
 function groupsList(which){ return which==='lib' ? editingLibraryGroups : editingVariants; }
-function addVariantGroup(which){
-  groupsList(which).push({id:'g'+Date.now().toString(36),name:'',type:'single',required:false,min:'',max:'',includedQty:'',overagePrice:'',options:[{name:'',priceDelta:0,priceMode:'adicional',maxQty:1}]});
-  renderVariantGroups(which);
+function addVariantGroup(which,kind){
+  const g={id:'g'+Date.now().toString(36),name:'',type:'single',required:false,min:'',max:'',includedQty:'',overagePrice:'',options:[{name:'',priceDelta:0,priceMode:'adicional',maxQty:1}]};
+  if(which==='item') g.kind = kind || 'variacao'; // v107c: em qual das 3 etapas (Tamanhos/Montagem/Variações) o grupo aparece
+  groupsList(which).push(g);
+  refreshGroupsUI(which);
+}
+// v107c: re-renderiza o(s) container(es) certo(s) depois de qualquer edição — pro item, os
+// grupos ficam espalhados em 3 listas (Tamanhos/Montagem/Variações) filtradas por g.kind, então
+// precisa atualizar as 3; pra Biblioteca continua sendo uma lista só, sem separação por kind.
+function refreshGroupsUI(which){
+  if(which==='lib'){ renderVariantGroups('lib'); }
+  else { renderAllItemGroups(); }
+}
+function renderAllItemGroups(){
+  renderVariantGroups('item','tamanho');
+  renderVariantGroups('item','montagem');
+  renderVariantGroups('item','variacao');
+  updateWizardPreview();
 }
 function removeVariantGroup(which,gi){
   if(!confirm('Remover esse grupo de variação?'))return;
   groupsList(which).splice(gi,1);
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 function duplicateVariantGroup(which,gi){
   const list=groupsList(which);
@@ -7603,7 +7813,7 @@ function duplicateVariantGroup(which,gi){
   clone.id='g'+Date.now().toString(36);
   clone.name=clone.name?clone.name+' (cópia)':'';
   list.splice(gi+1,0,clone);
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 // v87: "Reordenar" pedido no editor de variações — grupos e opções, ambos com ↑/↓ (arrastar não
 // valia a pena pra listas curtas como essas; sobe/desce já resolve).
@@ -7612,22 +7822,22 @@ function moveVariantGroup(which,gi,dir){
   const ni=gi+dir;
   if(ni<0||ni>=list.length)return;
   [list[gi],list[ni]]=[list[ni],list[gi]];
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 function moveVariantOption(which,gi,oi,dir){
   const opts=groupsList(which)[gi].options;
   const ni=oi+dir;
   if(ni<0||ni>=opts.length)return;
   [opts[oi],opts[ni]]=[opts[ni],opts[oi]];
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 function addVariantOption(which,gi){
   groupsList(which)[gi].options.push({name:'',priceDelta:0,priceMode:'adicional',maxQty:1});
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 function removeVariantOption(which,gi,oi){
   groupsList(which)[gi].options.splice(oi,1);
-  renderVariantGroups(which);
+  refreshGroupsUI(which);
 }
 function updateVariantGroupField(which,gi,field,value){
   const g=groupsList(which)[gi];
@@ -7636,14 +7846,14 @@ function updateVariantGroupField(which,gi,field,value){
   // e o campo "Máx.un" de cada opção) — os campos numéricos (min/max/# inclusas/+R$ excedente)
   // usam oninput a cada tecla digitada; re-renderizar neles fazia o campo perder o foco no meio
   // da digitação (só dava pra digitar 1 dígito por vez). BUG CORRIGIDO.
-  if(field==='type') renderVariantGroups(which);
+  if(field==='type'||field==='kind') refreshGroupsUI(which);
 }
 function updateVariantOptionField(which,gi,oi,field,value){
   const o=groupsList(which)[gi].options[oi];
   o[field] = (field==='priceDelta'||field==='maxQty') ? (parseFloat(value)||0) : value;
   // v107a-fix: só "priceMode" muda o que aparece na tela (mostra/esconde o campo de preço) —
   // "maxQty" também usava oninput e reiniciava o campo a cada dígito (mesmo bug do de cima).
-  if(field==='priceMode') renderVariantGroups(which);
+  if(field==='priceMode') refreshGroupsUI(which);
 }
 // "Usar grupo existente" — copia (clona, com id novo) um grupo da Biblioteca pra dentro do item
 // que está sendo editado agora. Não referencia o grupo original: se a Biblioteca mudar depois,
@@ -7663,9 +7873,10 @@ function openUseLibraryGroupPicker(){
 function useLibraryGroup(gi){
   const clone=JSON.parse(JSON.stringify(editingLibraryGroups[gi]));
   clone.id='g'+Date.now().toString(36);
+  if(!clone.kind) clone.kind='variacao';
   editingVariants.push(clone);
   closeModal('use-libgroup-modal');
-  renderVariantGroups('item');
+  renderAllItemGroups();
   showToast('✅ Grupo adicionado', `"${clone.name}" copiado pra este item.`);
 }
 // "💾 Salvar como reutilizável" — copia UM grupo do item que está sendo editado agora pra
@@ -7692,14 +7903,17 @@ async function saveLibraryGroups(silent){
   if(!res.ok){ alert(res.data.error||'Erro ao salvar biblioteca de grupos.'); return; }
   if(!silent){ closeModal('libgroups-modal'); showToast('✅ Biblioteca salva!', `${clean.length} grupo(s) reutilizável(is).`); }
 }
-function renderVariantGroups(which){
+function renderVariantGroups(which, kindFilter){
   which = which || 'item';
   const list = groupsList(which);
-  const el=document.getElementById(which==='lib' ? 'lib-groups-list' : 'item-variants-list');
+  const el=document.getElementById(which==='lib' ? 'lib-groups-list' : ('item-variants-list-'+(kindFilter||'variacao')));
   if(!el)return;
-  el.innerHTML = list.length===0
-    ? '<div style="font-size:11px;color:var(--muted);">Nenhum grupo. Use pra tamanhos (P/G), sabores, montagem de combos, molhos ou adicionais.</div>'
-    : list.map((g,gi)=>{
+  // filtra mantendo o índice REAL na lista (gi) — importante porque todas as funções de edição
+  // (mover/duplicar/remover/atualizar campo) indexam groupsList(which) diretamente pelo gi.
+  const entries = list.map((g,gi)=>({g,gi})).filter(({g})=> which!=='item' || (g.kind||'variacao')===(kindFilter||'variacao'));
+  el.innerHTML = entries.length===0
+    ? '<div style="font-size:11px;color:var(--muted);">Nenhum grupo aqui ainda.</div>'
+    : entries.map(({g,gi})=>{
       const isMultiple = g.type==='multiple';
       return `
       <div class="vgroup">
@@ -7713,6 +7927,11 @@ function renderVariantGroups(which){
             <option value="single" ${g.type==='single'?'selected':''}>Escolha única</option>
             <option value="multiple" ${isMultiple?'selected':''}>Múltipla escolha</option>
           </select>
+          ${which==='item'?`<select onchange="updateVariantGroupField('${which}',${gi},'kind',this.value)" title="Em qual etapa este grupo aparece no editor do item">
+            <option value="tamanho" ${(g.kind||'variacao')==='tamanho'?'selected':''}>📏 Tamanhos</option>
+            <option value="montagem" ${(g.kind||'variacao')==='montagem'?'selected':''}>🧩 Montagem</option>
+            <option value="variacao" ${(g.kind||'variacao')==='variacao'?'selected':''}>🎛️ Variações</option>
+          </select>`:''}
           <label style="font-size:11px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
             <input type="checkbox" ${g.required?'checked':''} onchange="updateVariantGroupField('${which}',${gi},'required',this.checked)"/> Obrigatório
           </label>
@@ -7745,7 +7964,6 @@ function renderVariantGroups(which){
         <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption('${which}',${gi})">+ Opção</button>
       </div>`;
     }).join('');
-  if(which==='item' && typeof updateWizardPreview==='function') updateWizardPreview(); // v107b: contagem de grupos na prévia/resumo em dia
 }
 async function saveItem(andNew){
   const si=parseInt(document.getElementById('item-edit-si').value);
@@ -7756,18 +7974,41 @@ async function saveItem(andNew){
     .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
     .filter(g=>g.options.length>0);
   const [posX, posY] = document.getElementById('item-image-pos').value.split(',').map(n=>parseInt(n)||50);
+  const nowIso = new Date().toISOString();
+  const existing = ii>-1 ? menu[si].items[ii] : null;
+  const promoPriceRaw = parseFloat(document.getElementById('item-promo-price').value);
+  const stockRaw = document.getElementById('item-stock').value.trim();
+  const tagsRaw = document.getElementById('item-tags').value.trim();
   // v43: via de impressão e dias do rodízio saíram do modal de item (agora a via é definida por
   // categoria — veja saveCategory). Aqui só preservamos o que o item já tinha, sem sobrescrever.
   const item={
+    id: (existing && existing.id) || ('item'+Date.now().toString(36)),
     name,desc:document.getElementById('item-desc').value.trim(),
     price:parseFloat(document.getElementById('item-price').value)||0,
     qty:document.getElementById('item-qty').value.trim(),
     badge:document.getElementById('item-badge').value.trim(),
     badgeMode:(document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global',
+    badgeColor: document.getElementById('item-badge-color').value||'#D9383A', // (novo)
     image:document.getElementById('item-image').value.trim(),
     imagePos:{x:posX,y:posY},
     variants:cleanVariants,
-    available:document.getElementById('item-available-check').checked // v107b: etapa "Disponibilidade" do wizard
+    available:document.getElementById('item-available-check').checked, // v107b: etapa "Disponibilidade" do wizard
+    featured: document.getElementById('item-featured-check').checked, // (novo)
+    sku: document.getElementById('item-sku').value.trim(), // (novo)
+    ean: document.getElementById('item-ean').value.trim(), // (novo)
+    tags: tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [], // (novo)
+    promoPrice: (promoPriceRaw>0) ? promoPriceRaw : null, // (novo) — ainda não conectado à vitrine/checkout, ver aviso na etapa 8
+    stock: stockRaw ? (parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
+    acceptsCoupon: document.getElementById('item-accepts-coupon').checked, // (novo) — informativo por enquanto
+    allergens: getSelectedAllergens(), // (novo)
+    nutrition: { // (novo) — por porção
+      calories: document.getElementById('item-nutri-calories').value.trim() ? Number(document.getElementById('item-nutri-calories').value) : null,
+      protein: document.getElementById('item-nutri-protein').value.trim() ? Number(document.getElementById('item-nutri-protein').value) : null,
+      carbs: document.getElementById('item-nutri-carbs').value.trim() ? Number(document.getElementById('item-nutri-carbs').value) : null,
+      fat: document.getElementById('item-nutri-fat').value.trim() ? Number(document.getElementById('item-nutri-fat').value) : null,
+    },
+    createdAt: (existing && existing.createdAt) || nowIso, // (novo)
+    updatedAt: nowIso, // (novo)
   };
   if(ii===-1){ menu[si].items.push(item); }
   else menu[si].items[ii]={...menu[si].items[ii], ...item}; // mantém stations e days que já estavam, não reseta ao editar
@@ -7775,7 +8016,7 @@ async function saveItem(andNew){
   if(!res.ok){ alert(res.data.error||'Erro ao salvar cardápio.'); return; }
   renderMenuEditor();
   showToast('✅ Salvo!',`"${name}" atualizado no cardápio.`);
-  if(andNew){ openAddItem(); } else { closeModal('item-modal'); }
+  if(andNew){ openAddItem(); } else { goPage('cardapio'); }
 }
 async function deleteItem(si,ii){
   if(!confirm(`Remover "${menu[si].items[ii].name}"?`))return;
