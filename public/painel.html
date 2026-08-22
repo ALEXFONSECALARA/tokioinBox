@@ -312,7 +312,8 @@ table{max-width:100%;}
 .cancel-reason-chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:11px 14px;cursor:pointer;font-size:14px;transition:border-color .15s,background .15s;}
 .cancel-reason-chip:hover{border-color:var(--red-dk);}
 .cancel-reason-chip.selected{border-color:var(--red);background:var(--red-bg);color:var(--red-lt);}
-.vgroup{border:1px solid var(--border);border-radius:14px;padding:10px;background:var(--bg);}
+.vgroup{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--bg);transition:border-color .15s;}
+.vgroup:hover{border-color:rgba(212,163,115,.4);}
 .vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
 .vgroup-head input[type=text]{flex:1;}
 .vopt-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
@@ -376,15 +377,20 @@ table{max-width:100%;}
 @media (max-width:1050px){
   .wizard-layout{grid-template-columns:200px minmax(0,1fr) 280px;}
 }
+.item-editor-page{scroll-behavior:smooth;}
+.wizard-content{scroll-behavior:smooth;}
 @media (max-width:900px){
   .item-editor-header-actions{width:100%;}
-  .item-editor-header-actions .btn{flex:1;}
+  .item-editor-header-actions .btn{flex:1;min-height:44px;}
   .wizard-layout{grid-template-columns:1fr;padding:14px;}
   .wizard-steps{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:8px;margin-right:0;margin-bottom:14px;}
-  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;}
+  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;min-height:44px;}
   .wizard-step-btn.active{border-left-color:transparent;border-bottom-color:var(--gold);}
   .wizard-step-btn-sub{display:none;}
   .wizard-preview{width:100%;border-left:none;padding-left:0;margin-left:0;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+  .vopt-icon-btn{font-size:17px;padding:6px 8px;}
+  .btn-add-option-big{padding:14px;}
+  .photo-tool-btn{padding:9px 12px;font-size:12px;}
 }
 .vopt-row input[type=text]{flex:1;}
 .vopt-row input[type=number]{width:90px;}
@@ -407,6 +413,10 @@ table{max-width:100%;}
 .vopt-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px 5px;border-radius:5px;line-height:1;flex-shrink:0;}
 .vopt-icon-btn:hover{background:rgba(212,163,115,.12);color:var(--gold);}
 .btn-add-option-big{width:100%;padding:11px;font-size:13px;font-weight:700;margin-top:2px;}
+/* (novo v107e) Card de Preço — Economia % e Lucro interno, no mesmo lugar dos campos de preço */
+.price-card{border:1px solid rgba(212,163,115,.35);border-radius:10px;padding:10px 12px;margin:4px 0 14px;background:var(--panel);display:flex;flex-direction:column;gap:7px;}
+.price-card-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);}
+.price-card-row b{color:var(--white);font-weight:700;font-size:12.5px;}
 .cat-reorder{display:flex;gap:2px;}
 .cat-reorder button{border:none;background:var(--border2);color:var(--muted);font-size:10px;width:16px;height:16px;line-height:16px;padding:0;border-radius:3px;cursor:pointer;}
 .cat-reorder button:hover:not(:disabled){color:var(--white);background:var(--gold);}
@@ -534,6 +544,15 @@ table{max-width:100%;}
    caixinha. Agora o <img> começa escondido por CSS e só aparece quando o JS confirma que há
    uma foto de verdade pra mostrar. */
 .photo-preview{width:100%;height:100%;object-fit:cover;display:none;}
+/* (novo v107e) barra de ferramentas de foto — zoom/girar/centralizar/corte automático, borda
+   dourada fina, no lugar dos dois sliders soltos de antes. */
+.photo-toolbar{margin-top:10px;padding:12px;border:1px solid rgba(212,163,115,.35);border-radius:10px;background:var(--panel);}
+.photo-toolbar-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.photo-tool-btn{border:1px solid var(--border);background:var(--card);color:var(--white);border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer;}
+.photo-tool-btn:hover{border-color:var(--gold);color:var(--gold);}
+.photo-toolbar-slider{display:flex;align-items:center;gap:10px;margin-top:6px;}
+.photo-toolbar-label{font-size:10px;color:var(--muted);width:76px;flex-shrink:0;}
+.photo-toolbar-slider input[type=range]{flex:1;accent-color:var(--gold);}
 .photo-placeholder-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted);pointer-events:none;}
 .photo-upload-actions{display:flex;flex-direction:column;gap:6px;}
 .photo-upload-actions input[type=file]{display:none;}
@@ -2448,28 +2467,58 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               </div>
               <div class="photo-upload-actions">
                 <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
-                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
+                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Trocar Foto</button>
                 <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
                 <span class="photo-upload-status" id="item-photo-status"></span>
               </div>
             </div>
-            <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
-              <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
-              <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
-                <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
-                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
+            <div id="item-photo-pos-wrap" class="photo-toolbar" style="display:none;">
+              <div class="photo-toolbar-row">
+                <button type="button" class="photo-tool-btn" onclick="photoToolCenter()" title="Centralizar enquadramento">🎯 Centralizar</button>
+                <button type="button" class="photo-tool-btn" onclick="photoToolRotate()" title="Girar 90°">🔄 Girar</button>
+                <button type="button" class="photo-tool-btn" onclick="photoToolAutoCrop()" title="Volta ao enquadramento padrão (centralizado, sem zoom, sem giro)">✂ Corte Automático</button>
               </div>
-              <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
-                <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
-                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">🔍 Zoom</span>
+                <input type="range" min="100" max="220" id="item-photo-zoom" oninput="updateItemPhotoPos()"/>
               </div>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">↔ Horizontal</span>
+                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()"/>
+              </div>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">↕ Vertical</span>
+                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()"/>
+              </div>
+              <input type="hidden" id="item-photo-rotate" value="0"/>
             </div>
           </div>
           <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato" oninput="updateWizardPreview()"/></div>
-          <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview()"></textarea></div>
+          <div class="field">
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Descrição</span>
+              <span id="item-desc-counter" style="font-size:10px;color:var(--muted);text-transform:none;font-weight:400;">0/300</span>
+            </label>
+            <textarea id="item-desc" maxlength="300" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview();document.getElementById('item-desc-counter').textContent=this.value.length+'/300';"></textarea>
+          </div>
           <div class="field-row">
             <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
             <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="updateWizardPreview()"/></div>
+          </div>
+          <div class="price-card" id="price-card-info">
+            <div class="price-card-row">
+              <span>Preço de Venda</span><b id="pc-preco-venda">R$ 0,00</b>
+            </div>
+            <div class="price-card-row" id="pc-economia-row" style="display:none;">
+              <span>Economia (preço promo. vs. venda)</span><b id="pc-economia" style="color:#4ade80;"></b>
+            </div>
+            <div class="price-card-row">
+              <span>Ficha técnica vinculada <span style="font-weight:400;color:var(--muted);">(novo — pra calcular o lucro)</span></span>
+              <select id="item-ficha-vinculada" onchange="updateWizardPreview()" style="max-width:200px;"><option value="">— nenhuma —</option></select>
+            </div>
+            <div class="price-card-row" id="pc-lucro-row" style="display:none;">
+              <span>Lucro (interno — só o admin vê)</span><b id="pc-lucro"></b>
+            </div>
           </div>
           <div class="field-row">
             <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças" oninput="updateWizardPreview()"/></div>
@@ -2549,7 +2598,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         <div class="wizard-step-panel" data-step="aparencia">
           <div class="wizard-step-section-title">5. Aparência — Badges e Etiquetas</div>
           <div class="field">
-            <label>Badge (destaque no cardápio)</label>
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Badge (destaque no cardápio)</span>
+              <button type="button" class="btn secondary sm" onclick="openBadgeLibrary()" style="text-transform:none;font-weight:400;">🏷 Biblioteca de Badges</button>
+            </label>
             <input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/>
           </div>
           <div class="field" style="margin-top:-4px;">
@@ -2672,6 +2724,30 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- v51: modal "Escolher Impressora" foi removido — o botão 🖨 agora sempre imprime direto em
      todas as vias configuradas (que tiverem itens desse pedido), sem esse passo extra. -->
 
+
+<!-- MODAL (novo v107e) 🏷 BIBLIOTECA DE BADGES — presets prontos + personalizados salvos -->
+<div class="modal-overlay" id="badge-library-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <span class="modal-title">🏷 Biblioteca de Badges</span>
+      <button class="modal-close" onclick="closeModal('badge-library-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Prontas</div>
+      <div id="badge-lib-presets" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suas personalizadas</div>
+      <div id="badge-lib-custom" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px;">
+        <div class="field" style="flex:1;min-width:120px;margin:0;"><label>Texto</label><input type="text" id="badge-lib-new-text" placeholder="ex: 🎉 Promoção"/></div>
+        <div class="field" style="margin:0;"><label>Cor</label><input type="color" id="badge-lib-new-color" value="#D9383A" style="width:44px;height:36px;padding:2px;"/></div>
+        <button type="button" class="btn secondary sm" onclick="addCustomBadgeToLibrary()">+ Salvar na Biblioteca</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('badge-library-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
 
 <!-- MODAL (novo v107d) "+ ADICIONAR OPÇÃO" — mini-janela dentro do grupo, salva sem fechar a etapa -->
 <div class="modal-overlay" id="add-option-modal">
@@ -7417,7 +7493,7 @@ function menuItemCardHTML(sec,si,item,ii,allowReorder){
       <div class="mi-card" draggable="${allowReorder?'true':'false'}" data-item-idx="${allowReorder?ii:''}">
         <div class="mi-card-media ${unavailable?'unavailable':''}">
           ${photoUrl
-            ? `<img src="${photoUrl}" alt="${esc(item.name)}" style="object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;"/>`
+            ? `<img src="${photoUrl}" alt="${esc(item.name)}" style="object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;transform:scale(${((item.imagePos&&item.imagePos.zoom)||100)/100}) rotate(${(item.imagePos&&item.imagePos.rotate)||0}deg);"/>`
             : `<div class="mi-thumb-empty">🍽️</div>`}
           ${allowReorder?`<button class="mi-card-drag-handle" title="Arraste pra reordenar">⠿</button>`:''}
           <div class="mi-card-badges">
@@ -7530,11 +7606,13 @@ function resetItemPhotoPreview(url, pos){
   const posWrap=document.getElementById('item-photo-pos-wrap');
   document.getElementById('item-image').value=url||'';
   document.getElementById('item-photo-status').textContent='';
-  const p = pos || {x:50,y:50};
-  document.getElementById('item-image-pos').value = p.x+','+p.y;
+  const p = pos || {x:50,y:50,zoom:100,rotate:0};
+  document.getElementById('item-image-pos').value = [p.x,p.y,p.zoom||100,p.rotate||0].join(',');
   document.getElementById('item-photo-posx').value = p.x;
   document.getElementById('item-photo-posy').value = p.y;
-  img.style.objectPosition = p.x+'% '+p.y+'%';
+  document.getElementById('item-photo-zoom').value = p.zoom||100;
+  document.getElementById('item-photo-rotate').value = p.rotate||0;
+  applyItemPhotoTransform(img, p);
   if(url){
     img.src=url;
     img.style.display='block';
@@ -7549,6 +7627,12 @@ function resetItemPhotoPreview(url, pos){
     placeholder.style.display='flex';
   }
   if(typeof updateWizardPreview==='function') updateWizardPreview(); // v107b: mantém a prévia da foto em dia
+}
+// (novo v107e) aplica x/y (enquadramento) + zoom + rotação no <img> — mesma fórmula usada no
+// cardápio do cliente e na miniatura da lista (ver public/index.html e renderMenuEditor).
+function applyItemPhotoTransform(img, pos){
+  img.style.objectPosition = pos.x+'% '+pos.y+'%';
+  img.style.transform = `scale(${(pos.zoom||100)/100}) rotate(${pos.rotate||0}deg)`;
 }
 // BUG CORRIGIDO (v42 — "caixa de fotos bugada"): antes a foto ia pro servidor do
 // jeito que saía da câmera do celular (muitas vezes 3–8MB), o que passava perto ou
@@ -7615,8 +7699,32 @@ function removeItemPhoto(){ resetItemPhotoPreview(''); }
 function updateItemPhotoPos(){
   const x = document.getElementById('item-photo-posx').value;
   const y = document.getElementById('item-photo-posy').value;
-  document.getElementById('item-image-pos').value = x+','+y;
-  document.getElementById('item-photo-preview').style.objectPosition = x+'% '+y+'%';
+  const zoom = document.getElementById('item-photo-zoom').value;
+  const rotate = document.getElementById('item-photo-rotate').value;
+  document.getElementById('item-image-pos').value = [x,y,zoom,rotate].join(',');
+  applyItemPhotoTransform(document.getElementById('item-photo-preview'), {x,y,zoom,rotate});
+}
+// (novo v107e) 🎯 Centralizar — volta x/y pro meio, mantém zoom e rotação como estavam
+function photoToolCenter(){
+  document.getElementById('item-photo-posx').value = 50;
+  document.getElementById('item-photo-posy').value = 50;
+  updateItemPhotoPos();
+}
+// (novo v107e) 🔄 Girar — soma 90° a cada clique (0→90→180→270→0...)
+function photoToolRotate(){
+  const el = document.getElementById('item-photo-rotate');
+  el.value = ((parseInt(el.value)||0) + 90) % 360;
+  updateItemPhotoPos();
+}
+// (novo v107e) ✂ Corte Automático — volta ao enquadramento padrão (centralizado, sem zoom, sem
+// giro). Não é recorte "inteligente" por IA — é um reset rápido pro ponto de partida mais
+// neutro, deixado assim de propósito pra não prometer um recurso que a foto sozinha não faz.
+function photoToolAutoCrop(){
+  document.getElementById('item-photo-posx').value = 50;
+  document.getElementById('item-photo-posy').value = 50;
+  document.getElementById('item-photo-zoom').value = 100;
+  document.getElementById('item-photo-rotate').value = 0;
+  updateItemPhotoPos();
 }
 
 let editingVariants=[];
@@ -7638,6 +7746,8 @@ function openAddItem(){
   document.getElementById('item-featured-check').checked=false;
   document.getElementById('item-featured').value='false';
   document.getElementById('item-accepts-coupon').checked=true;
+  _pendingFichaId = '';
+  if(document.getElementById('item-ficha-vinculada')) document.getElementById('item-ficha-vinculada').value='';
   ['item-nutri-calories','item-nutri-protein','item-nutri-carbs','item-nutri-fat'].forEach(id=>document.getElementById(id).value='');
   renderAllergenChecks([]);
   resetItemPhotoPreview('', {x:50,y:50});
@@ -7657,6 +7767,7 @@ function openEditItem(si,ii){
   document.getElementById('item-desc').value=item.desc||'';
   document.getElementById('item-price').value=item.price;
   document.getElementById('item-promo-price').value=item.promoPrice||'';
+  _pendingFichaId = item.fichaTecnicaId || '';
   document.getElementById('item-qty').value=item.qty||'';
   document.getElementById('item-sku').value=item.sku||'';
   document.getElementById('item-ean').value=item.ean||'';
@@ -7716,6 +7827,8 @@ function initWizard(isEdit){
   document.getElementById('wizard-btn-delete').style.display = isEdit ? '' : 'none';
   document.getElementById('wizard-btn-duplicate').style.display = isEdit ? '' : 'none';
   goToWizardStep('info');
+  populateFichaSelect();
+  ensureFichasLoaded();
   updateWizardPreview();
 }
 function goToWizardStep(id){
@@ -7780,11 +7893,50 @@ function computeWizardProgress(){
   if(editingVariants.length>0) score+=10;
   return Math.min(100,score);
 }
+let _pendingFichaId = ''; // guarda o vínculo salvo até a lista de fichas técnicas terminar de carregar
+async function ensureFichasLoaded(){
+  if(custosFichas.length===0){
+    try{ custosFichas = await apiGet('/api/custos/fichas') || []; }catch(e){ custosFichas = custosFichas||[]; }
+  }
+  populateFichaSelect();
+  updateWizardPreview();
+}
+function populateFichaSelect(){
+  const sel = document.getElementById('item-ficha-vinculada');
+  if(!sel) return;
+  const cur = sel.value || _pendingFichaId;
+  sel.innerHTML = '<option value="">— nenhuma —</option>' + custosFichas.map(f=>`<option value="${f.id}">${esc(f.nome)} (custo R$ ${Number(f.custoTotal||0).toFixed(2).replace('.',',')})</option>`).join('');
+  if(cur && custosFichas.some(f=>f.id===cur)){ sel.value = cur; _pendingFichaId=''; }
+}
 function updateWizardPreview(){
   const name = document.getElementById('item-name').value.trim() || 'Nome do prato';
   const desc = document.getElementById('item-desc').value.trim();
+  document.getElementById('item-desc-counter').textContent = document.getElementById('item-desc').value.length+'/300';
   const price = parseFloat(document.getElementById('item-price').value)||0;
   const promoPrice = parseFloat(document.getElementById('item-promo-price').value)||0;
+  // (novo) Card de Preço — Economia calculada sozinha a partir do promo; Lucro só aparece se
+  // o item estiver vinculado a uma Ficha Técnica (senão não tem custo pra comparar).
+  document.getElementById('pc-preco-venda').textContent = 'R$ '+price.toFixed(2).replace('.',',');
+  const economiaRow = document.getElementById('pc-economia-row');
+  if(promoPrice>0 && promoPrice<price && price>0){
+    const pct = ((price-promoPrice)/price*100);
+    document.getElementById('pc-economia').textContent = `- R$ ${(price-promoPrice).toFixed(2).replace('.',',')} (${pct.toFixed(0)}%)`;
+    economiaRow.style.display='';
+  } else { economiaRow.style.display='none'; }
+  const fichaSel = document.getElementById('item-ficha-vinculada');
+  const fichaId = fichaSel ? fichaSel.value : '';
+  const ficha = fichaId ? custosFichas.find(f=>f.id===fichaId) : null;
+  const lucroRow = document.getElementById('pc-lucro-row');
+  if(ficha){
+    const precoCobrado = (promoPrice>0 && promoPrice<price) ? promoPrice : price;
+    const custo = Number(ficha.custoTotal)||0;
+    const lucro = precoCobrado - custo;
+    const margem = precoCobrado>0 ? (lucro/precoCobrado*100) : 0;
+    const lucroEl = document.getElementById('pc-lucro');
+    lucroEl.textContent = `R$ ${lucro.toFixed(2).replace('.',',')} (${margem.toFixed(0)}% de margem)`;
+    lucroEl.style.color = lucro>=0 ? '#4ade80' : '#f87171';
+    lucroRow.style.display='';
+  } else { lucroRow.style.display='none'; }
   const image = document.getElementById('item-image').value.trim();
   const badgeMode = (document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global';
   const badgeText = document.getElementById('item-badge').value.trim();
@@ -8081,6 +8233,59 @@ function submitAddOptionModal(){
 }
 // (novo) "+ Novo Grupo" com atalhos prontos — cria o grupo já com nome/tipo comuns preenchidos,
 // pra não digitar do zero toda vez. "Grupo em branco" continua disponível igual sempre foi.
+// (novo v107e) 🏷 Biblioteca de Badges — prontas (fixas) + personalizadas (salvas em
+// cfg.badgeLibrary, persistidas junto com o resto da configuração — mesmo /api/config de sempre).
+const BADGE_PRESETS = [
+  {label:'🔥 Destaque', color:'#D9383A'},
+  {label:'👑 Premium', color:'#D4A373'},
+  {label:'⭐ Mais Vendido', color:'#C5A059'},
+  {label:'🆕 Novidade', color:'#2f9e44'},
+  {label:'🌶️ Picante', color:'#C83232'},
+  {label:'🌱 Vegano', color:'#2f9e44'},
+  {label:'⏰ Por Tempo Limitado', color:'#D9383A'},
+  {label:'♻️ Sustentável', color:'#2f9e44'},
+];
+function openBadgeLibrary(){
+  document.getElementById('badge-lib-presets').innerHTML = BADGE_PRESETS.map((b,i)=>`
+    <button type="button" class="btn secondary sm" style="border-color:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>`).join('');
+  renderCustomBadgeLibrary();
+  openModal('badge-library-modal');
+}
+function renderCustomBadgeLibrary(){
+  const list = cfg.badgeLibrary || [];
+  const el = document.getElementById('badge-lib-custom');
+  el.innerHTML = list.length ? list.map((b,i)=>`
+    <span style="display:inline-flex;align-items:center;gap:4px;">
+      <button type="button" class="btn secondary sm" style="border-color:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>
+      <button type="button" class="vopt-icon-btn" onclick="removeCustomBadgeFromLibrary(${i})" title="Remover da biblioteca">🗑</button>
+    </span>`).join('') : '<div style="font-size:11px;color:var(--muted);">Nenhuma badge personalizada salva ainda.</div>';
+}
+function applyBadgeFromLibrary(label,color){
+  document.getElementById('item-badge').value = label;
+  document.getElementById('item-badge-color').value = color;
+  document.getElementById('item-badgemode-manual').checked = true;
+  closeModal('badge-library-modal');
+  updateWizardPreview();
+}
+async function addCustomBadgeToLibrary(){
+  const text = document.getElementById('badge-lib-new-text').value.trim();
+  if(!text){ alert('Digite o texto da badge.'); return; }
+  const color = document.getElementById('badge-lib-new-color').value||'#D9383A';
+  cfg.badgeLibrary = cfg.badgeLibrary || [];
+  cfg.badgeLibrary.push({label:text,color});
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ cfg.badgeLibrary.pop(); alert(res.data.error||'Erro ao salvar badge.'); return; }
+  document.getElementById('badge-lib-new-text').value='';
+  renderCustomBadgeLibrary();
+  showToast('✅ Badge salva', `"${text}" adicionada à Biblioteca.`);
+}
+async function removeCustomBadgeFromLibrary(i){
+  if(!confirm('Remover essa badge da Biblioteca? (não afeta itens que já usam esse texto, só some da lista de atalhos)'))return;
+  const removed = cfg.badgeLibrary.splice(i,1);
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ cfg.badgeLibrary.splice(i,0,removed[0]); alert(res.data.error||'Erro ao remover badge.'); return; }
+  renderCustomBadgeLibrary();
+}
 const GROUP_PRESETS = [
   {label:'🍣 Sabores', name:'Sabores', type:'single'},
   {label:'🥫 Molhos', name:'Molhos', type:'multiple'},
@@ -8248,7 +8453,8 @@ async function saveItem(andNew){
   const cleanVariants = editingVariants
     .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
     .filter(g=>g.options.length>0);
-  const [posX, posY] = document.getElementById('item-image-pos').value.split(',').map(n=>parseInt(n)||50);
+  const _posParts = document.getElementById('item-image-pos').value.split(',');
+  const posX = parseInt(_posParts[0])||50, posY = parseInt(_posParts[1])||50, posZoom = parseInt(_posParts[2])||100, posRotate = parseInt(_posParts[3])||0;
   const nowIso = new Date().toISOString();
   const existing = ii>-1 ? menu[si].items[ii] : null;
   const promoPriceRaw = parseFloat(document.getElementById('item-promo-price').value);
@@ -8265,7 +8471,7 @@ async function saveItem(andNew){
     badgeMode:(document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global',
     badgeColor: document.getElementById('item-badge-color').value||'#D9383A', // (novo)
     image:document.getElementById('item-image').value.trim(),
-    imagePos:{x:posX,y:posY},
+    imagePos:{x:posX,y:posY,zoom:posZoom,rotate:posRotate},
     variants:cleanVariants,
     available:document.getElementById('item-available-check').checked, // v107b: etapa "Disponibilidade" do wizard
     featured: document.getElementById('item-featured-check').checked, // (novo)
@@ -8273,6 +8479,7 @@ async function saveItem(andNew){
     ean: document.getElementById('item-ean').value.trim(), // (novo)
     tags: tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [], // (novo)
     promoPrice: (promoPriceRaw>0) ? promoPriceRaw : null, // (novo) — ainda não conectado à vitrine/checkout, ver aviso na etapa 8
+    fichaTecnicaId: document.getElementById('item-ficha-vinculada') ? (document.getElementById('item-ficha-vinculada').value||null) : null, // (novo) — usado só pro cálculo de Lucro interno no painel
     stock: stockRaw ? (parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
     acceptsCoupon: document.getElementById('item-accepts-coupon').checked, // (novo) — informativo por enquanto
     allergens: getSelectedAllergens(), // (novo)

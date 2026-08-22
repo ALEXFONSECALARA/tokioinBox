@@ -2968,7 +2968,7 @@ function renderMenu() {
         <div class="item-card" id="card-${key}" style="${isAvail ? '' : 'opacity:.55;'}">
           ${badgeAboveImg ? badgeHtml : ''}
           <div class="item-img" style="position:relative;">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;">` : itemPlaceholderHtml(sec.icon)}
+            ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;transform:scale(${((item.imagePos&&item.imagePos.zoom)||100)/100}) rotate(${(item.imagePos&&item.imagePos.rotate)||0}deg);">` : itemPlaceholderHtml(sec.icon)}
             ${badgeInsideImg ? `<div style="${badgeCornerStyle}">${badgeHtml}</div>` : ''}
             <button onclick="toggleFavorite('${key}', event)" title="Favoritar" style="position:absolute;top:6px;right:6px;background:rgba(10,10,10,.55);border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">${isFav ? '❤️' : '🤍'}</button>
           </div>
