@@ -267,31 +267,49 @@ table{max-width:100%;}
    nos 200px simplesmente ficava cortado (janela "cortada"). Agora a coluna é mais larga,
    o item de categoria quebra em duas linhas (nome em cima, ações embaixo) e nada usa
    overflow:hidden, então o conteúdo sempre aparece inteiro.  */
-.menu-editor{display:grid;grid-template-columns:260px 1fr;gap:16px;height:calc(100vh - 140px);}
-.menu-cats-wrap{display:flex;flex-direction:column;gap:8px;min-width:0;}
-.menu-cats-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.menu-cats{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-y:auto;overflow-x:hidden;flex:1;}
-.menu-cat-item{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;display:flex;flex-direction:column;gap:6px;}
-.menu-cat-item:hover{background:var(--panel);}
-.menu-cat-item.active{background:var(--red-bg);color:var(--red-lt);border-left:2px solid var(--red);}
-.menu-cat-item-top{display:flex;align-items:center;gap:8px;min-width:0;}
-.menu-cat-name{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
-.menu-cat-count{font-size:11px;color:var(--muted);flex-shrink:0;}
-.menu-cat-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.cat-actions{display:flex;gap:6px;}
-.cat-actions button{border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:13px;padding:4px 8px;border-radius:6px;transition:all .15s;white-space:nowrap;}
-.cat-actions button.edit{background:var(--blue-bg);color:var(--blue);border-color:var(--blue);}
-.cat-actions button.edit:hover{background:var(--blue);color:#fff;}
-.cat-actions button.del{background:var(--red-bg);color:var(--red-lt);border-color:var(--red-dk);}
-.cat-actions button.del:hover{background:var(--red);color:#fff;}
-.menu-items-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
-.menu-items-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-/* v77: BUG CORRIGIDO — faltava esse container ser flex também; sem isso, "flex:1" do
-   .menu-items-body (mais abaixo) não tinha efeito nenhum (só funciona dentro de um pai flex),
-   e a lista de produtos podia ficar cortada/sem rolagem própria em vez de rolar sozinha
-   mantendo a busca e os filtros sempre visíveis no topo. */
-#menu-tab-content-itens{display:flex;flex-direction:column;flex:1;min-height:0;overflow:hidden;}
-.menu-items-body{flex:1;overflow-y:auto;padding:14px;}
+/* ═══════════════════════════════════════════
+   v107h — EDITOR DE CARDÁPIO — categorias viraram barra horizontal de cards (sem sidebar)
+   ═══════════════════════════════════════════ */
+.menu-page-head{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:14px;}
+.menu-page-subtitle{font-size:13px;color:var(--muted);}
+.menu-page-head-actions{display:flex;gap:8px;flex-wrap:wrap;}
+/* barra de categorias: sticky no topo do scroll (.content{overflow-y:auto}) pra continuar
+   acessível durante a rolagem, com rolagem horizontal própria (desktop e mobile). */
+.cat-tabbar-sticky{position:sticky;top:0;z-index:15;background:var(--bg);padding:2px 0 12px;margin:-2px 0 2px;}
+.cat-tabbar{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 8px;scrollbar-width:thin;-webkit-overflow-scrolling:touch;}
+.cat-tabbar::-webkit-scrollbar{height:6px;}
+.cat-tabbar::-webkit-scrollbar-thumb{background:var(--border2);border-radius:10px;}
+.cat-tab-todos,.cat-tab{flex:0 0 auto;display:flex;align-items:center;gap:8px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 14px;cursor:pointer;transition:all .15s;user-select:none;box-shadow:0 1px 2px rgba(0,0,0,.15);}
+.cat-tab-todos:hover,.cat-tab:hover{border-color:var(--border2);transform:translateY(-1px);}
+.cat-tab-todos.active,.cat-tab.active{background:var(--red-bg);border-color:var(--red);color:var(--red-lt);box-shadow:0 4px 14px rgba(220,38,38,.18);}
+.cat-tab.dragging{opacity:.4;}
+.cat-tab-icon{font-size:17px;line-height:1;flex-shrink:0;}
+.cat-tab-main{display:flex;align-items:center;gap:8px;min-width:0;}
+.cat-tab-name{font-size:13.5px;font-weight:600;white-space:nowrap;max-width:150px;overflow:hidden;text-overflow:ellipsis;}
+.cat-tab-count{font-size:10.5px;font-weight:700;color:var(--muted);background:var(--border2);border-radius:20px;padding:1px 7px;flex-shrink:0;}
+.cat-tab.active .cat-tab-count{background:rgba(255,255,255,.18);color:var(--red-lt);}
+.cat-tab-drag-handle{cursor:grab;color:var(--muted);font-size:12px;flex-shrink:0;}
+.cat-tab-kebab-wrap{position:relative;flex-shrink:0;}
+.cat-tab-kebab{background:transparent;border:none;color:inherit;opacity:.55;font-size:15px;line-height:1;padding:2px 4px;border-radius:6px;cursor:pointer;}
+.cat-tab-kebab:hover{opacity:1;background:rgba(255,255,255,.08);}
+.cat-tab-dropdown{position:absolute;top:calc(100% + 6px);right:0;background:var(--card);border:1px solid var(--border);border-radius:10px;box-shadow:0 10px 26px rgba(0,0,0,.45);padding:5px;display:none;flex-direction:column;min-width:172px;z-index:30;}
+.cat-tab-dropdown.open{display:flex;}
+.cat-tab-dropdown button{display:flex;align-items:center;gap:8px;background:none;border:none;color:var(--white);font-size:12.5px;text-align:left;padding:8px 10px;border-radius:7px;cursor:pointer;white-space:nowrap;}
+.cat-tab-dropdown button:hover{background:var(--panel);}
+.cat-tab-dropdown button.danger{color:var(--red-lt);}
+.cat-tab-dropdown button:disabled{opacity:.3;cursor:default;}
+.cat-tab-dropdown button:disabled:hover{background:none;}
+.cat-tabbar-empty{padding:16px;color:var(--muted);font-size:12.5px;}
+.menu-items-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
+.menu-items-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.menu-toolbar-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px 14px;border-bottom:1px solid var(--border);}
+.menu-search-input{flex:1 1 220px;min-width:0;background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 12px;color:var(--white);font-size:12.5px;}
+.menu-sort-select{background:var(--bg);border:1px solid var(--border);border-radius:8px;padding:9px 10px;color:var(--white);font-size:12px;flex:0 0 auto;}
+.menu-items-body{padding:16px;}
+/* botão flutuante "+" — sobretudo pra uso rápido no celular (o "+ Novo Item" do cabeçalho já
+   cobre desktop, mas some/quebra quando o cabeçalho aperta no mobile). */
+.mi-fab{display:none;position:fixed;right:18px;bottom:22px;width:54px;height:54px;border-radius:50%;background:var(--red);color:#fff;border:none;font-size:26px;line-height:1;box-shadow:0 8px 22px rgba(220,38,38,.45);cursor:pointer;z-index:40;align-items:center;justify-content:center;}
+.mi-fab:active{transform:scale(.94);}
 .menu-item-row{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px;margin-bottom:10px;display:grid;grid-template-columns:20px 46px 1fr auto auto auto auto auto;gap:10px;align-items:center;}
 .o-item-results{position:relative;max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:14px;margin-top:4px;background:var(--bg);}
 .o-item-results:empty{display:none;border:none;}
@@ -451,7 +469,7 @@ table{max-width:100%;}
 .menu-filter-chip{border:1px solid var(--border2);background:var(--panel);color:var(--muted);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .menu-filter-chip:hover{border-color:var(--gold);color:var(--white);}
 .menu-filter-chip.active{background:var(--red);border-color:var(--red);color:#fff;}
-.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;padding:2px;}
+.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:2px;}
 .mi-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:default;}
 .mi-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.35);border-color:var(--border2);}
 .mi-card.dragging{opacity:.4;}
@@ -484,21 +502,25 @@ table{max-width:100%;}
 .mi-card-actions .ca-move{background:var(--border2);color:var(--muted);}
 .mi-card-actions .ca-move:hover:not(:disabled){background:var(--gold-bg);color:var(--gold);transform:scale(1.08);}
 .mi-card-actions .ca-move:disabled{opacity:.35;cursor:default;}
+@media (max-width:1024px){
+  .mi-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+}
 @media (max-width:640px){
   .mi-grid{grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px;}
   .mi-card-name{font-size:13px;}
   .mi-card-desc{font-size:11px;min-height:2.4em;}
 }
-/* v76: BUG CORRIGIDO — essa regra responsiva do editor de cardápio precisa vir DEPOIS da regra
-   base ".menu-editor{grid-template-columns:260px 1fr}" (lá em cima, perto do topo do arquivo)
-   pra realmente ganhar no empate de especificidade CSS. Colocada antes, o navegador ignorava e
-   o cardápio ficava espremido/cortado no celular mesmo com a media query "batendo". */
+/* v107h: categorias em barra horizontal — no celular ela continua horizontal (sem virar
+   coluna), sempre com rolagem própria e sem nunca deixar os cards passarem da tela. */
 @media (max-width:760px){
-  .menu-editor{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;}
-  .menu-cats-wrap{flex-direction:row;}
-  .menu-cats{display:flex;overflow-x:auto;overflow-y:hidden;max-height:120px;}
-  .menu-cat-item{flex:0 0 210px;border-bottom:none;border-right:1px solid var(--border);}
-  .menu-items-panel{min-height:60vh;}
+  .menu-page-head{gap:8px;}
+  .menu-page-head-actions{width:100%;}
+  .menu-page-head-actions .btn{flex:1 1 auto;font-size:11.5px;padding:8px 6px;}
+  .cat-tab-name{max-width:110px;}
+  .menu-items-header{padding:12px 14px;}
+  .menu-toolbar-row{padding:10px;}
+  .menu-sort-select{flex:1 1 140px;}
+  .mi-fab{display:flex;}
 }
 
 /* ── MODAL: 📠 Estações de Impressão (por item do cardápio) ── */
@@ -1321,42 +1343,55 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 
     <!-- ── CARDÁPIO ── -->
     <div class="page" id="page-cardapio">
-      <div class="menu-editor">
-        <div class="menu-cats-wrap">
-          <div class="menu-cats-header">
-            <span class="panel-title" style="font-size:12px;">Categorias</span>
-            <div style="display:flex;gap:6px;">
-              <button class="btn secondary sm" onclick="openImportMenu()" title="Substituir o cardápio inteiro por um arquivo JSON">📥 Importar</button>
-              <button class="btn secondary sm" onclick="openBulkPriceModal()" title="Ajustar preços de várias categorias/itens de uma vez">💰 Ajustar preços</button>
-              <button class="btn secondary sm" onclick="openLibGroupsModal()" title="Grupos de opções (tamanho, sabores, molhos...) reutilizáveis em vários itens">📚 Grupos Reutilizáveis</button>
-              <button class="btn primary sm" onclick="openAddCategory()" title="Nova categoria de prato">+ Categoria</button>
-            </div>
-          </div>
-          <div class="menu-cats" id="menu-cats-list"></div>
+      <div class="menu-page-head">
+        <div class="menu-page-head-text">
+          <div class="menu-page-subtitle">Gerencie e organize os itens do seu cardápio</div>
         </div>
-        <div class="menu-items-panel">
-          <div class="menu-items-header">
-            <span class="panel-title" id="menu-active-cat-title">Selecione uma categoria</span>
-            <button class="btn primary sm" onclick="openAddItem()">+ Novo Item</button>
+        <div class="menu-page-head-actions">
+          <button class="btn secondary sm" onclick="openImportMenu()" title="Substituir o cardápio inteiro por um arquivo JSON">📥 Importar</button>
+          <button class="btn secondary sm" onclick="openBulkPriceModal()" title="Ajustar preços de várias categorias/itens de uma vez">💰 Ajustar preços</button>
+          <button class="btn secondary sm" onclick="openLibGroupsModal()" title="Grupos de opções (tamanho, sabores, molhos...) reutilizáveis em vários itens">📚 Grupos Reutilizáveis</button>
+          <button class="btn primary sm" onclick="openAddCategory()" title="Nova categoria de prato">+ Categoria</button>
+        </div>
+      </div>
+
+      <!-- v107h: categorias viraram uma barra horizontal de cards/abas (sem coluna lateral).
+           Fica "grudada" no topo do scroll (sticky) pra continuar acessível rolando a página. -->
+      <div class="cat-tabbar-sticky">
+        <div class="cat-tabbar" id="menu-cats-list"></div>
+      </div>
+
+      <div class="menu-items-panel">
+        <div class="menu-items-header">
+          <span class="panel-title" id="menu-active-cat-title">Selecione uma categoria</span>
+          <button class="btn primary sm" onclick="openAddItem()">+ Novo Item</button>
+        </div>
+        <div id="menu-tab-content-itens">
+          <div class="menu-toolbar-row">
+            <input id="menu-search" placeholder="🔎 Buscar prato em todo o cardápio..." oninput="onMenuSearch(this.value)" class="menu-search-input"/>
+            <select id="menu-sort" class="menu-sort-select" onchange="setMenuSort(this.value)" title="Ordenar por">
+              <option value="padrao">↕ Ordem padrão</option>
+              <option value="az">A → Z</option>
+              <option value="za">Z → A</option>
+              <option value="menor">Preço: menor primeiro</option>
+              <option value="maior">Preço: maior primeiro</option>
+            </select>
+            <button type="button" class="btn secondary sm" onclick="openClientPreview()" title="Ver como o cliente vê o cardápio">👁 Ver como cliente</button>
           </div>
-          <div id="menu-tab-content-itens">
-            <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
-              <input id="menu-search" placeholder="🔎 Buscar prato em todo o cardápio..." oninput="onMenuSearch(this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--white);font-size:12px;"/>
-            </div>
-            <div class="menu-filter-bar" id="menu-filter-bar">
-              <button type="button" class="menu-filter-chip active" data-filter="todos" onclick="setMenuFilter('todos')">🍽️ Todos</button>
-              <button type="button" class="menu-filter-chip" data-filter="disponivel" onclick="setMenuFilter('disponivel')">✅ Disponível</button>
-              <button type="button" class="menu-filter-chip" data-filter="indisponivel" onclick="setMenuFilter('indisponivel')">🚫 Indisponível</button>
-              <button type="button" class="menu-filter-chip" data-filter="promocao" onclick="setMenuFilter('promocao')">🏷️ Promoção</button>
-              <button type="button" class="menu-filter-chip" data-filter="destaque" onclick="setMenuFilter('destaque')">⭐ Destaque</button>
-              <button type="button" class="btn secondary sm" style="margin-left:auto;" onclick="openClientPreview()" title="Ver como o cliente vê o cardápio">👁 Ver como cliente</button>
-            </div>
-            <div class="menu-items-body mi-grid" id="menu-items-body">
-              <div style="text-align:center;padding:40px;color:var(--muted)">Selecione uma categoria</div>
-            </div>
+          <div class="menu-filter-bar" id="menu-filter-bar">
+            <button type="button" class="menu-filter-chip active" data-filter="todos" onclick="setMenuFilter('todos')">🍽️ Todos</button>
+            <button type="button" class="menu-filter-chip" data-filter="disponivel" onclick="setMenuFilter('disponivel')">✅ Disponível</button>
+            <button type="button" class="menu-filter-chip" data-filter="indisponivel" onclick="setMenuFilter('indisponivel')">🚫 Indisponível</button>
+            <button type="button" class="menu-filter-chip" data-filter="promocao" onclick="setMenuFilter('promocao')">🏷️ Promoção</button>
+            <button type="button" class="menu-filter-chip" data-filter="destaque" onclick="setMenuFilter('destaque')">⭐ Destaque</button>
+          </div>
+          <div class="menu-items-body mi-grid" id="menu-items-body">
+            <div style="text-align:center;padding:40px;color:var(--muted)">Selecione uma categoria</div>
           </div>
         </div>
       </div>
+
+      <button type="button" class="mi-fab" onclick="openAddItem()" title="Novo item">+</button>
     </div>
 
     <!-- ── CUSTOS & FICHA TÉCNICA (v43: antes era o programa separado "shogatsu-custos") ── -->
@@ -7179,7 +7214,20 @@ async function importarCardapioCustos(){
 // ═══════════════════════════════════════════
 let menuSearchQuery='';
 let menuFilterState='todos';
+let menuSortMode='padrao'; // v107h: só reorganiza a EXIBIÇÃO (grid), não mexe na ordem salva no banco
 function onMenuSearch(v){ menuSearchQuery=(v||'').trim().toLowerCase(); renderMenuItems(); }
+function setMenuSort(v){ menuSortMode=v||'padrao'; renderMenuItems(); }
+// v107h: aplica a ordenação escolhida em cima de uma lista de {sec,si,item,ii} — puramente visual,
+// o array `menu` (e o que é salvo via saveMenuSilently) nunca é tocado por essa função.
+function applyMenuSort(list){
+  if(menuSortMode==='padrao') return list;
+  const sorted=list.slice();
+  if(menuSortMode==='az') sorted.sort((a,b)=>(a.item.name||'').localeCompare(b.item.name||'','pt-BR'));
+  else if(menuSortMode==='za') sorted.sort((a,b)=>(b.item.name||'').localeCompare(a.item.name||'','pt-BR'));
+  else if(menuSortMode==='menor') sorted.sort((a,b)=>Number(a.item.price||0)-Number(b.item.price||0));
+  else if(menuSortMode==='maior') sorted.sort((a,b)=>Number(b.item.price||0)-Number(a.item.price||0));
+  return sorted;
+}
 function setMenuFilter(f){
   menuFilterState=f;
   document.querySelectorAll('#menu-filter-bar .menu-filter-chip').forEach(b=>b.classList.toggle('active', b.dataset.filter===f));
@@ -7221,35 +7269,56 @@ function menuFilterPass(item, si, ii){
   if(menuFilterState==='destaque') return itemHasBadge(item);
   return true;
 }
+// v107h: categorias em barra horizontal de cards/abas (era coluna lateral). Mesmos dados
+// (`menu`) e mesmas ações de sempre (editar/copiar/excluir/reordenar categoria) — só que
+// compactadas num menu "⋮" pra manter o card limpo, mais um botão "Todos" novo que mostra
+// o cardápio inteiro (todas as categorias juntas) em vez de escolher uma só.
 function renderMenuEditor(){
-  if(activeCatIdx>=menu.length) activeCatIdx=Math.max(0,menu.length-1);
-  document.getElementById('menu-cats-list').innerHTML = menu.length===0
-    ? '<div style="text-align:center;padding:30px 12px;color:var(--muted);font-size:12px;">Nenhuma categoria ainda.<br>Clique em + Categoria.</div>'
-    : menu.map((s,i)=>`
-    <div class="menu-cat-item ${i===activeCatIdx?'active':''}" draggable="true" data-cat-idx="${i}" onclick="selectCat(${i})">
-      <div class="menu-cat-item-top">
-        <span style="cursor:grab;" title="Arraste pra reordenar">⠿</span>
-        <span>${s.icon||'🍽️'}</span>
-        <span class="menu-cat-name" title="${s.title}">${s.title}</span>
-        <span class="menu-cat-count">${s.items.length}</span>
-      </div>
-      <div class="menu-cat-item-bottom">
-        <span class="cat-reorder">
-          <button onclick="event.stopPropagation();moveCategory(${i},-1)" ${i===0?'disabled':''} title="Mover para cima">▲</button>
-          <button onclick="event.stopPropagation();moveCategory(${i},1)" ${i===menu.length-1?'disabled':''} title="Mover para baixo">▼</button>
-        </span>
-        <span class="cat-actions">
-          <button class="edit" onclick="event.stopPropagation();openEditCategory(${i})" title="Editar categoria">✏️</button>
-          <button class="edit" onclick="event.stopPropagation();openCopyCategoryPicker(${i})" title="Copiar todos os itens dessa categoria pra outra">📋</button>
-          <button class="del" onclick="event.stopPropagation();deleteCategory(${i})" title="Excluir categoria">🗑</button>
-        </span>
-      </div>
+  if(typeof activeCatIdx==='number' && activeCatIdx>=menu.length) activeCatIdx=Math.max(0,menu.length-1);
+  const totalItems = menu.reduce((n,s)=>n+s.items.length,0);
+  const todosTab = `
+    <div class="cat-tab-todos ${activeCatIdx==='all'?'active':''}" onclick="selectAllCats()" title="Ver o cardápio inteiro">
+      <span class="cat-tab-icon">🍽️</span>
+      <span class="cat-tab-main"><span class="cat-tab-name">Todos</span><span class="cat-tab-count">${totalItems}</span></span>
+    </div>`;
+  const catTabs = menu.map((s,i)=>`
+    <div class="cat-tab ${i===activeCatIdx?'active':''}" draggable="true" data-cat-idx="${i}" onclick="selectCat(${i})">
+      <span class="cat-tab-drag-handle" title="Arraste pra reordenar">⠿</span>
+      <span class="cat-tab-icon">${s.icon||'🍽️'}</span>
+      <span class="cat-tab-main"><span class="cat-tab-name" title="${esc(s.title)}">${esc(s.title)}</span><span class="cat-tab-count">${s.items.length}</span></span>
+      <span class="cat-tab-kebab-wrap">
+        <button type="button" class="cat-tab-kebab" onclick="event.stopPropagation();toggleCatMenu(${i})" title="Mais ações">⋮</button>
+        <div class="cat-tab-dropdown" id="cat-dropdown-${i}">
+          <button onclick="event.stopPropagation();closeCatMenus();openEditCategory(${i})">✏️ Editar categoria</button>
+          <button onclick="event.stopPropagation();closeCatMenus();openCopyCategoryPicker(${i})">📋 Copiar itens p/ outra</button>
+          <button onclick="event.stopPropagation();closeCatMenus();moveCategory(${i},-1)" ${i===0?'disabled':''}>◀ Mover p/ esquerda</button>
+          <button onclick="event.stopPropagation();closeCatMenus();moveCategory(${i},1)" ${i===menu.length-1?'disabled':''}>▶ Mover p/ direita</button>
+          <button class="danger" onclick="event.stopPropagation();closeCatMenus();deleteCategory(${i})">🗑 Excluir categoria</button>
+        </div>
+      </span>
     </div>`).join('');
+  document.getElementById('menu-cats-list').innerHTML = todosTab + (menu.length===0
+    ? '<div class="cat-tabbar-empty">Nenhuma categoria ainda. Clique em + Categoria.</div>'
+    : catTabs);
   setupCatDragDrop();
   renderMenuItems();
 }
-// v76: arrastar-e-soltar pra reordenar categorias (além dos botões ▲▼, que continuam
-// funcionando normalmente — o arrastar é só um atalho a mais).
+// menu "⋮" de cada card de categoria — só um aberto por vez, fecha ao clicar fora.
+function toggleCatMenu(i){
+  const dd = document.getElementById('cat-dropdown-'+i);
+  if(!dd) return;
+  const wasOpen = dd.classList.contains('open');
+  closeCatMenus();
+  if(!wasOpen) dd.classList.add('open');
+}
+function closeCatMenus(){
+  document.querySelectorAll('.cat-tab-dropdown.open').forEach(d=>d.classList.remove('open'));
+}
+document.addEventListener('click', e=>{
+  if(!e.target.closest('.cat-tab-kebab-wrap')) closeCatMenus();
+});
+// v76: arrastar-e-soltar pra reordenar categorias (além dos botões ◀▶ no menu "⋮", que
+// continuam funcionando normalmente — o arrastar é só um atalho a mais).
 function setupCatDragDrop(){
   const container = document.getElementById('menu-cats-list');
   if(!container || container._dragBound) return;
@@ -7283,6 +7352,9 @@ function setupCatDragDrop(){
 }
 
 function selectCat(i){activeCatIdx=i;document.getElementById('menu-search').value='';menuSearchQuery='';renderMenuEditor();}
+// v107h: botão "Todos" — mostra o cardápio inteiro (todas as categorias) numa lista só,
+// respeitando os filtros rápidos e a ordenação, do mesmo jeito que o modo de busca já fazia.
+function selectAllCats(){activeCatIdx='all';document.getElementById('menu-search').value='';menuSearchQuery='';renderMenuEditor();}
 function moveCategory(i,dir){
   const j=i+dir;
   if(j<0||j>=menu.length)return;
@@ -7309,12 +7381,28 @@ function itemMatches(item,q){
 function renderMenuItems(){
   // Modo busca: procura em TODAS as categorias, não só na selecionada
   if(menuSearchQuery){
-    const results=[];
+    let results=[];
     menu.forEach((sec,si)=>sec.items.forEach((item,ii)=>{ if(itemMatches(item,menuSearchQuery) && menuFilterPass(item,si,ii)) results.push({sec,si,item,ii}); }));
+    results=applyMenuSort(results);
     document.getElementById('menu-active-cat-title').textContent=`🔎 Resultados para "${menuSearchQuery}" (${results.length})`;
     document.getElementById('menu-items-body').innerHTML=results.length===0
       ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum prato encontrado.</div>'
       :results.map(({sec,si,item,ii})=>menuItemCardHTML(sec,si,item,ii,false)).join('');
+    return;
+  }
+  // v107h: botão "Todos" — cardápio inteiro numa lista só (mesmas categorias/itens, só a
+  // exibição muda; nada é reordenado no banco).
+  if(activeCatIdx==='all'){
+    let results=[];
+    menu.forEach((sec,si)=>sec.items.forEach((item,ii)=>{ if(menuFilterPass(item,si,ii)) results.push({sec,si,item,ii}); }));
+    results=applyMenuSort(results);
+    const totalItems = menu.reduce((n,s)=>n+s.items.length,0);
+    document.getElementById('menu-active-cat-title').textContent=`🍽️ Todo o cardápio (${totalItems})`;
+    document.getElementById('menu-items-body').innerHTML=totalItems===0
+      ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Crie uma categoria pra começar a montar o cardápio.</div>'
+      :(results.length===0
+        ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item nesse filtro.</div>'
+        :results.map(({sec,si,item,ii})=>menuItemCardHTML(sec,si,item,ii,false)).join(''));
     return;
   }
   const sec=menu[activeCatIdx];
@@ -7324,13 +7412,15 @@ function renderMenuItems(){
     return;
   }
   document.getElementById('menu-active-cat-title').textContent=sec.icon+' '+sec.title;
-  const visibleItems = sec.items.map((item,ii)=>({item,ii})).filter(({item,ii})=>menuFilterPass(item,activeCatIdx,ii));
+  const allowReorder = menuSortMode==='padrao'; // reordenar por arraste só faz sentido na ordem padrão
+  let visibleItems = sec.items.map((item,ii)=>({item,ii})).filter(({item,ii})=>menuFilterPass(item,activeCatIdx,ii));
+  if(!allowReorder) visibleItems = applyMenuSort(visibleItems.map(({item,ii})=>({sec,si:activeCatIdx,item,ii}))).map(({item,ii})=>({item,ii}));
   document.getElementById('menu-items-body').innerHTML=sec.items.length===0
     ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item. Clique em + Novo Item.</div>'
     :(visibleItems.length===0
       ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item nesse filtro.</div>'
-      :visibleItems.map(({item,ii})=>menuItemCardHTML(sec,activeCatIdx,item,ii,true)).join(''));
-  setupItemDragDrop();
+      :visibleItems.map(({item,ii})=>menuItemCardHTML(sec,activeCatIdx,item,ii,allowReorder)).join(''));
+  if(allowReorder) setupItemDragDrop();
 }
 // v73: rótulo do badge na listagem do painel, respeitando herdar-global/personalizar/sem-badge
 function menuItemBadgeLabelHTML(item){
