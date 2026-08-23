@@ -325,7 +325,12 @@ table{max-width:100%;}
    visual pedida. Campos/API continuam os mesmos + campos novos guardados como chaves extras
    no mesmo objeto `item` (ver comentário no HTML da página). */
 .item-editor-page{max-width:1400px;margin:0 auto;}
-.item-editor-header{margin-bottom:18px;}
+/* v107g — cabeçalho fixo durante toda a edição, como pedido ("sempre visível ao rolar"): como o
+   editor de item é uma página cheia (não modal), o container que rola é o `.content` (ver
+   .content{overflow-y:auto}); sticky aqui gruda o cabeçalho — com todos os botões de ação já
+   dentro dele (Cancelar/Visualizar/Duplicar/Excluir/Salvar) — no topo desse scroll, sem precisar
+   duplicar os botões numa segunda barra fixa embaixo. */
+.item-editor-header{margin-bottom:18px;position:sticky;top:0;z-index:20;background:var(--bg);padding-bottom:14px;}
 .item-editor-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .item-editor-header-left{min-width:0;flex:1;}
 .item-editor-title{font-size:24px;font-weight:800;margin:2px 0 4px;color:var(--white);}
@@ -338,6 +343,7 @@ table{max-width:100%;}
 .wizard-status-pill.available{color:#4ade80;border-color:#4ade8055;}
 .wizard-status-pill.unavailable{color:#f87171;border-color:#f8717155;}
 .wizard-status-pill.featured-on{color:var(--gold);border-color:var(--gold);}
+.wizard-status-pill.hidden-state{color:#9ca3af;border-color:#9ca3af55;background:rgba(156,163,175,.1);}
 .wizard-progress-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;max-width:420px;}
 .wizard-progress-bar{flex:1;height:5px;background:var(--card);border-radius:3px;overflow:hidden;}
 .wizard-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-2,#C5A059),var(--gold));transition:width .25s;}
@@ -2449,6 +2455,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     <input type="hidden" id="item-image-pos" value="50,50"/>
     <input type="hidden" id="item-available" value="true"/>
     <input type="hidden" id="item-featured" value="false"/>
+    <input type="hidden" id="item-hidden" value="false"/>
 
     <div class="wizard-layout">
       <div class="wizard-steps" id="wizard-steps"></div>
@@ -2501,8 +2508,8 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <textarea id="item-desc" maxlength="300" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview();document.getElementById('item-desc-counter').textContent=this.value.length+'/300';"></textarea>
           </div>
           <div class="field-row">
-            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
-            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" min="0" id="item-price" placeholder="0.00" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/></div>
+            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" min="0" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/></div>
           </div>
           <div class="price-card" id="price-card-info">
             <div class="price-card-row">
@@ -2641,19 +2648,26 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         <!-- ETAPA 6 — DISPONIBILIDADE -->
         <div class="wizard-step-panel" data-step="disponibilidade">
           <div class="wizard-step-section-title">6. Disponibilidade</div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
-            <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
-          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+              <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;" title="Some do cardápio do cliente sem apagar o item — continua aqui no painel pra reativar quando quiser">
+              <input type="checkbox" id="item-hidden-check" onchange="onWizardHiddenToggle()"/> 🙈 Ocultar do cardápio (some pro cliente, sem excluir)
+            </label>
+          </div>
           <div class="field" style="margin-top:14px;max-width:260px;">
             <label>Estoque (unidades) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
-            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="updateWizardPreview()"/>
+            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:10px;">
-            Desmarcado = aparece como "esgotado" pro cliente (mesmo toggle rápido ✅/🚫 que já
-            existe na listagem do cardápio — aqui é só outro jeito de mexer na mesma opção).
-            Horário e pausa programada por dia da semana ainda não existem neste sistema — não
-            criei essa parte agora pra não inventar um recurso novo de meio caminho; me avisa se
-            quiser que eu desenvolva isso numa próxima rodada.
+            "Disponível" desmarcado = aparece como "esgotado" pro cliente (continua visível no
+            cardápio, só não dá pra pedir). "Ocultar do cardápio" = some inteiro da vitrine do
+            cliente, mas continua aqui no painel pra reativar quando quiser — são coisas
+            diferentes, dá pra combinar as duas. Horário e pausa programada por dia da semana
+            ainda não existem neste sistema — não criei essa parte agora pra não inventar um
+            recurso novo de meio caminho; me avisa se quiser que eu desenvolva isso numa próxima
+            rodada.
           </div>
         </div>
 
@@ -2757,10 +2771,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:6px 0 10px;">
         <input type="checkbox" id="aom-free" onchange="onAomFreeToggle()"/> Gratuito (sem cobrar nada)
       </label>
-      <div class="field"><label>Valor R$</label><input type="number" step="0.01" id="aom-price" placeholder="0,00"/></div>
+      <div class="field"><label>Valor R$</label><input type="number" step="0.01" min="0" id="aom-price" placeholder="0,00" oninput="if(this.value<0)this.value=0;"/></div>
       <div class="field-row">
-        <div class="field"><label>Qtd. mínima</label><input type="number" min="0" id="aom-minqty" placeholder="—"/></div>
-        <div class="field"><label>Qtd. máxima</label><input type="number" min="1" id="aom-maxqty" value="1"/></div>
+        <div class="field"><label>Qtd. mínima</label><input type="number" min="0" id="aom-minqty" placeholder="—" oninput="if(this.value<0)this.value=0;"/></div>
+        <div class="field"><label>Qtd. máxima</label><input type="number" min="1" id="aom-maxqty" value="1" oninput="if(this.value<1)this.value=1;"/></div>
       </div>
     </div>
     <div class="modal-footer">
@@ -7595,6 +7609,8 @@ function openAddItem(){
   document.getElementById('item-badge-color').value='#D9383A';
   document.getElementById('item-available-check').checked=true;
   document.getElementById('item-available').value='true';
+  document.getElementById('item-hidden-check').checked=false;
+  document.getElementById('item-hidden').value='false';
   document.getElementById('item-featured-check').checked=false;
   document.getElementById('item-featured').value='false';
   document.getElementById('item-accepts-coupon').checked=true;
@@ -7611,7 +7627,7 @@ function openAddItem(){
 function openEditItem(si,ii){
   const item=menu[si].items[ii];
   document.getElementById('item-modal-title').textContent='Editar Item';
-  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')):null].filter(Boolean);
+  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')+(item.updatedBy?' por '+item.updatedBy:'')):null].filter(Boolean);
   document.getElementById('item-editor-meta-line').textContent = metaBits.join(' · ');
   document.getElementById('item-edit-si').value=si;
   document.getElementById('item-edit-ii').value=ii;
@@ -7638,6 +7654,8 @@ function openEditItem(si,ii){
   document.getElementById('item-badge-color').value=badgeColorValue;
   document.getElementById('item-available-check').checked = item.available!==false;
   document.getElementById('item-available').value = item.available!==false ? 'true' : 'false';
+  document.getElementById('item-hidden-check').checked = item.hidden===true;
+  document.getElementById('item-hidden').value = item.hidden===true ? 'true' : 'false';
   document.getElementById('item-featured-check').checked = !!item.featured;
   document.getElementById('item-featured').value = item.featured ? 'true' : 'false';
   document.getElementById('item-accepts-coupon').checked = item.acceptsCoupon!==false;
@@ -7714,6 +7732,16 @@ function toggleWizardAvailability(){
   const cb=document.getElementById('item-available-check');
   cb.checked=!cb.checked;
   onWizardAvailabilityToggle();
+}
+// v107g — status de 3 estados no cabeçalho (Disponível / Indisponível / Oculto), como pedido.
+// "Oculto" (some do cardápio do cliente) é independente de "Disponível" (aparece mas esgotado) —
+// dá pra combinar os dois. O selo do cabeçalho só mostra o resultado; quem liga/desliga cada um
+// é o checkbox correspondente na etapa Disponibilidade (clicar no selo continua alternando só
+// "Disponível", que é o ajuste mais comum do dia a dia).
+function onWizardHiddenToggle(){
+  const checked = document.getElementById('item-hidden-check').checked;
+  document.getElementById('item-hidden').value = checked ? 'true' : 'false';
+  updateWizardPreview();
 }
 function onWizardFeaturedToggle(){
   const checked = document.getElementById('item-featured-check').checked;
@@ -7819,9 +7847,12 @@ function updateWizardPreview(){
   document.getElementById('wizard-preview-badge-wrap').innerHTML = badgeHTML;
   const miniPreviewEl = document.getElementById('item-badge-mini-preview');
   if(miniPreviewEl) miniPreviewEl.innerHTML = badgeHTML || '<span style="font-size:11px;color:var(--muted);">Sem badge</span>';
+  const hidden = document.getElementById('item-hidden-check').checked;
   const pill = document.getElementById('wizard-status-pill');
-  pill.className = 'wizard-status-pill '+(available?'available':'unavailable');
-  pill.textContent = available ? '✅ Disponível' : '🚫 Esgotado';
+  // v107g: status de 3 estados — Oculto tem prioridade visual (some do cardápio inteiro, é o
+  // estado "mais forte"); senão mostra Disponível/Indisponível como sempre.
+  if(hidden){ pill.className = 'wizard-status-pill hidden-state'; pill.textContent = '🙈 Oculto'; }
+  else { pill.className = 'wizard-status-pill '+(available?'available':'unavailable'); pill.textContent = available ? '✅ Disponível' : '🚫 Indisponível'; }
   const fpill = document.getElementById('wizard-featured-pill');
   fpill.className = 'wizard-status-pill '+(featured?'featured-on':'');
   fpill.textContent = featured ? '⭐ Destaque' : '☆ Destaque';
@@ -8277,10 +8308,10 @@ function renderVariantGroups(which, kindFilter){
         ${isMultiple?`
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;padding:10px;background:var(--bg2,rgba(0,0,0,.15));border-radius:8px;">
           <div style="font-size:10px;color:var(--muted);width:100%;">Quantidade total no grupo (opcional — deixe em branco pra não limitar por quantidade, ex: molhos onde cada um só liga/desliga)</div>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
         </div>`:''}
         ${g.options.map((o,oi)=>`
           <div class="vopt-row2 ${o.hidden?'hidden-opt':''}" draggable="true"
@@ -8296,7 +8327,7 @@ function renderVariantGroups(which, kindFilter){
                 <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>+ R$</option>
                 <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>R$ fixo</option>
               </select>
-              ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="0,00" value="${o.priceDelta||0}" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
+              ${o.priceMode!=='incluido'?`<input type="number" step="0.01" min="0" placeholder="0,00" value="${o.priceDelta||0}" oninput="if(this.value<0)this.value=0;updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
             </span>
             ${isMultiple?`<span class="vopt-maxqty-cell" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Qtd. máx <input type="number" min="1" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></span>`:''}
             <button type="button" class="vopt-icon-btn" onclick="toggleOptionHidden('${which}',${gi},${oi})" title="${o.hidden?'Reexibir opção no cardápio':'Ocultar opção do cardápio (some da loja, continua salva aqui)'}">${o.hidden?'🙈':'👁'}</button>
@@ -8312,8 +8343,22 @@ async function saveItem(andNew){
   const ii=parseInt(document.getElementById('item-edit-ii').value);
   const name=document.getElementById('item-name').value.trim();
   if(!name){alert('Digite o nome do prato.');goToWizardStep('info');return;}
+  // BUG CORRIGIDO — validação de valores negativos: min="0" no HTML só bloqueia as setinhas do
+  // campo, não impede digitar ou colar um número negativo direto. Math.max(0,...) aqui garante
+  // que nada negativo chega a ser salvo, mesmo se passar batido pela validação da tela.
   const cleanVariants = editingVariants
-    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
+    .map(g=>({
+      ...g,
+      name:g.name.trim()||'Opções',
+      // BUG CORRIGIDO — mesma validação de "sem negativo" aplicada aos campos de quantidade/preço
+      // do grupo (Mín./Máx. total, # inclusas, +R$/excedente): min="0" no HTML não segura colar
+      // um valor negativo, então trava aqui também antes de salvar.
+      min: g.min===''||g.min==null ? '' : Math.max(0,Number(g.min)||0),
+      max: g.max===''||g.max==null ? '' : Math.max(0,Number(g.max)||0),
+      includedQty: g.includedQty===''||g.includedQty==null ? '' : Math.max(0,Number(g.includedQty)||0),
+      overagePrice: g.overagePrice===''||g.overagePrice==null ? '' : Math.max(0,Number(g.overagePrice)||0),
+      options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Math.max(0,Number(o.priceDelta)||0),priceMode:o.priceMode||'adicional',maxQty:Math.max(1,Number(o.maxQty)||1)})).filter(o=>o.name)
+    }))
     .filter(g=>g.options.length>0);
   const _posParts = document.getElementById('item-image-pos').value.split(',');
   const posX = parseInt(_posParts[0])||50, posY = parseInt(_posParts[1])||50, posZoom = parseInt(_posParts[2])||100, posRotate = parseInt(_posParts[3])||0;
@@ -8327,7 +8372,7 @@ async function saveItem(andNew){
   const item={
     id: (existing && existing.id) || ('item'+Date.now().toString(36)),
     name,desc:document.getElementById('item-desc').value.trim(),
-    price:parseFloat(document.getElementById('item-price').value)||0,
+    price:Math.max(0,parseFloat(document.getElementById('item-price').value)||0),
     qty:document.getElementById('item-qty').value.trim(),
     badge:document.getElementById('item-badge').value.trim(),
     // v107e: "Herdar Badge Global" saiu junto com a tela que configurava isso — agora é só "tem
@@ -8338,13 +8383,14 @@ async function saveItem(andNew){
     imagePos:{x:posX,y:posY,zoom:posZoom,rotate:posRotate},
     variants:cleanVariants,
     available:document.getElementById('item-available-check').checked, // v107b: etapa "Disponibilidade" do wizard
+    hidden:document.getElementById('item-hidden-check').checked, // v107g: "Ocultar do cardápio" agora editável direto no wizard (campo já existia desde v87, usado pelo toggle rápido da listagem)
     featured: document.getElementById('item-featured-check').checked, // (novo)
     sku: document.getElementById('item-sku').value.trim(), // (novo)
     ean: document.getElementById('item-ean').value.trim(), // (novo)
     tags: tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [], // (novo)
     promoPrice: (promoPriceRaw>0) ? promoPriceRaw : null, // (novo) — ainda não conectado à vitrine/checkout, ver aviso na etapa 8
     fichaTecnicaId: document.getElementById('item-ficha-vinculada') ? (document.getElementById('item-ficha-vinculada').value||null) : null, // (novo) — usado só pro cálculo de Lucro interno no painel
-    stock: stockRaw ? (parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
+    stock: stockRaw ? Math.max(0,parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
     acceptsCoupon: document.getElementById('item-accepts-coupon').checked, // (novo) — informativo por enquanto
     allergens: getSelectedAllergens(), // (novo)
     nutrition: { // (novo) — por porção
@@ -8355,6 +8401,7 @@ async function saveItem(andNew){
     },
     createdAt: (existing && existing.createdAt) || nowIso, // (novo)
     updatedAt: nowIso, // (novo)
+    updatedBy: userName||'', // (novo) — quem salvou por último, pra mostrar em "Última atualização"
   };
   if(ii===-1){ menu[si].items.push(item); }
   else menu[si].items[ii]={...menu[si].items[ii], ...item}; // mantém stations e days que já estavam, não reseta ao editar
