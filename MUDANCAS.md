@@ -1,3 +1,37 @@
+# v107g — Auditoria de bugs + cabeçalho fixo + status de 3 estados
+
+Build usada como base: `shogatsu-v107f` (badges + remoção do Badge Global). Esta rodada foi uma
+**auditoria de bugs** (conferir duplicações, validação, valores negativos, foto quebrada) mais
+dois ajustes de UX pedidos.
+
+**Auditoria (sem bugs achados nos pontos abaixo, já estavam OK):**
+- Duplicação de funções/IDs: rodei uma varredura em `server.js`, `public/painel.html` e
+  `public/index.html` procurando função ou `id=""` duplicado — nenhum encontrado.
+- Foto quebrada: já existia fallback (volta pro ícone de prato quando a imagem não carrega).
+- Impressão e cardápio do cliente: não tocados, como sempre.
+
+**Bugs corrigidos:**
+- **Valores negativos não eram bloqueados de verdade.** O atributo `min="0"` do HTML só trava as
+  setinhas do campo — dava pra digitar ou colar um número negativo direto (preço, preço
+  promocional, estoque, valor de opção de variação, quantidades de grupo). Agora trava na hora
+  que você digita E de novo (com `Math.max(0,...)`) na hora de salvar, pra garantir que nada
+  negativo chega a ir pro Supabase mesmo que passe pela tela.
+
+**Novo, como pedido:**
+- **Cabeçalho fixo durante toda a edição.** Como o editor de item virou página cheia (não é mais
+  modal, desde uma versão anterior), o cabeçalho — com status, progresso e todos os botões de
+  ação (Cancelar/Visualizar/Duplicar/Excluir/Salvar) — agora fica grudado no topo enquanto você
+  rola a página pra baixo, em vez de rolar junto e sumir.
+- **Status de 3 estados**: Disponível / Indisponível / 🙈 Oculto. "Oculto do cardápio" (um campo
+  que já existia desde a v87 — usado no botão rápido "👁️ Ocultar Produto" da listagem) agora
+  também é editável dentro do próprio editor, na etapa Disponibilidade, com selo próprio no
+  cabeçalho.
+- **"Última atualização"** no cabeçalho agora mostra data **e quem editou** (usuário do painel
+  logado), reaproveitando o sistema de usuários/permissões já existente — sem criar nada novo pra
+  isso.
+
+
+
 # v107f — 🏷 Badge Global removido de vez + Biblioteca de Badges com as 7 cores pedidas
 
 Build usada como base: `shogatsu-v107e-completo.zip` (enviada pelo usuário — já trazia, prontos
