@@ -1,25 +1,4 @@
-# v107i — Polimento visual geral: cards com mais profundidade, telas mais fluidas, bug de cards apertados corrigido
-
-Passo de modernização visual **transversal** (afeta Central de Impressão, Configurações,
-Gerenciar Pedidos e Editar Cardápio de uma vez, já que compartilham os mesmos componentes) — sem
-mudar nenhuma cor de identidade, dado, rota ou função. Cores do sistema (vermelho/dourado/verde
-Shogatsu, fundo escuro) mantidas como já estavam.
-
-**Bug corrigido**: entre ~620px e ~980px de largura de janela, os cards de Configurações/Central
-de Impressão ficavam espremidos em 2 colunas estreitas demais pro conteúdo (texto cortando,
-visual de sobreposição — exatamente o que aparecia no print que você mandou). Agora só passa pra
-2/3 colunas a partir de 980px; abaixo disso fica em 1 coluna só, com espaço de sobra.
-
-**Mais "fluido"**: transição de troca de página suavizada (curva de easing igual à do resto do
-sistema, com leve zoom-in também, não só um fade). Cards de configuração, categorias do cardápio
-e do Kanban de pedidos ganharam sombra sutil + leve "elevação" ao passar o mouse — mesmo efeito
-de profundidade que os cards de produto e de pedido já tinham, agora consistente em toda tela.
-
-**O que não mexi**: os modais (edição de categoria, seletor de grupo, etc.) já tinham vidro
-fosco (blur) no fundo, borda dourada brilhante e animação de entrada — já estavam no padrão
-"moderno" que você pediu, então não precisei tocar neles.
-
-
+# v107h — "Editar Cardápio" modernizado: sidebar de categorias virou barra horizontal
 
 Só reorganização visual — nenhuma função, dado, categoria ou produto foi tocado. Mesmas
 `selectCat`/`moveCategory`/`openEditCategory`/`openCopyCategoryPicker`/`deleteCategory`/
