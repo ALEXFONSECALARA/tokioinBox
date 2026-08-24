@@ -1,4 +1,31 @@
-# v107g — Auditoria de bugs + cabeçalho fixo + status de 3 estados
+# v107h — "Editar Cardápio" modernizado: sidebar de categorias virou barra horizontal
+
+Só reorganização visual — nenhuma função, dado, categoria ou produto foi tocado. Mesmas
+`selectCat`/`moveCategory`/`openEditCategory`/`openCopyCategoryPicker`/`deleteCategory`/
+`setupCatDragDrop` de sempre; só o HTML mudou de coluna lateral fixa pra fileira horizontal.
+
+**Sidebar lateral de categorias removida.** Virou uma barra horizontal de cards compactos
+(ícone + nome + "X produtos") logo abaixo do cabeçalho "Editar Cardápio", com rolagem própria —
+funciona igual em celular e desktop, sem quebrar layout. Categoria selecionada fica destacada em
+vermelho Shogatsu. Reordenar categoria continua funcionando por arrastar-e-soltar (já existia);
+tirei os botões ▲▼ pra deixar o card mais compacto, já que arrastar já fazia a mesma coisa.
+
+**Botão "🍽️ Todos" (novo).** Mostra o cardápio inteiro junto, todas as categorias misturadas,
+sem precisar clicar categoria por categoria — só reorganiza a exibição, não mexe nos dados.
+
+**Ordenação (novo).** Um seletor "↕ Ordem padrão / 🔤 Nome A-Z / 💲 Preço menor/maior primeiro"
+na barra de ferramentas, do lado do filtro de busca — só muda a ordem de exibição na tela, a
+ordem "de verdade" salva no cardápio não muda (por isso os botões de mover item ▲▼ somem
+enquanto uma ordenação diferente da padrão está ativa: mover não faria sentido nessa visão).
+
+**Grid de produtos ajustado pros tamanhos pedidos**: ~4 por linha em desktop largo, 2-3 em
+tablet, 1-2 em celular (responsivo automático, sem breakpoint fixo cortando produto no meio).
+
+**O que NÃO adicionei nesta rodada**: um botão "Filtros" separado dos chips de filtro rápido que
+já existem (Todos/Disponível/Indisponível/Promoção/Destaque) — os chips já cobrem exatamente
+esses filtros, um botão a mais só duplicaria a mesma coisa e poluiria a tela.
+
+
 
 Build usada como base: `shogatsu-v107f` (badges + remoção do Badge Global). Esta rodada foi uma
 **auditoria de bugs** (conferir duplicações, validação, valores negativos, foto quebrada) mais
