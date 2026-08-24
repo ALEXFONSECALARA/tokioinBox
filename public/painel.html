@@ -556,8 +556,14 @@ table{max-width:100%;}
 .field select option{background:var(--panel);}
 .field textarea{resize:vertical;min-height:70px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
-.photo-upload{display:flex;align-items:center;gap:14px;}
-.photo-preview-wrap{position:relative;width:74px;height:74px;border-radius:14px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+.photo-upload{display:flex;align-items:flex-start;gap:18px;flex-wrap:wrap;}
+/* BUG CORRIGIDO: o preview da foto do prato era um quadradinho de 74×74px — dava pra ver o
+   ícone de "🔍 Zoom / ↔ Horizontal / ↕ Vertical / 🔄 Girar" mas era impossível enxergar o
+   enquadramento de verdade nesse tamanho (a foto some/fica ilegível). Agora o preview é
+   grande (220×220px), do mesmo tamanho que costuma aparecer numa tela normal, então o admin
+   vê exatamente o que está ajustando antes de salvar. */
+.photo-preview-wrap{position:relative;width:220px;height:220px;border-radius:14px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+@media (max-width:520px){ .photo-preview-wrap{width:100%;max-width:280px;height:220px;} }
 /* v53: BUG CORRIGIDO ("ícones se misturando" na caixa de fotos) — o <img> da prévia não tinha
    display:none por padrão no CSS; ele só ficava escondido depois que o JS rodava
    (resetItemPhotoPreview). Num primeiro carregamento mais lento, ou em qualquer caso onde o JS
@@ -575,8 +581,8 @@ table{max-width:100%;}
 .photo-toolbar-slider{display:flex;align-items:center;gap:10px;margin-top:6px;}
 .photo-toolbar-label{font-size:10px;color:var(--muted);width:76px;flex-shrink:0;}
 .photo-toolbar-slider input[type=range]{flex:1;accent-color:var(--gold);}
-.photo-placeholder-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted);pointer-events:none;}
-.photo-upload-actions{display:flex;flex-direction:column;gap:6px;}
+.photo-placeholder-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;color:var(--muted);pointer-events:none;}
+.photo-upload-actions{display:flex;flex-direction:column;gap:8px;min-width:180px;justify-content:center;}
 .photo-upload-actions input[type=file]{display:none;}
 .photo-upload-status{font-size:12px;color:var(--muted);}
 
@@ -2121,11 +2127,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             </div>
           </div>
 
-          <div class="field">
-            <label>Galeria de fundos prontos</label>
-            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Clique numa foto para usar direto — ou envie a sua própria acima.</div>
-            <div id="chatbg-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;"></div>
-          </div>
         </div>
 <div class="settings-card" style="grid-column:1/-1;">
           <div class="settings-card-title">✨ Sequência de fotos ao abrir o app</div>
@@ -5199,15 +5200,33 @@ async function saveSplashConfig(){
   const statusEl = document.getElementById('splash-save-status');
   const enabled = document.getElementById('splash-enabled').checked;
   const photos = splashDraftPhotos.filter(p => (typeof p==='string'?p:p.url||'').trim());
-  if(enabled && !photos.length){ statusEl.innerHTML = '<span style="color:var(--red-lt);">Adicione pelo menos uma foto pra poder ativar.</span>'; return; }
+  // BUG CORRIGIDO ("Ativar Splash Screen não ativa"): a splash só liga de verdade se tiver
+  // pelo menos 1 foto (senão não tem o que mostrar) — isso já era checado, mas o aviso era um
+  // textinho discreto que passava batido, então parecia que o botão "Salvar" simplesmente não
+  // fazia nada. Agora, além do aviso, a lista de fotos pisca em vermelho e a tela rola até lá,
+  // pra ficar óbvio o que falta preencher antes de conseguir ativar.
+  if(enabled && !photos.length){
+    statusEl.innerHTML = '<span style="color:var(--red-lt);">⚠️ Adicione pelo menos uma foto abaixo pra poder ativar — depois clique em Salvar de novo.</span>';
+    const list = document.getElementById('splash-photos-list');
+    if(list){
+      list.scrollIntoView({behavior:'smooth', block:'center'});
+      list.style.outline = '2px solid var(--red-lt)'; list.style.outlineOffset='4px'; list.style.borderRadius='8px';
+      setTimeout(()=>{ list.style.outline=''; }, 2200);
+    }
+    return;
+  }
   const durationSeconds = Math.max(2, Math.min(15, Number(document.getElementById('splash-duration').value)||3));
   const transition = document.getElementById('splash-transition').value;
   const splash = { enabled, durationSeconds, transition, photos };
+  statusEl.innerHTML = '<span style="color:var(--muted);">Salvando...</span>';
   const res = await apiPost('/api/config', { cfg: { splash }, menu });
   if(!res.ok){ statusEl.innerHTML = '<span style="color:var(--red-lt);">'+(res.data.error||'Erro ao salvar.')+'</span>'; return; }
   cfg.splash = splash;
-  statusEl.innerHTML = '<span style="color:var(--green);">✅ Salvo! Já vale na próxima vez que o cardápio for aberto.</span>';
-  setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
+  document.getElementById('splash-enabled').checked = enabled; // garante que o check reflete o que foi realmente salvo
+  statusEl.innerHTML = enabled
+    ? '<span style="color:var(--green);">✅ Splash Screen ativada! Já vale na próxima vez que o cardápio for aberto.</span>'
+    : '<span style="color:var(--green);">✅ Salvo — Splash Screen desativada.</span>';
+  setTimeout(()=>{ statusEl.innerHTML=''; }, 5000);
 }
 
 // ═══════════════════════════════════════════
@@ -5339,7 +5358,6 @@ function renderChatBgEditor(){
   document.getElementById('chatbg-overlay-val').textContent = Math.round(((typeof cb.overlay==='number')?cb.overlay:0.45)*100)+'%';
   renderChatBgPreview();
   renderChatBgInfo();
-  renderChatBgGallery();
 }
 function renderChatBgPreview(){
   const cb = cfg.chatBackground || {};
