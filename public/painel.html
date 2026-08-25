@@ -148,11 +148,11 @@ table{max-width:100%;}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--sidebar);flex-shrink:0;}
-.topbar-title{font-size:16px;font-weight:600;color:var(--white);}
-.topbar-right{display:flex;align-items:center;gap:12px;}
-.topbar-time{font-size:13px;color:var(--muted);}
-.topbar-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:13px;transition:all .15s;}
+.topbar{min-height:54px;height:auto;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 24px;background:var(--sidebar);flex-shrink:0;row-gap:8px;}
+.topbar-title{font-size:16px;font-weight:600;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:60px;flex:1 1 auto;margin-right:12px;}
+.topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:8px;justify-content:flex-end;}
+.topbar-time{font-size:13px;color:var(--muted);flex-shrink:0;}
+.topbar-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:13px;transition:all .15s;flex-shrink:0;white-space:nowrap;}
 .topbar-btn:hover{border-color:var(--red);color:var(--red-lt);}
 .topbar-btn.primary{background:var(--red);border-color:var(--red);color:#fff;}
 .topbar-btn.primary:hover{background:var(--red-lt);}
@@ -313,9 +313,79 @@ table{max-width:100%;}
 .cancel-reason-chip:hover{border-color:var(--red-dk);}
 .cancel-reason-chip.selected{border-color:var(--red);background:var(--red-bg);color:var(--red-lt);}
 .vgroup{border:1px solid var(--border);border-radius:14px;padding:10px;background:var(--bg);}
-.vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;}
+.vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
 .vgroup-head input[type=text]{flex:1;}
 .vopt-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
+/* ═══════════════════════════════════════════
+   v107c — EDITOR DE PRODUTO — Cardápio → Editar/Novo Item — PÁGINA CHEIA
+   ═══════════════════════════════════════════
+   Era um modal (v107b); virou página cheia dentro do painel (mesma navegação goPage() de
+   Pedidos/Cardápio/etc), com cabeçalho, 8 etapas e prévia lateral inspirados na referência
+   visual pedida. Campos/API continuam os mesmos + campos novos guardados como chaves extras
+   no mesmo objeto `item` (ver comentário no HTML da página). */
+.item-editor-page{max-width:1400px;margin:0 auto;}
+.item-editor-header{margin-bottom:18px;}
+.item-editor-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+.item-editor-header-left{min-width:0;flex:1;}
+.item-editor-title{font-size:24px;font-weight:800;margin:2px 0 4px;color:var(--white);}
+.item-editor-meta-line{font-size:11px;color:var(--muted);}
+.item-editor-header-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.wizard-breadcrumb{font-size:11px;color:var(--muted);}
+.wizard-breadcrumb b{color:var(--gold);font-weight:600;}
+.wizard-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;}
+.wizard-status-pill{font-size:11px;padding:3px 10px;border-radius:20px;border:1px solid var(--border);cursor:pointer;background:var(--card);}
+.wizard-status-pill.available{color:#4ade80;border-color:#4ade8055;}
+.wizard-status-pill.unavailable{color:#f87171;border-color:#f8717155;}
+.wizard-status-pill.featured-on{color:var(--gold);border-color:var(--gold);}
+.wizard-progress-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;max-width:420px;}
+.wizard-progress-bar{flex:1;height:5px;background:var(--card);border-radius:3px;overflow:hidden;}
+.wizard-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-2,#C5A059),var(--gold));transition:width .25s;}
+.wizard-progress-pct{font-size:10px;color:var(--gold);font-weight:600;white-space:nowrap;}
+.wizard-layout{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;align-items:start;gap:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.wizard-steps{width:100%;min-width:0;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border);padding-right:12px;margin-right:16px;}
+.wizard-step-btn{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:8px;background:none;border:none;border-left:3px solid transparent;color:var(--white);text-align:left;cursor:pointer;font-size:12.5px;width:100%;}
+.wizard-step-btn:hover{background:rgba(255,255,255,.04);}
+.wizard-step-btn.active{background:rgba(212,163,115,.12);color:var(--gold);font-weight:600;border-left-color:var(--gold);}
+.wizard-step-btn .wsn{width:20px;height:20px;border-radius:50%;background:var(--panel);display:flex;align-items:center;justify-content:center;font-size:10.5px;flex-shrink:0;border:1px solid var(--border);margin-top:1px;}
+.wizard-step-btn.active .wsn{background:var(--gold);color:#1A1818;border-color:var(--gold);}
+.wizard-step-btn-text{display:flex;flex-direction:column;gap:1px;min-width:0;}
+.wizard-step-btn-label{white-space:nowrap;}
+.wizard-step-btn-sub{font-size:10px;color:var(--muted);white-space:nowrap;font-weight:400;}
+.wizard-step-btn.active .wizard-step-btn-sub{color:var(--gold);opacity:.75;}
+.wizard-content{min-width:0;width:100%;}
+.wizard-content .field label,.wizard-content .field-row .field label{white-space:nowrap;}
+.wizard-step-panel{display:none;}
+.wizard-step-panel.active{display:block;}
+.wizard-preview{width:100%;min-width:0;border-left:1px solid var(--border);padding-left:14px;margin-left:16px;}
+.wizard-preview-title{font-size:10px;letter-spacing:1px;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.wizard-preview-card{background:var(--panel);border:1px solid var(--border);border-radius:10px;overflow:hidden;}
+.wizard-preview-photo{width:100%;aspect-ratio:4/3;background:var(--bg2,#121212);display:flex;align-items:center;justify-content:center;font-size:34px;background-size:cover;background-position:center;}
+.wizard-preview-body{padding:10px;}
+.wizard-preview-name{font-weight:700;font-size:13px;margin-bottom:2px;}
+.wizard-preview-desc{font-size:11px;color:var(--muted);margin-bottom:6px;max-height:48px;overflow:hidden;}
+.wizard-preview-price{color:var(--gold);font-weight:700;font-size:14px;}
+.wizard-preview-price .old{text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;}
+.wizard-preview-badge{display:inline-block;font-size:10px;background:var(--red-dk);padding:2px 7px;border-radius:20px;margin-bottom:6px;color:#fff;}
+.wizard-preview-summary{margin-top:12px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px;}
+.wizard-preview-status-list{margin-top:12px;font-size:11px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:10px;}
+.wizard-preview-status-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);}
+.wizard-preview-status-row b{color:var(--white);font-weight:600;}
+.wizard-step-section-title{font-size:13px;font-weight:700;color:var(--gold);margin-bottom:12px;}
+/* breakpoint intermediário: antes de virar 1 coluna, só reduz a largura fixa das laterais
+   (nunca deixar a coluna central ficar estreita a ponto de quebrar palavra). */
+@media (max-width:1050px){
+  .wizard-layout{grid-template-columns:200px minmax(0,1fr) 280px;}
+}
+@media (max-width:900px){
+  .item-editor-header-actions{width:100%;}
+  .item-editor-header-actions .btn{flex:1;}
+  .wizard-layout{grid-template-columns:1fr;padding:14px;}
+  .wizard-steps{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:8px;margin-right:0;margin-bottom:14px;}
+  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;}
+  .wizard-step-btn.active{border-left-color:transparent;border-bottom-color:var(--gold);}
+  .wizard-step-btn-sub{display:none;}
+  .wizard-preview{width:100%;border-left:none;padding-left:0;margin-left:0;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+}
 .vopt-row input[type=text]{flex:1;}
 .vopt-row input[type=number]{width:90px;}
 .vopt-row button,.vgroup-head button{border:none;background:var(--red-bg);color:var(--red-lt);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;}
@@ -488,7 +558,7 @@ table{max-width:100%;}
 .card-minimized{padding-bottom:20px;}
 .card-pinned{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);}
 .card-favorited{border-color:var(--gold);}
-.conn-status{font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.06);white-space:nowrap;transition:background .2s,color .2s;}
+.conn-status{font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.06);white-space:nowrap;transition:background .2s,color .2s;flex-shrink:0;}
 .conn-connected{color:#4ade80;}
 .conn-connecting{color:#facc15;}
 .conn-lost{color:#f87171;background:rgba(248,113,113,.12);cursor:pointer;}
@@ -555,7 +625,7 @@ table{max-width:100%;}
 .login-btn:hover{background:var(--red-lt);}
 .login-err{color:var(--red-lt);font-size:13px;margin-top:12px;display:none;}
 #app-shell{display:none;width:100%;}
-.logout-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 12px;font-size:13px;transition:all .15s;}
+.logout-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 12px;font-size:13px;transition:all .15s;flex-shrink:0;white-space:nowrap;}
 .logout-btn:hover{border-color:var(--red);color:var(--red-lt);}
 
 /* ── v37: MODERNIZAÇÃO VISUAL — só aparência (sombra, blur, animação, elevação); nenhuma lógica muda ── */
@@ -671,8 +741,8 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-icon">🍣</div>
-    <div class="login-title">SHOGATSU</div>
+    <div class="login-icon" id="login-icon">🍣</div>
+    <div class="login-title" id="login-title">Food</div>
     <div class="login-sub">Painel Admin</div>
     <input type="text" class="login-input" id="login-user" placeholder="Usuário" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
     <input type="password" class="login-input" id="login-pass" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
@@ -687,9 +757,9 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-icon">🍣</div>
+    <div class="brand-icon" id="sidebar-brand-icon">🍣</div>
     <div>
-      <div class="brand-name">SHOGATSU</div>
+      <div class="brand-name" id="sidebar-brand-name">Food</div>
       <div class="brand-sub">Painel Admin</div>
     </div>
     <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Recolher/expandir menu" style="margin-left:auto;">◀</button>
@@ -705,9 +775,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     <button class="nav-item" data-page="cardapio" data-min-role="admin" onclick="goPage('cardapio')"><span class="ni">🍱</span> Cardápio</button>
     <button class="nav-item" data-page="custos" data-min-role="admin" onclick="goPage('custos')"><span class="ni">💰</span> Custos</button>
     <!-- v99 — ferramenta isolada, abre em nova aba; não usa goPage()/roteamento do SPA, não mexe em nenhum outro item -->
-    <button class="nav-item" data-min-role="admin" onclick="window.open('/nota-fiscal.html','_blank')"><span class="ni">📷</span> Ler Nota Fiscal</button>
     <button class="nav-item" data-page="ia" data-min-role="admin" onclick="goPage('ia')"><span class="ni">🤖</span> IA do Cardápio <span class="nb" id="nb-ia-aprovacoes" style="display:none">0</span></button>
-    <button class="nav-item" data-page="qrlinks" data-min-role="admin" onclick="goPage('qrlinks')"><span class="ni">🔗</span> QR Code &amp; Links</button>
     <button class="nav-item" data-page="relatorios" data-min-role="admin" onclick="goPage('relatorios')"><span class="ni">📈</span> Relatórios</button>
     <button class="nav-item" data-page="avaliacoes" data-min-role="admin" onclick="goPage('avaliacoes')"><span class="ni">⭐</span> Avaliações</button>
     <div class="nav-section" data-min-role="admin">Sistema</div>
@@ -1205,6 +1273,122 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 
     <!-- ── CARDÁPIO ── -->
     <div class="page" id="page-cardapio">
+      <!-- v108: "Editar Cardápio Popular" morava dentro de "QR Code & Links" (que foi removida) —
+           mudou de endereço pra cá porque é edição de conteúdo real (não tem nada de QR code), e
+           "Cardápio" é o lugar que já existia e faz sentido pra essa função. Nada do código interno
+           mudou, só o lugar onde o painel encaixa (renderRpEditor/saveRodizioPopular etc. seguem
+           idênticos). -->
+      <div class="panel" style="margin-bottom:16px;">
+        <div class="panel-header" style="cursor:pointer;" onclick="toggleRpEditor()">
+          <span class="panel-title">✏️ Editar Cardápio Popular</span>
+          <span style="display:flex;align-items:center;gap:10px;">
+            <a href="/cardapio-rodizio-popular.html" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:var(--gold);text-decoration:none;">🔗 Pré-visualizar página</a>
+            <span id="rp-editor-toggle-icon" style="font-size:12px;color:var(--muted);">▾ mostrar</span>
+          </span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0 12px;">
+          Edita o conteúdo da página pública do Rodízio Popular — preços por dia, destaques, categorias e itens, frases do topo e dados de rodapé.
+        </div>
+        <div id="rp-editor-body" style="display:none;">
+
+          <div class="settings-card-title" style="margin-top:4px;">🎨 Aparência — fontes e cores</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ajusta a tipografia e a cor de destaque da página pública, sem precisar mexer em código.</div>
+          <div class="field-row" style="margin-bottom:14px;">
+            <div class="field">
+              <label style="font-size:10px;">Fonte dos títulos</label>
+              <select id="rp-theme-headingfont" onchange="rpDraft.theme.headingFont=this.value">
+                <option value="serif">Serifada (elegante — padrão)</option>
+                <option value="sans-serif">Sem serifa (moderna/limpa)</option>
+                <option value="rounded">Arredondada (amigável)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label style="font-size:10px;">Fonte do texto</label>
+              <select id="rp-theme-bodyfont" onchange="rpDraft.theme.bodyFont=this.value">
+                <option value="sans-serif">Sem serifa (padrão)</option>
+                <option value="serif">Serifada</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:110px;">
+              <label style="font-size:10px;">Cor de destaque</label>
+              <input type="color" id="rp-theme-color" oninput="rpDraft.theme.accentColor=this.value" style="width:100%;height:36px;padding:2px;"/>
+            </div>
+            <div class="field">
+              <label style="font-size:10px;">Tamanho do texto (<span id="rp-theme-scale-label">100%</span>)</label>
+              <input type="range" id="rp-theme-scale" min="0.85" max="1.25" step="0.05" oninput="rpDraft.theme.fontScale=Number(this.value);document.getElementById('rp-theme-scale-label').textContent=Math.round(this.value*100)+'%';"/>
+            </div>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:4px;">📷 Foto de capa</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Aparece no topo da página, em tela cheia. Envie do dispositivo ou cole um link — a prévia abaixo mostra a foto no formato original (sem cortar), do jeito que ela é enviada.</div>
+          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;">
+            <img id="rp-hero-preview" src="" alt="" style="width:160px;max-height:120px;object-fit:contain;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:none;"/>
+            <div style="flex:1;min-width:200px;">
+              <input id="rp-herophoto" placeholder="https://.../capa.jpg (ou envie do dispositivo →)" oninput="rpDraft.heroPhoto=this.value;rpUpdateHeroPreview();" style="width:100%;margin-bottom:6px;"/>
+              <input type="file" accept="image/*" id="rp-hero-file" style="display:none;" onchange="uploadRpHeroPhoto(this)"/>
+              <button type="button" class="btn secondary sm" onclick="document.getElementById('rp-hero-file').click()">📤 Enviar foto de capa</button>
+              <span id="rp-hero-status" style="font-size:10px;color:var(--muted);margin-left:6px;"></span>
+            </div>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">🖼️ Galeria de fotos</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Fotos do rodízio/ambiente mostradas na galeria da página. Envie do dispositivo ou cole um link.</div>
+          <div id="rp-gallery-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddGalleryPhoto()">+ Foto na galeria</button>
+
+          <div class="settings-card-title" style="margin-top:4px;">💰 Preços por grupo de dias</div>
+          <div id="rp-pricegroups-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddPriceGroup()">+ Grupo de dias</button>
+          <div class="field" style="margin-top:12px;max-width:420px;">
+            <label>Observação do preço (aceita HTML simples, ex: &lt;b&gt;18:30&lt;/b&gt;)</label>
+            <input id="rp-pricenote" placeholder="Valores válidos a partir das 18:30."/>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">⭐ Destaques do rodízio</div>
+          <div id="rp-highlights-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddHighlight()">+ Destaque</button>
+
+          <div class="settings-card-title" style="margin-top:20px;">🍽️ Categorias e itens</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Um item por linha. Pra dar um subtítulo (ex: "sob consulta"), escreva assim: <code>Nome do item | subtítulo</code></div>
+          <div id="rp-categories-list" style="display:flex;flex-direction:column;gap:14px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddCategory()">+ Categoria</button>
+
+          <div class="settings-card-title" style="margin-top:20px;">💬 Frases do topo (giram automaticamente)</div>
+          <div class="field">
+            <textarea id="rp-phrases" rows="5" placeholder="Uma frase por linha" style="width:100%;font-family:inherit;font-size:12px;padding:8px;"></textarea>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">📍 Rodapé</div>
+          <div class="field-row">
+            <div class="field"><label>Endereço</label><input id="rp-address" placeholder="Av. Gov. Roberto Silveira, 109 — Costa Azul, Rio das Ostras"/></div>
+            <div class="field"><label>WhatsApp (só números, com DDI)</label><input id="rp-whatsapp" placeholder="552227641333"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Instagram (sem @)</label><input id="rp-instagram" placeholder="shogatsurestaurante"/></div>
+            <div class="field"><label>Link do delivery</label><input id="rp-deliveryurl" placeholder="/"/></div>
+          </div>
+          <div class="field">
+            <label>Aviso de taxa de desperdício</label>
+            <input id="rp-wastenote" placeholder="Taxa de desperdício: valor da peça do cardápio..."/>
+          </div>
+
+          <button type="button" class="btn secondary sm" style="margin-top:14px;" onclick="rpToggleManualEditor()">🛠️ Editar manualmente (avançado)</button>
+          <div id="rp-manual-editor" style="display:none;margin-top:10px;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
+              Edita tudo de uma vez em formato JSON — útil pra copiar/colar entre lojas ou fazer
+              ajustes finos. Clique em "Aplicar" pra recarregar os campos acima a partir daqui
+              (ainda precisa clicar em Salvar depois pra confirmar de vez).
+            </div>
+            <textarea id="rp-manual-json" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;background:var(--bg);color:var(--white);border:1px solid var(--border);border-radius:6px;"></textarea>
+            <button type="button" class="btn secondary sm" style="margin-top:8px;" onclick="rpApplyManualJson()">↻ Aplicar JSON aos campos</button>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:10px;">
+            <button type="button" class="btn primary" onclick="saveRodizioPopular()">💾 Salvar Cardápio Popular</button>
+            <button type="button" class="btn secondary" onclick="renderRpEditor()">↺ Descartar alterações</button>
+          </div>
+        </div>
+      </div>
       <div class="menu-editor">
         <div class="menu-cats-wrap">
           <div class="menu-cats-header">
@@ -1212,6 +1396,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <div style="display:flex;gap:6px;">
               <button class="btn secondary sm" onclick="openImportMenu()" title="Substituir o cardápio inteiro por um arquivo JSON">📥 Importar</button>
               <button class="btn secondary sm" onclick="openBulkPriceModal()" title="Ajustar preços de várias categorias/itens de uma vez">💰 Ajustar preços</button>
+              <button class="btn secondary sm" onclick="openLibGroupsModal()" title="Grupos de opções (tamanho, sabores, molhos...) reutilizáveis em vários itens">📚 Grupos Reutilizáveis</button>
               <button class="btn primary sm" onclick="openAddCategory()" title="Nova categoria de prato">+ Categoria</button>
             </div>
           </div>
@@ -1385,151 +1570,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     </div>
 
     <!-- ── QR CODE & LINKS ── -->
-    <div class="page" id="page-qrlinks">
-      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
-        Link e QR Code prontos pra cada página pública do sistema — copie o link ou baixe/imprima o QR
-        pra usar nas mesas, na bio do Instagram, no cardápio impresso, etc. Cada aba abaixo é uma página
-        diferente.
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="qrl-tabs"></div>
-      <div class="panel" id="qrl-content" style="max-width:520px;"></div>
-
-      <!-- v44: aba pra editar o conteúdo da página pública "Cardápio Rodízio Popular" (preços,
-           destaques, categorias/itens, frases e rodapé) direto pelo painel, sem mexer em código.
-           Os dados ficam em cfg.rodizioPopular (já existia no servidor) e a página pública
-           cardapio-rodizio-popular.html passou a ler daqui, com fallback pro conteúdo padrão. -->
-      <div class="panel" style="max-width:720px;margin-top:18px;">
-        <div class="panel-header" style="cursor:pointer;" onclick="toggleRpEditor()">
-          <span class="panel-title">✏️ Editar Cardápio Popular</span>
-          <span style="display:flex;align-items:center;gap:10px;">
-            <a href="/cardapio-rodizio-popular.html" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:var(--gold);text-decoration:none;">🔗 Pré-visualizar página</a>
-            <span id="rp-editor-toggle-icon" style="font-size:12px;color:var(--muted);">▾ mostrar</span>
-          </span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin:2px 0 12px;">
-          Edita o conteúdo da página pública do Rodízio Popular (a mesma do QR "Cardápio Rodízio Popular" acima) — preços por dia, destaques, categorias e itens, frases do topo e dados de rodapé.
-        </div>
-        <div id="rp-editor-body" style="display:none;">
-
-          <div class="settings-card-title" style="margin-top:4px;">🎨 Aparência — fontes e cores</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ajusta a tipografia e a cor de destaque da página pública, sem precisar mexer em código.</div>
-          <div class="field-row" style="margin-bottom:14px;">
-            <div class="field">
-              <label style="font-size:10px;">Fonte dos títulos</label>
-              <select id="rp-theme-headingfont" onchange="rpDraft.theme.headingFont=this.value">
-                <option value="serif">Serifada (elegante — padrão)</option>
-                <option value="sans-serif">Sem serifa (moderna/limpa)</option>
-                <option value="rounded">Arredondada (amigável)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label style="font-size:10px;">Fonte do texto</label>
-              <select id="rp-theme-bodyfont" onchange="rpDraft.theme.bodyFont=this.value">
-                <option value="sans-serif">Sem serifa (padrão)</option>
-                <option value="serif">Serifada</option>
-              </select>
-            </div>
-            <div class="field" style="max-width:110px;">
-              <label style="font-size:10px;">Cor de destaque</label>
-              <input type="color" id="rp-theme-color" oninput="rpDraft.theme.accentColor=this.value" style="width:100%;height:36px;padding:2px;"/>
-            </div>
-            <div class="field">
-              <label style="font-size:10px;">Tamanho do texto (<span id="rp-theme-scale-label">100%</span>)</label>
-              <input type="range" id="rp-theme-scale" min="0.85" max="1.25" step="0.05" oninput="rpDraft.theme.fontScale=Number(this.value);document.getElementById('rp-theme-scale-label').textContent=Math.round(this.value*100)+'%';"/>
-            </div>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:4px;">📷 Foto de capa</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Aparece no topo da página, em tela cheia. Envie do dispositivo ou cole um link — a prévia abaixo mostra a foto no formato original (sem cortar), do jeito que ela é enviada.</div>
-          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;">
-            <img id="rp-hero-preview" src="" alt="" style="width:160px;max-height:120px;object-fit:contain;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:none;"/>
-            <div style="flex:1;min-width:200px;">
-              <input id="rp-herophoto" placeholder="https://.../capa.jpg (ou envie do dispositivo →)" oninput="rpDraft.heroPhoto=this.value;rpUpdateHeroPreview();" style="width:100%;margin-bottom:6px;"/>
-              <input type="file" accept="image/*" id="rp-hero-file" style="display:none;" onchange="uploadRpHeroPhoto(this)"/>
-              <button type="button" class="btn secondary sm" onclick="document.getElementById('rp-hero-file').click()">📤 Enviar foto de capa</button>
-              <span id="rp-hero-status" style="font-size:10px;color:var(--muted);margin-left:6px;"></span>
-            </div>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">🖼️ Galeria de fotos</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Fotos do rodízio/ambiente mostradas na galeria da página. Envie do dispositivo ou cole um link.</div>
-          <div id="rp-gallery-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddGalleryPhoto()">+ Foto na galeria</button>
-
-          <div class="settings-card-title" style="margin-top:4px;">💰 Preços por grupo de dias</div>
-          <div id="rp-pricegroups-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddPriceGroup()">+ Grupo de dias</button>
-          <div class="field" style="margin-top:12px;max-width:420px;">
-            <label>Observação do preço (aceita HTML simples, ex: &lt;b&gt;18:30&lt;/b&gt;)</label>
-            <input id="rp-pricenote" placeholder="Valores válidos a partir das 18:30."/>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">⭐ Destaques do rodízio</div>
-          <div id="rp-highlights-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddHighlight()">+ Destaque</button>
-
-          <div class="settings-card-title" style="margin-top:20px;">🍽️ Categorias e itens</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Um item por linha. Pra dar um subtítulo (ex: "sob consulta"), escreva assim: <code>Nome do item | subtítulo</code></div>
-          <div id="rp-categories-list" style="display:flex;flex-direction:column;gap:14px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddCategory()">+ Categoria</button>
-
-          <div class="settings-card-title" style="margin-top:20px;">💬 Frases do topo (giram automaticamente)</div>
-          <div class="field">
-            <textarea id="rp-phrases" rows="5" placeholder="Uma frase por linha" style="width:100%;font-family:inherit;font-size:12px;padding:8px;"></textarea>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">📍 Rodapé</div>
-          <div class="field-row">
-            <div class="field"><label>Endereço</label><input id="rp-address" placeholder="Av. Gov. Roberto Silveira, 109 — Costa Azul, Rio das Ostras"/></div>
-            <div class="field"><label>WhatsApp (só números, com DDI)</label><input id="rp-whatsapp" placeholder="552227641333"/></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Instagram (sem @)</label><input id="rp-instagram" placeholder="shogatsurestaurante"/></div>
-            <div class="field"><label>Link do delivery</label><input id="rp-deliveryurl" placeholder="/"/></div>
-          </div>
-          <div class="field">
-            <label>Aviso de taxa de desperdício</label>
-            <input id="rp-wastenote" placeholder="Taxa de desperdício: valor da peça do cardápio..."/>
-          </div>
-
-          <button type="button" class="btn secondary sm" style="margin-top:14px;" onclick="rpToggleManualEditor()">🛠️ Editar manualmente (avançado)</button>
-          <div id="rp-manual-editor" style="display:none;margin-top:10px;">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
-              Edita tudo de uma vez em formato JSON — útil pra copiar/colar entre lojas ou fazer
-              ajustes finos. Clique em "Aplicar" pra recarregar os campos acima a partir daqui
-              (ainda precisa clicar em Salvar depois pra confirmar de vez).
-            </div>
-            <textarea id="rp-manual-json" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;background:var(--bg);color:var(--white);border:1px solid var(--border);border-radius:6px;"></textarea>
-            <button type="button" class="btn secondary sm" style="margin-top:8px;" onclick="rpApplyManualJson()">↻ Aplicar JSON aos campos</button>
-          </div>
-
-          <div style="margin-top:18px;display:flex;gap:10px;">
-            <button type="button" class="btn primary" onclick="saveRodizioPopular()">💾 Salvar Cardápio Popular</button>
-            <button type="button" class="btn secondary" onclick="renderRpEditor()">↺ Descartar alterações</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="panel" style="max-width:520px;margin-top:18px;">
-        <div class="panel-title" style="margin-bottom:10px;">🔧 Gerador Personalizado</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Cole qualquer link (ou texto) e gere um QR Code na hora — útil pra promoções, cardápios de terceiros, cupons, etc.</div>
-        <div class="field">
-          <label>Link ou texto</label>
-          <div style="display:flex;gap:8px;">
-            <input id="qrl-custom-input" placeholder="https://..." style="flex:1;"/>
-            <button class="btn primary sm" onclick="generateCustomQr()">Gerar QR</button>
-          </div>
-        </div>
-        <div id="qrl-custom-result" style="display:none;margin-top:12px;text-align:center;">
-          <img id="qrl-custom-img" style="width:160px;height:160px;border-radius:8px;background:#fff;padding:6px;"/>
-          <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;">
-            <a class="btn secondary sm" id="qrl-custom-download" download="qrcode.png" target="_blank">⬇️ Baixar</a>
-            <button class="btn secondary sm" onclick="printQrImage('qrl-custom-img')">🖨 Imprimir</button>
-          </div>
-        </div>
-      </div>
-    </div>
-
     <!-- ── RELATÓRIOS ── -->
     <div class="page" id="page-relatorios">
       <div id="reports-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;"></div>
@@ -1670,7 +1710,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               <button type="button" class="btn secondary sm" style="margin-left:6px;padding:1px 8px;" onclick="navigator.clipboard.writeText(PRINT_STATION_ID).then(()=>showToast('📋 Copiado','Código da estação copiado.',2000)).catch(()=>{})">Copiar</button>
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:4px;">
-              Só o computador com o Painel aberto e conectado pode imprimir de verdade (Agente Local ou modo Navegador). Se abrir o Painel em outro computador, ele assume a impressão automaticamente. Pra travar um Agente Local específico nesta estação, copie este código e cole em "stationId" no config.json dele.
+              Só o computador com o Painel aberto e conectado pode imprimir de verdade em <b>modo Navegador</b>. Se abrir o Painel em outro computador, ele assume a impressão automaticamente. Isso não afeta o Agente Local (print-agent.js) — ele imprime de forma independente e já evita duplicidade sozinho, sem precisar de nenhuma configuração extra.
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
               Já colocou um nome escolhido por você (ex.: <code>PC-CAIXA</code>) no config.json do Agente Local, em vez do código acima? Digite o MESMO nome aqui pra esta estação assumir com ele:
@@ -2270,7 +2310,8 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
             <b>Master</b>: acesso total, inclusive gerenciar outros usuários.
             <b>Admin</b>: acesso total ao painel, menos gerenciar usuários.
-            <b>Vendas</b>: só Dashboard, Pedidos e Kanban — ideal pra quem só bate pedido no balcão/telefone.
+            <b>Caixa</b>: só Dashboard, Pedidos e Kanban — ideal pra quem só bate pedido no balcão/telefone.
+            Além do cargo, dá pra afinar módulo por módulo em <b>🔐 Permissões</b> (não vale pra usuários master, que sempre têm acesso total).
           </div>
           <div id="users-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
           <div class="settings-card-title" style="font-size:13px;">+ Novo Usuário</div>
@@ -2279,7 +2320,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <div class="field"><label style="font-size:10px;">Senha</label><input id="nu-password" type="password" placeholder="mín. 4 caracteres"/></div>
             <div class="field"><label style="font-size:10px;">Nível de acesso</label>
               <select id="nu-role">
-                <option value="vendas">Vendas</option>
+                <option value="vendas">Caixa</option>
                 <option value="admin">Admin</option>
                 <option value="master">Master</option>
               </select>
@@ -2303,6 +2344,269 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
       </div>
     </div>
 
+<!-- v107c: EDITOR DE ITEM VIROU PÁGINA CHEIA (não é mais modal) — mesmos dados e mesma API de
+     sempre (/api/config, o mesmo objeto `item` dentro de menu[si].items[ii]); os campos abaixo
+     marcados "novo" são só chaves novas dentro desse mesmo objeto (SKU, EAN, tags, alérgenos,
+     nutricional, estoque, cor do badge, destaque, preço promocional, aceita cupom) — o backend
+     já preserva qualquer chave extra do item (normalizeMenu faz spread), então não precisou
+     mudar nada no servidor pra isso ser salvo/carregado de verdade. -->
+<div class="page" id="page-item-editor">
+  <div class="item-editor-page">
+    <div class="item-editor-header">
+      <div class="item-editor-header-top">
+        <div class="item-editor-header-left">
+          <div class="wizard-breadcrumb">Cardápio › <span id="wizard-cat-name">Categoria</span> › <b id="wizard-title-crumb">Novo Item</b></div>
+          <h1 class="item-editor-title" id="item-modal-title">Novo Item</h1>
+          <div class="item-editor-meta-line" id="item-editor-meta-line">Novo item — ainda não salvo</div>
+        </div>
+        <div class="item-editor-header-actions">
+          <button type="button" class="btn secondary" onclick="cancelItemEditor()">Cancelar</button>
+          <button type="button" class="btn secondary" onclick="scrollToWizardPreview()">👁 Visualizar</button>
+          <button type="button" class="btn secondary" id="wizard-btn-duplicate" style="display:none;" onclick="duplicateCurrentWizardItem()">⧉ Duplicar</button>
+          <button type="button" class="btn secondary" id="wizard-btn-delete" style="display:none;" onclick="deleteCurrentWizardItem()">🗑 Excluir</button>
+          <button type="button" class="btn primary" onclick="saveItem(false)">💾 Salvar Item</button>
+        </div>
+      </div>
+      <div class="wizard-meta">
+        <span class="wizard-status-pill available" id="wizard-status-pill" onclick="toggleWizardAvailability()" title="Clique pra alternar disponibilidade">✅ Disponível</span>
+        <span class="wizard-status-pill" id="wizard-featured-pill" onclick="toggleWizardFeatured()" title="Clique pra alternar destaque">☆ Destaque</span>
+      </div>
+      <div class="wizard-progress-wrap">
+        <div class="wizard-progress-bar"><div class="wizard-progress-fill" id="wizard-progress-fill" style="width:0%;"></div></div>
+        <span class="wizard-progress-pct" id="wizard-progress-pct">0% completo</span>
+      </div>
+    </div>
+
+    <input type="hidden" id="item-edit-si"/>
+    <input type="hidden" id="item-edit-ii"/>
+    <input type="hidden" id="item-image"/>
+    <input type="hidden" id="item-image-pos" value="50,50"/>
+    <input type="hidden" id="item-available" value="true"/>
+    <input type="hidden" id="item-featured" value="false"/>
+
+    <div class="wizard-layout">
+      <div class="wizard-steps" id="wizard-steps"></div>
+      <div class="wizard-content">
+
+        <!-- ETAPA 1 — INFORMAÇÕES -->
+        <div class="wizard-step-panel" data-step="info">
+          <div class="wizard-step-section-title">1. Informações do Produto</div>
+          <div class="field">
+            <label>Foto do Prato</label>
+            <div class="photo-upload">
+              <div class="photo-preview-wrap" id="item-photo-wrap">
+                <img class="photo-preview" id="item-photo-preview" alt="Foto do prato"/>
+                <span class="photo-placeholder-icon" id="item-photo-placeholder">🍽️</span>
+              </div>
+              <div class="photo-upload-actions">
+                <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
+                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
+                <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
+                <span class="photo-upload-status" id="item-photo-status"></span>
+              </div>
+            </div>
+            <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
+              <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
+              <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
+                <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
+                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              </div>
+              <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
+                <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
+                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              </div>
+            </div>
+          </div>
+          <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato" oninput="updateWizardPreview()"/></div>
+          <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview()"></textarea></div>
+          <div class="field-row">
+            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="updateWizardPreview()"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Categoria</label><input id="item-category-display" disabled style="opacity:.7;"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>SKU <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input id="item-sku" placeholder="ex: COMBO-0245" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>EAN (opcional) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input id="item-ean" placeholder="789..." oninput="updateWizardPreview()"/></div>
+          </div>
+          <div class="field">
+            <label>Tags / palavras-chave <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo — separe por vírgula)</span></label>
+            <input id="item-tags" placeholder="ex: combo, premium, 24 peças" oninput="updateWizardPreview()"/>
+          </div>
+        </div>
+
+        <!-- ETAPA 2 — TAMANHOS -->
+        <div class="wizard-step-panel" data-step="tamanhos">
+          <div class="wizard-step-section-title">2. Tamanhos do Produto</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Use um grupo de <b>Escolha única</b> pra P/M/G/Família — o motor é o mesmo de
+            "Variações" (Grupos de Opções), só fica separado aqui pra ficar mais fácil de achar.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Tamanho</span>
+              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','tamanho')">+ Novo Tamanho</button>
+            </label>
+            <div id="item-variants-list-tamanho" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 3 — MONTAGEM -->
+        <div class="wizard-step-panel" data-step="montagem">
+          <div class="wizard-step-section-title">3. Montagem do Combo</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Pra combos montados por peça (ex: "escolha até 24 peças entre os sabores"), use um
+            grupo de <b>Múltipla escolha</b> com quantidade total — o cliente vê um contador
+            +/- por sabor até bater no total configurado aqui.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Montagem</span>
+              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','montagem')">+ Novo Grupo de Montagem</button>
+            </label>
+            <div id="item-variants-list-montagem" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 4 — VARIAÇÕES (+ extras/molhos) -->
+        <div class="wizard-step-panel" data-step="variacoes">
+          <div class="wizard-step-section-title">4. Variações, Adicionais e Molhos</div>
+          <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
+            Sabores, adicionais e molhos — qualquer grupo de opções que não seja tamanho nem
+            montagem de combo entra aqui.
+          </div>
+          <div class="field" style="margin-top:6px;">
+            <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
+              <span>Grupos de Variações</span>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
+                <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','variacao')">+ Grupo novo</button>
+              </span>
+            </label>
+            <div id="item-variants-list-variacao" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
+          </div>
+        </div>
+
+        <!-- ETAPA 5 — APARÊNCIA -->
+        <div class="wizard-step-panel" data-step="aparencia">
+          <div class="wizard-step-section-title">5. Aparência — Badges e Etiquetas</div>
+          <div class="field">
+            <label>Badge (destaque no cardápio)</label>
+            <input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/>
+          </div>
+          <div class="field" style="margin-top:-4px;">
+            <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
+            <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global" onchange="updateWizardPreview()"/> Herdar Badge Global</label>
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual" onchange="updateWizardPreview()"/> Personalizar (usa o texto acima)</label>
+              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off" onchange="updateWizardPreview()"/> Sem badge</label>
+            </div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Cor do Badge <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <input type="color" id="item-badge-color" value="#D9383A" oninput="updateWizardPreview()" style="width:44px;height:36px;padding:2px;"/>
+                <span style="font-size:11px;color:var(--muted);">cor de fundo do badge no cardápio do cliente</span>
+              </div>
+            </div>
+            <div class="field">
+              <label>Destaque <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+              <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:9px 12px;border-radius:6px;border:1px solid var(--border);width:fit-content;">
+                <input type="checkbox" id="item-featured-check" onchange="onWizardFeaturedToggle()"/> Item em destaque
+              </label>
+            </div>
+          </div>
+          <div class="field">
+            <label>Alérgenos <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+            <div id="item-allergens-checks" style="display:flex;flex-wrap:wrap;gap:12px;font-size:12px;margin-top:4px;"></div>
+          </div>
+          <div class="field">
+            <label>Informações Nutricionais <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo — por porção)</span></label>
+            <div class="field-row">
+              <div class="field"><label style="font-size:10px;">Calorias (kcal)</label><input type="number" min="0" id="item-nutri-calories" oninput="updateWizardPreview()"/></div>
+              <div class="field"><label style="font-size:10px;">Proteínas (g)</label><input type="number" min="0" id="item-nutri-protein" oninput="updateWizardPreview()"/></div>
+            </div>
+            <div class="field-row">
+              <div class="field"><label style="font-size:10px;">Carboidratos (g)</label><input type="number" min="0" id="item-nutri-carbs" oninput="updateWizardPreview()"/></div>
+              <div class="field"><label style="font-size:10px;">Gorduras (g)</label><input type="number" min="0" id="item-nutri-fat" oninput="updateWizardPreview()"/></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 6 — DISPONIBILIDADE -->
+        <div class="wizard-step-panel" data-step="disponibilidade">
+          <div class="wizard-step-section-title">6. Disponibilidade</div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+            <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
+          </label>
+          <div class="field" style="margin-top:14px;max-width:260px;">
+            <label>Estoque (unidades) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
+            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="updateWizardPreview()"/>
+          </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">
+            Desmarcado = aparece como "esgotado" pro cliente (mesmo toggle rápido ✅/🚫 que já
+            existe na listagem do cardápio — aqui é só outro jeito de mexer na mesma opção).
+            Horário e pausa programada por dia da semana ainda não existem neste sistema — não
+            criei essa parte agora pra não inventar um recurso novo de meio caminho; me avisa se
+            quiser que eu desenvolva isso numa próxima rodada.
+          </div>
+        </div>
+
+        <!-- ETAPA 7 — IMPRESSÃO -->
+        <div class="wizard-step-panel" data-step="impressao">
+          <div class="wizard-step-section-title">7. Impressão</div>
+          <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;">
+            🖨 A via de impressão (Caixa / Cozinha / SushiBar) é configurada uma vez <b>por
+            categoria</b>, não por item — todo prato desta categoria já herda automaticamente
+            pra onde imprime. Isso evita configurar a mesma coisa prato por prato.
+            <div style="margin-top:10px;">
+              <button type="button" class="btn secondary sm" onclick="goPage('cardapio');openEditCategory(parseInt(document.getElementById('item-edit-si').value))">⚙️ Configurar vias de impressão da categoria</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ETAPA 8 — PROMOÇÕES -->
+        <div class="wizard-step-panel" data-step="promocoes">
+          <div class="wizard-step-section-title">8. Promoções e Descontos</div>
+          <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
+            O <b>Preço Promocional</b> fica na etapa 1 (Informações), junto com o Preço de Venda —
+            quando preenchido, ele aparece riscado/promocional aqui no painel e na prévia ao
+            lado. <b>Ainda não conectei esse preço à vitrine pública nem ao carrinho do cliente</b>
+            pra não arriscar mexer no cálculo do checkout sem seu ok — se quiser que eu ligue
+            isso de verdade no cardápio que o cliente vê, me avisa que eu faço numa próxima etapa.
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+            <input type="checkbox" id="item-accepts-coupon" checked onchange="updateWizardPreview()"/> Aceita cupom de desconto
+          </label>
+          <div style="font-size:11px;color:var(--muted);margin-top:10px;">
+            Os cupons em si continuam cadastrados em <b>Configurações → 🎟️ Cupons</b> (sistema
+            global, sem restrição por prato hoje) — esse campo aqui é <b>(novo)</b> e só marca se
+            este item participa ou não quando um cupom geral for aplicado; ainda não bloqueia o
+            cupom no checkout automaticamente, é informativo por enquanto.
+          </div>
+        </div>
+
+      </div>
+      <div class="wizard-preview">
+        <div class="wizard-preview-title">👁 Prévia no Cardápio do Cliente</div>
+        <div class="wizard-preview-card">
+          <div class="wizard-preview-photo" id="wizard-preview-photo">🍽️</div>
+          <div class="wizard-preview-body">
+            <div id="wizard-preview-badge-wrap"></div>
+            <div class="wizard-preview-name" id="wizard-preview-name">Nome do prato</div>
+            <div class="wizard-preview-desc" id="wizard-preview-desc"></div>
+            <div class="wizard-preview-price" id="wizard-preview-price">R$ 0,00</div>
+          </div>
+        </div>
+        <div class="wizard-preview-summary" id="wizard-preview-summary"></div>
+        <div class="wizard-preview-status-list" id="wizard-preview-status-list"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
   </div><!-- /content -->
 </div><!-- /main -->
 
@@ -2312,77 +2616,48 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- v51: modal "Escolher Impressora" foi removido — o botão 🖨 agora sempre imprime direto em
      todas as vias configuradas (que tiverem itens desse pedido), sem esse passo extra. -->
 
-<!-- MODAL ITEM -->
-<div class="modal-overlay" id="item-modal">
-  <div class="modal">
+
+<!-- MODAL "USAR GRUPO EXISTENTE" (v107a) — escolher um grupo da Biblioteca pra copiar pro item -->
+<div class="modal-overlay" id="use-libgroup-modal">
+  <div class="modal" style="max-width:460px;">
     <div class="modal-header">
-      <span class="modal-title" id="item-modal-title">Novo Item</span>
-      <button class="modal-close" onclick="closeModal('item-modal')">✕</button>
+      <span class="modal-title">📚 Usar grupo existente</span>
+      <button class="modal-close" onclick="closeModal('use-libgroup-modal')">✕</button>
     </div>
     <div class="modal-body">
-      <input type="hidden" id="item-edit-si"/>
-      <input type="hidden" id="item-edit-ii"/>
-      <input type="hidden" id="item-image"/>
-      <input type="hidden" id="item-image-pos" value="50,50"/>
-      <div class="field">
-        <label>Foto do Prato</label>
-        <div class="photo-upload">
-          <div class="photo-preview-wrap" id="item-photo-wrap">
-            <img class="photo-preview" id="item-photo-preview" alt="Foto do prato"/>
-            <span class="photo-placeholder-icon" id="item-photo-placeholder">🍽️</span>
-          </div>
-          <div class="photo-upload-actions">
-            <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
-            <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
-            <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
-            <span class="photo-upload-status" id="item-photo-status"></span>
-          </div>
-        </div>
-        <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
-          <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
-            <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
-            <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
-          </div>
-          <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
-            <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
-            <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
-          </div>
-        </div>
-      </div>
-      <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato"/></div>
-      <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..."></textarea></div>
-      <div class="field-row">
-        <div class="field"><label>Preço R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00"/></div>
-        <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças"/></div>
-      </div>
-      <div class="field-row">
-        <div class="field"><label>Badge (destaque)</label><input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium"/></div>
-      </div>
-      <div class="field" style="margin-top:-4px;">
-        <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
-        <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
-          <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global"/> Herdar Badge Global</label>
-          <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual"/> Personalizar (usa o texto acima)</label>
-          <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off"/> Sem badge</label>
-        </div>
-      </div>
-      <div class="field" style="margin-top:6px;">
-        <label style="display:flex;align-items:center;justify-content:space-between;">
-          <span>Variações (tamanho, sabor, complementos...)</span>
-          <button type="button" class="btn secondary sm" onclick="addVariantGroup()">+ Grupo de variação</button>
-        </label>
-        <div id="item-variants-list" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
-      </div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Copia o grupo pra este item (não fica ligado — se editar aqui, não muda a Biblioteca nem outros itens que já usaram).</div>
+      <div id="use-libgroup-list" style="display:flex;flex-direction:column;gap:8px;"></div>
     </div>
     <div class="modal-footer">
-      <button class="btn secondary" onclick="closeModal('item-modal')">Cancelar</button>
-      <button class="btn primary" onclick="saveItem()">Salvar</button>
+      <button class="btn secondary" onclick="closeModal('use-libgroup-modal')">Fechar</button>
     </div>
   </div>
 </div>
 
-<!-- MODAL 🎨 FUNDO DO CHAT DO PAINEL (admin) -->
+<!-- MODAL 📚 BIBLIOTECA DE GRUPOS DE OPÇÕES REUTILIZÁVEIS (v107a) -->
+<div class="modal-overlay" id="libgroups-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">📚 Grupos de Opções Reutilizáveis</span>
+      <button class="modal-close" onclick="closeModal('libgroups-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
+        Monte um grupo uma vez só (ex: "Molhos", "Sabores de Sushi") e reutilize em quantos pratos
+        precisar, sem digitar tudo de novo — em Editar Item, use o botão "📚 Usar grupo existente".
+        Alterar aqui não muda itens que já usaram o grupo antes (cada item guarda a própria cópia).
+      </div>
+      <button type="button" class="btn secondary sm" style="margin-bottom:10px;" onclick="addVariantGroup('lib')">+ Novo grupo reutilizável</button>
+      <div id="lib-groups-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('libgroups-modal')">Cancelar</button>
+      <button class="btn primary" onclick="saveLibraryGroups()">💾 Salvar Biblioteca</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL 🎨 FUNDO DO CHAT DO PAINEL -->
 <div class="modal-overlay" id="admin-chatbg-modal">
   <div class="modal" style="max-width:460px;">
     <div class="modal-header">
@@ -2500,6 +2775,35 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     </div>
   </div>
 </div>
+
+<!-- MODAL PERMISSÕES DE USUÁRIO (v107 — Prompt 1) -->
+<div class="modal-overlay" id="perm-modal">
+  <div class="modal" style="max-width:560px;">
+    <div class="modal-header">
+      <span class="modal-title">🔐 Permissões — <span id="perm-modal-username"></span></span>
+      <button class="modal-close" onclick="closeModal('perm-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="perm-modal-target-username"/>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
+        ✅ Marcado = esse usuário enxerga e acessa a opção no Painel dele. ❌ Desmarcado = a opção fica
+        oculta e bloqueada só pra ele — o resto do sistema continua igual pra todo mundo.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;">
+        <button type="button" class="btn secondary sm" onclick="permSetAll(true)">☑️ Marcar Tudo</button>
+        <button type="button" class="btn secondary sm" onclick="permSetAll(false)">☐ Desmarcar Tudo</button>
+        <select id="perm-copy-from" style="flex:1;min-width:160px;"></select>
+        <button type="button" class="btn secondary sm" onclick="permCopyFromOther()">📋 Copiar Permissões</button>
+      </div>
+      <div id="perm-modal-groups" style="display:flex;flex-direction:column;gap:16px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('perm-modal')">Cancelar</button>
+      <button class="btn success" onclick="savePermissions()">💾 Salvar Permissões</button>
+    </div>
+  </div>
+</div>
+
 
 <!-- MODAL AJUSTAR PREÇOS EM MASSA (v87) -->
 <div class="modal-overlay" id="bulk-price-modal">
@@ -2846,6 +3150,10 @@ function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&am
 let token = localStorage.getItem('shog_token') || null;
 let userRole = localStorage.getItem('shog_role') || 'admin';
 let userName = localStorage.getItem('shog_user') || '';
+// v107: permissões por usuário (sistema de Permissões, Prompt 1) — null = acesso total, igual
+// sempre foi. Só passa a restringir quando o master desliga algo explicitamente pra alguém.
+let userPermissions = null;
+try { userPermissions = JSON.parse(localStorage.getItem('shog_perms') || 'null'); } catch (e) { userPermissions = null; }
 let cfg = {};
 let menu = [];
 // v83: identifica esta aba/aparelho especificamente — só serve pra evitar imprimir 2x quando
@@ -3115,9 +3423,11 @@ async function doLogin(){
     token = data.token;
     userRole = data.role || 'admin';
     userName = data.username || user || 'admin';
+    userPermissions = data.permissions || null; // v107: null = acesso total (sem restrição)
     localStorage.setItem('shog_token', token);
     localStorage.setItem('shog_role', userRole);
     localStorage.setItem('shog_user', userName);
+    localStorage.setItem('shog_perms', JSON.stringify(userPermissions));
     document.getElementById('login-screen').style.display='none';
     document.getElementById('app-shell').style.display='flex';
     boot();
@@ -3129,6 +3439,7 @@ function doLogout(){
   localStorage.removeItem('shog_token');
   localStorage.removeItem('shog_role');
   localStorage.removeItem('shog_user');
+  localStorage.removeItem('shog_perms');
   token=null;
   if(evtSource) evtSource.close();
   location.reload();
@@ -3138,18 +3449,21 @@ function doLogout(){
 // BOOT
 // ═══════════════════════════════════════════
 async function boot(){
-  await loadConfigAndMenu();
-  await loadOrders();
+  // v107: cada etapa crítica isolada com try/catch — antes, se UMA etapa falhasse (ex: rede
+  // instável), TODAS as etapas seguintes (navegação, SSE, impressão) ficavam sem rodar, sem
+  // nenhum aviso. Agora um erro numa etapa é registrado no console e a inicialização continua.
+  try { await loadConfigAndMenu(); } catch(e){ console.error('⚠️ Falha ao carregar configurações:', e); }
+  await loadOrders(); // já trata o próprio erro internamente (ver função acima)
   updateNewBadge();
   applyRoleUI();
-  goPage('pedidos');
+  goPage(firstAllowedPage() || 'pedidos');
   connectSSE();
   updatePrintTerminalHeartbeat();
   registerPrintStation();
   startPrintStationHeartbeat();
   if(isPrintTestMode()) startPrintTestModeStatusPolling();
   updatePrintStationIndicator();
-  loadReservations();
+  try { await loadReservations(); } catch(e){ console.error('⚠️ Falha ao carregar reservas:', e); }
   setInterval(loadReservations, 30000);
   setupCardControls();
   initSettingsAccordions();
@@ -3524,8 +3838,25 @@ function applyRoleUI(){
   document.querySelectorAll('[data-min-role]').forEach(el=>{
     el.style.display = hasRole(el.dataset.minRole) ? '' : 'none';
   });
+  // v107: além do cargo (role), agora também respeita a permissão específica do usuário —
+  // some da barra lateral (mesmo que o cargo permitisse) sem tocar em mais nada da tela.
+  document.querySelectorAll('.nav-item[data-page],.nav-item[data-perm]').forEach(el=>{
+    const key = el.dataset.perm || el.dataset.page;
+    if(!hasPerm(key)) el.style.display='none';
+  });
   const badge=document.getElementById('sidebar-user-badge');
-  if(badge) badge.textContent = `${userName||'admin'} · ${({master:'Master',admin:'Admin',vendas:'Vendas'})[userRole]||userRole}`;
+  if(badge) badge.textContent = `${userName||'admin'} · ${({master:'Master',admin:'Admin',vendas:'Caixa'})[userRole]||userRole}`;
+}
+// v107: primeira página visível pro usuário atual — usado no boot pra não abrir sozinho uma
+// página que ele não tem permissão de ver (em vez de sempre cair em "pedidos" de propósito).
+function firstAllowedPage(){
+  const order = ['pedidos','reservas','mensagens','motoboys','cardapio','custos','ia','relatorios','avaliacoes','configuracoes','impressao','usuarios'];
+  for(const id of order){
+    if(PAGE_MIN_ROLE[id] && !hasRole(PAGE_MIN_ROLE[id])) continue;
+    if(!hasPerm(id)) continue;
+    return id;
+  }
+  return null;
 }
 
 async function loadConfigAndMenu(){
@@ -3533,6 +3864,7 @@ async function loadConfigAndMenu(){
   const data = await r.json();
   cfg = data.cfg;
   menu = data.menu;
+  editingLibraryGroups = JSON.parse(JSON.stringify(cfg.optionGroupsLibrary || [])); // v107a — biblioteca de grupos reutilizáveis, disponível assim que o painel carrega
   document.getElementById('store-toggle').checked = Boolean(Number(cfg.open));
   const autoSched = cfg.schedule && cfg.schedule.enabled;
   document.getElementById('store-toggle').disabled = !!autoSched;
@@ -3540,9 +3872,38 @@ async function loadConfigAndMenu(){
   document.getElementById('auto-accept-toggle').checked = Boolean(Number(cfg.autoAcceptOrders));
   document.getElementById('auto-accept-status-sub').textContent = Number(cfg.autoAcceptOrders) ? 'ligado — aceita sozinho' : 'desligado';
   applyAdminChatBackground();
+  applyBranding(cfg);
   // v78: mesmos interruptores, agora também como card em Configurações → 🏪 Restaurante
   syncAutomationToggles();
 }
+// v108 — NOME E LOGO DINÂMICOS: antes "SHOGATSU" ficava gravado fixo direto no HTML da tela de
+// login e do topo do menu lateral — agora os dois lêem de cfg.name/cfg.logoUrl (os mesmos campos
+// que "Configurações → Nome do Restaurante" e "Logo" já usavam pra recibos/relatórios/cardápio
+// público havia tempo — só a barra lateral do painel é que ainda não seguia isso). Sem nome
+// configurado, cai no padrão "Food". Sem logo enviada, mantém o emoji como um placeholder
+// elegante (mesma lógica de fallback que renderLogoPreview() já usa há tempo em Configurações).
+function applyBranding(cfg){
+  const name = (cfg && cfg.name ? String(cfg.name).trim() : '') || 'Food';
+  const logo = cfg && cfg.logoUrl ? String(cfg.logoUrl).trim() : '';
+  document.title = name + ' — Painel de Controle';
+  const loginTitle = document.getElementById('login-title');
+  if (loginTitle) loginTitle.textContent = name.toUpperCase();
+  const sidebarName = document.getElementById('sidebar-brand-name');
+  if (sidebarName) sidebarName.textContent = name;
+  [document.getElementById('login-icon'), document.getElementById('sidebar-brand-icon')].forEach(el=>{
+    if (!el) return;
+    if (logo) el.innerHTML = `<img src="${logo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
+    else el.textContent = '🍣'; // placeholder elegante — mesmo padrão já usado em renderLogoPreview()
+  });
+}
+// v108: preenche nome/logo na tela de LOGIN antes de qualquer autenticação — /api/config é
+// público (nunca devolve senha nenhuma, ver GET /api/config no server.js) e já era usado assim
+// pelo cardápio público, então não é uma exposição nova. Se a rede estiver lenta/offline nesse
+// instante, o login-screen simplesmente continua mostrando "Food" (o padrão já escrito no HTML)
+// até o usuário logar de verdade — nunca trava o login por causa disso.
+(function preloadLoginBranding(){
+  fetch('/api/config').then(r=>r.json()).then(data=>{ if (data && data.cfg) applyBranding(data.cfg); }).catch(()=>{});
+})();
 // v78: os interruptores de automação existem em dois lugares (rodapé do menu + card em
 // Configurações) — essa função mantém os dois sempre iguais, não importa qual foi clicado.
 function syncAutomationToggles(){
@@ -3561,7 +3922,20 @@ function syncAutomationToggles(){
 }
 
 async function loadOrders(){
-  orders = await apiGet('/api/orders');
+  // v107 — BUG CORRIGIDO (erro silencioso em cascata): antes, se essa chamada falhasse (rede
+  // instável bem no momento do login, servidor reiniciando, etc.), a exceção subia sem
+  // nenhum catch e travava boot() na metade — o resto da inicialização (goPage, SSE, etc.)
+  // nunca rodava, e o admin via o painel pela metade sem nenhuma explicação do porquê. Agora
+  // registra o erro no console (pra diagnóstico) e cai num array vazio, deixando o resto do
+  // boot continuar normalmente — o painel some com pedidos temporariamente em vez de travar
+  // inteiro, e volta ao normal sozinho no próximo evento SSE ou refresh manual.
+  try {
+    orders = await apiGet('/api/orders');
+  } catch (e) {
+    console.error('⚠️ Não consegui carregar os pedidos:', e);
+    orders = orders || [];
+    showToast('⚠️ Falha ao carregar pedidos', 'Verifique sua conexão. Tentando de novo automaticamente.', 5000);
+  }
 }
 
 function setConnStatus(state){
@@ -3737,11 +4111,22 @@ setInterval(tick,1000);tick();
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',qrlinks:'QR Code & Links',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
-const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', qrlinks:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
+const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio','item-editor':'Editar Item',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
+const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
+// v107: confere a permissão por usuário (Prompt 1) — só entra em ação se o master tiver
+// desligado explicitamente algum módulo pra esse usuário; sem isso (userPermissions === null),
+// o acesso continua sendo decidido só pelo cargo (role), exatamente como sempre foi.
+function hasPerm(moduleKey){
+  if(userRole==='master' || !userPermissions || !moduleKey) return true;
+  return userPermissions[moduleKey] !== false;
+}
 function goPage(id, silent){
   if(PAGE_MIN_ROLE[id] && !hasRole(PAGE_MIN_ROLE[id])){
     showToast('🔒 Acesso restrito','Seu usuário não tem permissão pra essa área.');
+    return;
+  }
+  if(!hasPerm(id)){
+    showToast('🔒 Acesso restrito','Seu usuário não tem permissão pra essa área. Fale com o administrador.');
     return;
   }
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
@@ -3751,10 +4136,9 @@ function goPage(id, silent){
   document.getElementById('topbar-title').textContent=pageTitles[id]||id;
   if(id==='pedidos')setPedidosView(pedidosView);
   if(id==='reservas')renderReservationsList();
-  if(id==='cardapio')renderMenuEditor();
+  if(id==='cardapio'){renderMenuEditor();renderRpEditor();}
   if(id==='custos')renderCustosPage();
   if(id==='ia')renderIaPage();
-  if(id==='qrlinks'){renderQrLinksPage();renderRpEditor();}
   if(id==='relatorios')renderReports();
   if(id==='configuracoes' && !silent)loadSettings();
   if(id==='impressao')loadPrinterCentral();
@@ -4237,58 +4621,7 @@ function copyLinkField(id){
 }
 
 // ═══════════════════════════════════════════
-// QR CODE & LINKS — ferramenta central com uma aba por página pública
-// (o Cardápio do Rodízio tem a sua própria aba, separada das demais).
-// ═══════════════════════════════════════════
-const QR_LINKS = [
-  { key:'pedir',    icon:'📲', label:'Delivery / Pedir Agora', path:'/pedir-agora.html',              desc:'Link único pra bio do Instagram/Facebook ou status do WhatsApp — abre direto o cardápio de delivery.' },
-  { key:'cardapio',  icon:'🍽️', label:'Cardápio',              path:'/cardapio-rodizio.html',          desc:'QR Code pra colar nas mesas do salão — o cliente escaneia e vê o cardápio do rodízio na hora, sem precisar de app.' },
-  { key:'popular',  icon:'📖', label:'Cardápio Rodízio Popular', path:'/cardapio-rodizio-popular.html', desc:'Cardápio completo do rodízio (preços por grupo de dias, destaques do dia) — pode ir num QR separado se quiser um cardápio mais completo na mesa.' },
-  { key:'divulgacao', icon:'📣', label:'Divulgação',            path:'/divulgacao-rodizio.html',        desc:'Página-vitrine do rodízio, pronta pra colar na bio do Instagram/Facebook ou mandar direto pro cliente.' },
-  { key:'avaliar',  icon:'⭐', label:'Avaliação Rodízio',        path:'/avaliar-rodizio.html',           desc:'Link pra pedir avaliação de quem veio no rodízio presencial — pode imprimir o QR e deixar na mesa ou na conta.' },
-  { key:'entregador', icon:'🛵', label:'Motoboys',   path:'/entregador.html',                desc:'Acesso rápido do motoboy pra ver e atualizar as entregas — manda o link direto pro celular dele.' },
-];
-let qrlActiveTab = 'pedir';
-function renderQrLinksPage(){
-  const tabsEl = document.getElementById('qrl-tabs');
-  tabsEl.innerHTML = QR_LINKS.map(l=>`
-    <button class="topbar-btn${qrlActiveTab===l.key?' active':''}" id="qrltab-${l.key}" onclick="qrlSelectTab('${l.key}')" style="${qrlActiveTab===l.key?'border-color:var(--red);color:var(--red-lt)':''}">${l.icon} ${l.label}</button>
-  `).join('');
-  qrlRenderContent();
-}
-function qrlSelectTab(key){
-  qrlActiveTab = key;
-  document.querySelectorAll('#qrl-tabs .topbar-btn').forEach(b=>{ b.classList.remove('active'); b.style.borderColor=''; b.style.color=''; });
-  const active = document.getElementById('qrltab-'+key);
-  if(active){ active.classList.add('active'); active.style.borderColor='var(--red)'; active.style.color='var(--red-lt)'; }
-  qrlRenderContent();
-}
-function qrlRenderContent(){
-  const l = QR_LINKS.find(x=>x.key===qrlActiveTab) || QR_LINKS[0];
-  const url = location.origin + l.path;
-  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
-  document.getElementById('qrl-content').innerHTML = `
-    <div class="panel-title" style="margin-bottom:6px;">${l.icon} ${l.label}</div>
-    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">${l.desc}</div>
-    <div class="field" style="margin-bottom:14px;">
-      <label>Link</label>
-      <div style="display:flex;gap:8px;">
-        <input id="qrl-link-input" readonly onclick="this.select()" value="${url}" style="flex:1;font-size:11px;"/>
-        <button class="btn secondary sm" onclick="copyLinkField('qrl-link-input')">📋 Copiar</button>
-      </div>
-    </div>
-    <div style="text-align:center;">
-      <img id="qrl-img" src="${qrSrc}" style="width:220px;height:220px;border-radius:10px;background:#fff;padding:8px;" alt="QR Code — ${l.label}"/>
-      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
-        <a class="btn secondary sm" href="${qrSrc}" download="qr-${l.key}.png" target="_blank">⬇️ Baixar QR</a>
-        <button class="btn secondary sm" onclick="printQrImage('qrl-img','${esc(l.label)}')">🖨 Imprimir QR</button>
-        <button class="btn secondary sm" onclick="window.open('${url}','_blank')">🔗 Abrir</button>
-      </div>
-    </div>`;
-}
-
-// ═══════════════════════════════════════════
-// v44: EDITAR CARDÁPIO POPULAR (aba dentro de QR Code & Links)
+// v44: EDITAR CARDÁPIO POPULAR (agora mora na página "Cardápio" — ver v108 acima)
 // Edita cfg.rodizioPopular, consumido pela página pública cardapio-rodizio-popular.html.
 // ═══════════════════════════════════════════
 let rpDraft = null; // cópia de trabalho de cfg.rodizioPopular enquanto o admin edita
@@ -4672,6 +5005,7 @@ async function uploadLogo(input){
     const res = await apiPost('/api/config', { cfg: { logoUrl: cfg.logoUrl }, menu });
     if(!res.ok){ statusEl.innerHTML = '<span style="color:var(--red-lt);">'+(res.data.error||'Erro ao salvar.')+'</span>'; return; }
     renderLogoPreview();
+    applyBranding(cfg); // v108: atualiza logo na tela de login e na barra lateral na hora, sem precisar recarregar
     statusEl.innerHTML = '<span style="color:var(--green);">✅ Logo atualizada!</span>';
     setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
   };
@@ -4994,34 +5328,6 @@ function applyAdminChatBackground(){
   } else {
     el.style.backgroundImage = '';
   }
-}
-
-function generateCustomQr(){
-  const val = document.getElementById('qrl-custom-input').value.trim();
-  if(!val){ showToast('Digite um link ou texto', 'Preencha o campo antes de gerar o QR.'); return; }
-  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(val);
-  document.getElementById('qrl-custom-img').src = qrSrc;
-  const dl = document.getElementById('qrl-custom-download');
-  dl.href = qrSrc;
-  document.getElementById('qrl-custom-result').style.display = 'block';
-}
-// Abre uma janela simples só com a imagem do QR pra imprimir (útil pra colar na mesa/conta).
-function printQrImage(imgId, label){
-  const src = document.getElementById(imgId).src;
-  const w = window.open('', '_blank', 'width=400,height=500');
-  if(!w){ showToast('⚠️ Pop-up bloqueado', 'Permita pop-ups pra esse site pra imprimir o QR Code.', 5000); return; }
-  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR Code</title>
-  <style>body{font-family:sans-serif;text-align:center;padding:30px;} img{width:280px;height:280px;} h2{font-size:15px;margin-top:14px;}</style>
-  </head><body>
-    <img src="${src}"/>
-    ${label?`<h2>${label}</h2>`:''}
-    <script>
-      window.onload = function(){ window.print(); };
-      window.onafterprint = function(){ try{ window.close(); }catch(e){} };
-      setTimeout(function(){ try{ window.close(); }catch(e){} }, 45000);
-    <\/script>
-  </body></html>`);
-  w.document.close();
 }
 
 // ── Seletor de motoboy (v32) — mostra os motoboys pré-cadastrados como chips,
@@ -5439,7 +5745,7 @@ function buildPlainTicketLines(order, station, deliveryWindow){
   const money = v => 'R$ '+Number(v||0).toFixed(2).replace('.',',');
   const HR = '--------------------------------', HR2='================================';
   const L = [];
-  L.push({text:(cfg.name||'SHOGATSU').toUpperCase(), size:12, bold:true, center:true});
+  L.push({text:(cfg.name||'FOOD').toUpperCase(), size:12, bold:true, center:true});
   L.push({text:(cfg.tagline||'CULINARIA ORIENTAL').toUpperCase()});
   L.push(HR2);
   if(isCaixa){
@@ -5520,7 +5826,7 @@ function openBrowserReservationTicket(reservation){
     .t-row{font-size:${Math.round(12*scale)}px;margin:3px 0;}
   </style></head><body>
     <div class="t-center">
-      <div class="t-title">${(cfg.name||'SHOGATSU').toUpperCase()}</div>
+      <div class="t-title">${(cfg.name||'FOOD').toUpperCase()}</div>
       <div class="t-sub">${esc(cfg.tagline||'CULINÁRIA ORIENTAL')}</div>
     </div>
     <div class="t-hr-solid"></div>
@@ -5606,7 +5912,7 @@ function openBrowserTicket(order, station, deliveryWindow, existingWin){
     .t-obs-line{border-bottom:1px solid ${pc};height:${Math.round(16*scale)}px;margin:6px 4px;}
   </style></head><body>
     <div class="t-center">
-      <div class="t-title">${(cfg.name||'SHOGATSU').toUpperCase()}</div>
+      <div class="t-title">${(cfg.name||'FOOD').toUpperCase()}</div>
       <div class="t-sub">${esc(cfg.tagline||'CULINÁRIA ORIENTAL')}</div>
     </div>
     <div class="t-hr-solid"></div>
@@ -6032,7 +6338,11 @@ function renderOrdersList(){
 let reservations = [];
 let reservationFilter = 'todos';
 async function loadReservations(){
-  try{ const d = await apiGet('/api/reservations'); reservations = d.reservations||[]; }catch(e){}
+  // v107: catch registrava o erro em silêncio total — agora loga no console pra dar pra
+  // diagnosticar (ex: Supabase/servidor fora do ar), mas continua sem incomodar o admin com um
+  // alerta a cada 30s (esse polling já tenta de novo sozinho) — só reservations.length fica
+  // parado no valor antigo até a próxima tentativa funcionar.
+  try{ const d = await apiGet('/api/reservations'); reservations = d.reservations||[]; }catch(e){ console.error('⚠️ Falha ao carregar reservas:', e); }
   const pending = reservations.filter(r=>r.status==='pendente').length;
   const nb = document.getElementById('nb-reservas');
   if(nb){ nb.style.display = pending?'inline-block':'none'; nb.textContent = pending; }
@@ -7088,6 +7398,7 @@ function resetItemPhotoPreview(url, pos){
     img.style.display='none';
     placeholder.style.display='flex';
   }
+  if(typeof updateWizardPreview==='function') updateWizardPreview(); // v107b: mantém a prévia da foto em dia
 }
 // BUG CORRIGIDO (v42 — "caixa de fotos bugada"): antes a foto ia pro servidor do
 // jeito que saía da câmera do celular (muitas vezes 3–8MB), o que passava perto ou
@@ -7159,137 +7470,492 @@ function updateItemPhotoPos(){
 }
 
 let editingVariants=[];
+let editingLibraryGroups=[]; // v107a — biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚)
 function openAddItem(){
   if(!menu[activeCatIdx]){ alert('Crie uma categoria antes de adicionar itens.'); return; }
   document.getElementById('item-modal-title').textContent='Novo Item';
+  document.getElementById('item-editor-meta-line').textContent='Novo item — ainda não salvo';
   document.getElementById('item-edit-si').value=activeCatIdx;
   document.getElementById('item-edit-ii').value=-1;
-  ['item-name','item-desc','item-qty','item-badge'].forEach(id=>document.getElementById(id).value='');
+  ['item-name','item-desc','item-qty','item-badge','item-sku','item-ean','item-tags'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('item-price').value='';
+  document.getElementById('item-promo-price').value='';
+  document.getElementById('item-stock').value='';
+  document.getElementById('item-badge-color').value='#D9383A';
   document.getElementById('item-badgemode-global').checked=true;
+  document.getElementById('item-available-check').checked=true;
+  document.getElementById('item-available').value='true';
+  document.getElementById('item-featured-check').checked=false;
+  document.getElementById('item-featured').value='false';
+  document.getElementById('item-accepts-coupon').checked=true;
+  ['item-nutri-calories','item-nutri-protein','item-nutri-carbs','item-nutri-fat'].forEach(id=>document.getElementById(id).value='');
+  renderAllergenChecks([]);
   resetItemPhotoPreview('', {x:50,y:50});
   editingVariants=[];
-  renderVariantGroups();
-  openModal('item-modal');
+  initWizard(false);
+  renderAllItemGroups();
+  goPage('item-editor', true);
 }
 function openEditItem(si,ii){
   const item=menu[si].items[ii];
   document.getElementById('item-modal-title').textContent='Editar Item';
+  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')):null].filter(Boolean);
+  document.getElementById('item-editor-meta-line').textContent = metaBits.join(' · ');
   document.getElementById('item-edit-si').value=si;
   document.getElementById('item-edit-ii').value=ii;
   document.getElementById('item-name').value=item.name;
   document.getElementById('item-desc').value=item.desc||'';
   document.getElementById('item-price').value=item.price;
+  document.getElementById('item-promo-price').value=item.promoPrice||'';
   document.getElementById('item-qty').value=item.qty||'';
+  document.getElementById('item-sku').value=item.sku||'';
+  document.getElementById('item-ean').value=item.ean||'';
+  document.getElementById('item-tags').value=(item.tags||[]).join(', ');
+  document.getElementById('item-stock').value=(item.stock===null||item.stock===undefined)?'':item.stock;
   document.getElementById('item-badge').value=item.badge||'';
+  document.getElementById('item-badge-color').value=item.badgeColor||'#D9383A';
   document.getElementById('item-badgemode-'+(item.badgeMode||'global')).checked=true;
+  document.getElementById('item-available-check').checked = item.available!==false;
+  document.getElementById('item-available').value = item.available!==false ? 'true' : 'false';
+  document.getElementById('item-featured-check').checked = !!item.featured;
+  document.getElementById('item-featured').value = item.featured ? 'true' : 'false';
+  document.getElementById('item-accepts-coupon').checked = item.acceptsCoupon!==false;
+  const nutri = item.nutrition||{};
+  document.getElementById('item-nutri-calories').value = nutri.calories==null?'':nutri.calories;
+  document.getElementById('item-nutri-protein').value = nutri.protein==null?'':nutri.protein;
+  document.getElementById('item-nutri-carbs').value = nutri.carbs==null?'':nutri.carbs;
+  document.getElementById('item-nutri-fat').value = nutri.fat==null?'':nutri.fat;
+  renderAllergenChecks(item.allergens||[]);
   resetItemPhotoPreview(item.image||'', item.imagePos||{x:50,y:50});
   editingVariants=JSON.parse(JSON.stringify(item.variants||[]));
-  renderVariantGroups();
-  openModal('item-modal');
+  initWizard(true);
+  renderAllItemGroups();
+  goPage('item-editor', true);
 }
 // v75: BUG "Estações" saiu da edição do item — agora só existe em nível de Categoria
 // (Cardápio → editar categoria → "Imprime na(s) via(s) de:"). Todo item herda automaticamente
 // as vias da categoria; não existe mais controle por item.
-// ── Variações (grupos de opções, ex: Tamanho / Adicionais) ──
-function addVariantGroup(){
-  editingVariants.push({id:'g'+Date.now().toString(36),name:'',type:'single',required:false,options:[{name:'',priceDelta:0}]});
-  renderVariantGroups();
+// ═══════════════════════════════════════════
+// v107b — EDITOR DE PRODUTO (WIZARD): etapas, progresso, prévia ao vivo, resumo
+// ═══════════════════════════════════════════
+// Reorganiza visualmente o MESMO formulário de sempre — nenhum campo/API/lógica de dados novo
+// além da checkbox de disponibilidade (que já existia como toggle rápido na listagem; aqui é só
+// outro jeito de mexer na mesma propriedade `item.available`).
+const WIZARD_STEPS = [
+  { id:'info', label:'Informações', sub:'Básicas do produto', icon:'📝' },
+  { id:'tamanhos', label:'Tamanhos', sub:'P, M, G, Família...', icon:'📏' },
+  { id:'montagem', label:'Montagem', sub:'Peças do combo', icon:'🧩' },
+  { id:'variacoes', label:'Variações', sub:'Sabores, adicionais...', icon:'🎛️' },
+  { id:'aparencia', label:'Aparência', sub:'Badges e etiquetas', icon:'🎨' },
+  { id:'disponibilidade', label:'Disponibilidade', sub:'Horários e estoque', icon:'✅' },
+  { id:'impressao', label:'Impressão', sub:'Estações e impressoras', icon:'🖨' },
+  { id:'promocoes', label:'Promoções', sub:'Descontos e ofertas', icon:'🏷️' },
+];
+let wizardCurrentStep = 'info';
+function initWizard(isEdit){
+  wizardCurrentStep='info';
+  const si = parseInt(document.getElementById('item-edit-si').value);
+  document.getElementById('wizard-cat-name').textContent = (menu[si]&&menu[si].title) || 'Categoria';
+  document.getElementById('wizard-title-crumb').textContent = isEdit ? 'Editar Item' : 'Novo Item';
+  document.getElementById('item-category-display').value = (menu[si]&&menu[si].title) || '';
+  document.getElementById('wizard-steps').innerHTML = WIZARD_STEPS.map((s,i)=>`
+    <button type="button" class="wizard-step-btn" data-wizard-step="${s.id}" onclick="goToWizardStep('${s.id}')">
+      <span class="wsn">${i+1}</span>
+      <span class="wizard-step-btn-text"><span class="wizard-step-btn-label">${s.icon} ${s.label}</span><span class="wizard-step-btn-sub">${s.sub}</span></span>
+    </button>`).join('');
+  document.getElementById('wizard-btn-delete').style.display = isEdit ? '' : 'none';
+  document.getElementById('wizard-btn-duplicate').style.display = isEdit ? '' : 'none';
+  goToWizardStep('info');
+  updateWizardPreview();
 }
-function removeVariantGroup(gi){
+function goToWizardStep(id){
+  wizardCurrentStep=id;
+  document.querySelectorAll('.wizard-step-panel').forEach(p=>p.classList.toggle('active', p.dataset.step===id));
+  document.querySelectorAll('.wizard-step-btn').forEach(b=>b.classList.toggle('active', b.dataset.wizardStep===id));
+  const layoutEl = document.querySelector('.wizard-layout');
+  if(layoutEl) layoutEl.scrollIntoView({block:'nearest'});
+}
+function scrollToWizardPreview(){
+  const el = document.querySelector('.wizard-preview');
+  if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+}
+function cancelItemEditor(){
+  goPage('cardapio');
+}
+function onWizardAvailabilityToggle(){
+  const checked = document.getElementById('item-available-check').checked;
+  document.getElementById('item-available').value = checked ? 'true' : 'false';
+  updateWizardPreview();
+}
+function toggleWizardAvailability(){
+  const cb=document.getElementById('item-available-check');
+  cb.checked=!cb.checked;
+  onWizardAvailabilityToggle();
+}
+function onWizardFeaturedToggle(){
+  const checked = document.getElementById('item-featured-check').checked;
+  document.getElementById('item-featured').value = checked ? 'true' : 'false';
+  updateWizardPreview();
+}
+function toggleWizardFeatured(){
+  const cb=document.getElementById('item-featured-check');
+  cb.checked=!cb.checked;
+  onWizardFeaturedToggle();
+}
+// Lista fixa de alérgenos comuns em culinária japonesa/oriental — cada um vira um checkbox;
+// o que fica marcado vai pra item.allergens (array de strings), campo novo e opcional.
+const ALLERGEN_OPTIONS = [
+  {id:'peixe',label:'🐟 Peixe'},{id:'crustaceos',label:'🦐 Crustáceos'},{id:'gluten',label:'🌾 Glúten'},
+  {id:'soja',label:'🫘 Soja'},{id:'gergelim',label:'◦ Gergelim'},{id:'ovo',label:'🥚 Ovo'},
+  {id:'lactose',label:'🥛 Lactose'},{id:'amendoim',label:'🥜 Amendoim/Castanhas'},
+];
+function renderAllergenChecks(selected){
+  const sel = new Set(selected||[]);
+  document.getElementById('item-allergens-checks').innerHTML = ALLERGEN_OPTIONS.map(a=>`
+    <label style="display:flex;align-items:center;gap:5px;cursor:pointer;">
+      <input type="checkbox" class="item-allergen-check" value="${a.id}" ${sel.has(a.id)?'checked':''} onchange="updateWizardPreview()"/> ${a.label}
+    </label>`).join('');
+}
+function getSelectedAllergens(){
+  return Array.from(document.querySelectorAll('.item-allergen-check:checked')).map(c=>c.value);
+}
+// 0-100%: nome, preço, foto, descrição e ao menos 1 grupo — pesos simples, só pra dar um norte
+// visual de "o que falta"; não bloqueia salvar (salvar continua exigindo só nome+preço, igual sempre foi).
+function computeWizardProgress(){
+  let score=0;
+  if(document.getElementById('item-name').value.trim()) score+=30;
+  if(parseFloat(document.getElementById('item-price').value)>0) score+=25;
+  if(document.getElementById('item-image').value.trim()) score+=20;
+  if(document.getElementById('item-desc').value.trim()) score+=15;
+  if(editingVariants.length>0) score+=10;
+  return Math.min(100,score);
+}
+function updateWizardPreview(){
+  const name = document.getElementById('item-name').value.trim() || 'Nome do prato';
+  const desc = document.getElementById('item-desc').value.trim();
+  const price = parseFloat(document.getElementById('item-price').value)||0;
+  const promoPrice = parseFloat(document.getElementById('item-promo-price').value)||0;
+  const image = document.getElementById('item-image').value.trim();
+  const badgeMode = (document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global';
+  const badgeText = document.getElementById('item-badge').value.trim();
+  const badgeColor = document.getElementById('item-badge-color').value||'#D9383A';
+  const available = document.getElementById('item-available-check').checked;
+  const featured = document.getElementById('item-featured-check').checked;
+  const stock = document.getElementById('item-stock').value.trim();
+  const acceptsCoupon = document.getElementById('item-accepts-coupon').checked;
+  const allergens = getSelectedAllergens();
+  document.getElementById('wizard-preview-name').textContent = name;
+  document.getElementById('wizard-preview-desc').textContent = desc;
+  document.getElementById('wizard-preview-price').innerHTML = (promoPrice>0 && promoPrice<price)
+    ? `<span class="old">R$ ${price.toFixed(2).replace('.',',')}</span>R$ ${promoPrice.toFixed(2).replace('.',',')}`
+    : 'R$ ' + price.toFixed(2).replace('.',',');
+  const photoEl = document.getElementById('wizard-preview-photo');
+  if(image){ photoEl.style.backgroundImage = `url(${JSON.stringify(image).slice(1,-1)})`; photoEl.textContent=''; }
+  else { photoEl.style.backgroundImage=''; photoEl.textContent='🍽️'; }
+  document.getElementById('wizard-preview-badge-wrap').innerHTML = (badgeMode==='manual'&&badgeText) ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : (badgeMode==='global' ? `<span class="wizard-preview-badge" style="opacity:.6;">🏷 badge global</span>` : '');
+  const pill = document.getElementById('wizard-status-pill');
+  pill.className = 'wizard-status-pill '+(available?'available':'unavailable');
+  pill.textContent = available ? '✅ Disponível' : '🚫 Esgotado';
+  const fpill = document.getElementById('wizard-featured-pill');
+  fpill.className = 'wizard-status-pill '+(featured?'featured-on':'');
+  fpill.textContent = featured ? '⭐ Destaque' : '☆ Destaque';
+  const pct = computeWizardProgress();
+  document.getElementById('wizard-progress-fill').style.width = pct+'%';
+  document.getElementById('wizard-progress-pct').textContent = pct+'% completo';
+  document.getElementById('wizard-preview-summary').innerHTML = `
+    <div>🍱 ${editingVariants.length} grupo(s) de opções</div>
+    <div>${document.getElementById('item-qty').value.trim() ? '🍣 '+document.getElementById('item-qty').value.trim() : ''}</div>`;
+  const nutriCal = document.getElementById('item-nutri-calories').value.trim();
+  const nutriProt = document.getElementById('item-nutri-protein').value.trim();
+  const nutriCarb = document.getElementById('item-nutri-carbs').value.trim();
+  const nutriFat = document.getElementById('item-nutri-fat').value.trim();
+  const hasNutri = nutriCal||nutriProt||nutriCarb||nutriFat;
+  const rows = [
+    ['Status', available ? 'Disponível' : 'Esgotado'],
+    ['Destaque', featured ? 'Sim' : 'Não'],
+    ['Aceita Cupom', acceptsCoupon ? 'Sim' : 'Não'],
+    ['Estoque', stock ? stock+' unidades' : 'Ilimitado'],
+  ];
+  if(allergens.length) rows.push(['Alérgenos', allergens.map(id=>(ALLERGEN_OPTIONS.find(a=>a.id===id)||{}).label||id).join(', ')]);
+  if(hasNutri) rows.push(['Nutricional', [nutriCal&&nutriCal+' kcal', nutriProt&&nutriProt+'g prot', nutriCarb&&nutriCarb+'g carb', nutriFat&&nutriFat+'g gord'].filter(Boolean).join(' · ')]);
+  document.getElementById('wizard-preview-status-list').innerHTML = rows.map(([k,v])=>`
+    <div class="wizard-preview-status-row"><span>${k}</span><b>${v}</b></div>`).join('');
+}
+async function duplicateCurrentWizardItem(){
+  const si=parseInt(document.getElementById('item-edit-si').value);
+  const ii=parseInt(document.getElementById('item-edit-ii').value);
+  if(ii===-1)return;
+  const clone=JSON.parse(JSON.stringify(menu[si].items[ii]));
+  clone.name = clone.name+' (cópia)';
+  clone.id = 'item'+Date.now().toString(36);
+  clone.createdAt = new Date().toISOString();
+  clone.updatedAt = clone.createdAt;
+  menu[si].items.splice(ii+1,0,clone);
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ alert(res.data.error||'Erro ao duplicar item.'); menu[si].items.splice(ii+1,1); return; }
+  goPage('cardapio');
+  renderMenuEditor();
+  showToast('⧉ Item duplicado', clone.name);
+}
+async function deleteCurrentWizardItem(){
+  const si=parseInt(document.getElementById('item-edit-si').value);
+  const ii=parseInt(document.getElementById('item-edit-ii').value);
+  if(ii===-1)return;
+  const removedItem = menu[si].items[ii];
+  if(!confirm(`Remover "${removedItem.name}"?`))return; // confirma ANTES de sair da página — cancelar mantém tudo como estava
+  menu[si].items.splice(ii,1);
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ alert(res.data.error||'Erro ao remover item.'); menu[si].items.splice(ii,0,removedItem); return; }
+  goPage('cardapio');
+  renderMenuEditor();
+}
+// ═══════════════════════════════════════════
+// GRUPOS DE OPÇÕES (v107a — "Evolução do cadastro de pratos")
+// ═══════════════════════════════════════════
+// Motor genérico: os mesmos grupos/opções são editados tanto dentro de um item (editingVariants,
+// #item-variants-list) quanto na Biblioteca reutilizável (editingLibraryGroups, #lib-groups-list)
+// — `which` ('item'|'lib') escolhe qual das duas listas cada função mexe, sem duplicar código.
+// Formato do GRUPO (tudo novo é opcional, item salvo antes desta versão não tem esses campos e
+// continua funcionando exatamente igual): {id, name, type:'single'|'multiple', required,
+// min, max (quantidade total, ex: "escolha até 24 peças"), includedQty, overagePrice
+// (seção 13.4 — "as N primeiras inclusas, excedente +R$ por unidade"), options:[...]}.
+// Formato da OPÇÃO: {name, priceDelta, priceMode:'incluido'|'adicional'|'fixo', maxQty (>1 vira
+// stepper no cliente, ex: "Salmão 0-8")}.
+function groupsList(which){ return which==='lib' ? editingLibraryGroups : editingVariants; }
+function addVariantGroup(which,kind){
+  const g={id:'g'+Date.now().toString(36),name:'',type:'single',required:false,min:'',max:'',includedQty:'',overagePrice:'',options:[{name:'',priceDelta:0,priceMode:'adicional',maxQty:1}]};
+  if(which==='item') g.kind = kind || 'variacao'; // v107c: em qual das 3 etapas (Tamanhos/Montagem/Variações) o grupo aparece
+  groupsList(which).push(g);
+  refreshGroupsUI(which);
+}
+// v107c: re-renderiza o(s) container(es) certo(s) depois de qualquer edição — pro item, os
+// grupos ficam espalhados em 3 listas (Tamanhos/Montagem/Variações) filtradas por g.kind, então
+// precisa atualizar as 3; pra Biblioteca continua sendo uma lista só, sem separação por kind.
+function refreshGroupsUI(which){
+  if(which==='lib'){ renderVariantGroups('lib'); }
+  else { renderAllItemGroups(); }
+}
+function renderAllItemGroups(){
+  renderVariantGroups('item','tamanho');
+  renderVariantGroups('item','montagem');
+  renderVariantGroups('item','variacao');
+  updateWizardPreview();
+}
+function removeVariantGroup(which,gi){
   if(!confirm('Remover esse grupo de variação?'))return;
-  editingVariants.splice(gi,1);
-  renderVariantGroups();
+  groupsList(which).splice(gi,1);
+  refreshGroupsUI(which);
+}
+function duplicateVariantGroup(which,gi){
+  const list=groupsList(which);
+  const clone=JSON.parse(JSON.stringify(list[gi]));
+  clone.id='g'+Date.now().toString(36);
+  clone.name=clone.name?clone.name+' (cópia)':'';
+  list.splice(gi+1,0,clone);
+  refreshGroupsUI(which);
 }
 // v87: "Reordenar" pedido no editor de variações — grupos e opções, ambos com ↑/↓ (arrastar não
 // valia a pena pra listas curtas como essas; sobe/desce já resolve).
-function moveVariantGroup(gi,dir){
+function moveVariantGroup(which,gi,dir){
+  const list=groupsList(which);
   const ni=gi+dir;
-  if(ni<0||ni>=editingVariants.length)return;
-  [editingVariants[gi],editingVariants[ni]]=[editingVariants[ni],editingVariants[gi]];
-  renderVariantGroups();
+  if(ni<0||ni>=list.length)return;
+  [list[gi],list[ni]]=[list[ni],list[gi]];
+  refreshGroupsUI(which);
 }
-function moveVariantOption(gi,oi,dir){
-  const opts=editingVariants[gi].options;
+function moveVariantOption(which,gi,oi,dir){
+  const opts=groupsList(which)[gi].options;
   const ni=oi+dir;
   if(ni<0||ni>=opts.length)return;
   [opts[oi],opts[ni]]=[opts[ni],opts[oi]];
-  renderVariantGroups();
+  refreshGroupsUI(which);
 }
-function addVariantOption(gi){
-  editingVariants[gi].options.push({name:'',priceDelta:0});
-  renderVariantGroups();
+function addVariantOption(which,gi){
+  groupsList(which)[gi].options.push({name:'',priceDelta:0,priceMode:'adicional',maxQty:1});
+  refreshGroupsUI(which);
 }
-function removeVariantOption(gi,oi){
-  editingVariants[gi].options.splice(oi,1);
-  renderVariantGroups();
+function removeVariantOption(which,gi,oi){
+  groupsList(which)[gi].options.splice(oi,1);
+  refreshGroupsUI(which);
 }
-function updateVariantGroupField(gi,field,value){
-  editingVariants[gi][field] = value;
+function updateVariantGroupField(which,gi,field,value){
+  const g=groupsList(which)[gi];
+  g[field] = value;
+  // v107a-fix: só "type" muda o que aparece na tela (mostra/esconde o bloco de quantidade total
+  // e o campo "Máx.un" de cada opção) — os campos numéricos (min/max/# inclusas/+R$ excedente)
+  // usam oninput a cada tecla digitada; re-renderizar neles fazia o campo perder o foco no meio
+  // da digitação (só dava pra digitar 1 dígito por vez). BUG CORRIGIDO.
+  if(field==='type'||field==='kind') refreshGroupsUI(which);
 }
-function updateVariantOptionField(gi,oi,field,value){
-  editingVariants[gi].options[oi][field] = field==='priceDelta' ? (parseFloat(value)||0) : value;
+function updateVariantOptionField(which,gi,oi,field,value){
+  const o=groupsList(which)[gi].options[oi];
+  o[field] = (field==='priceDelta'||field==='maxQty') ? (parseFloat(value)||0) : value;
+  // v107a-fix: só "priceMode" muda o que aparece na tela (mostra/esconde o campo de preço) —
+  // "maxQty" também usava oninput e reiniciava o campo a cada dígito (mesmo bug do de cima).
+  if(field==='priceMode') refreshGroupsUI(which);
 }
-function renderVariantGroups(){
-  const el=document.getElementById('item-variants-list');
+// "Usar grupo existente" — copia (clona, com id novo) um grupo da Biblioteca pra dentro do item
+// que está sendo editado agora. Não referencia o grupo original: se a Biblioteca mudar depois,
+// os itens que já usaram esse grupo não mudam sozinhos (evita quebrar pedidos/impressão antigos).
+function openUseLibraryGroupPicker(){
+  if(!editingLibraryGroups.length){ showToast('📚 Biblioteca vazia', 'Crie grupos reutilizáveis em Cardápio → 📚 Grupos de Opções Reutilizáveis primeiro.'); return; }
+  document.getElementById('use-libgroup-list').innerHTML = editingLibraryGroups.map((g,gi)=>`
+    <div class="vgroup" style="display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;">
+        <div style="font-weight:600;font-size:13px;">${(g.name||'(sem nome)').replace(/</g,'&lt;')}</div>
+        <div style="font-size:11px;color:var(--muted);">${g.type==='multiple'?'Múltipla escolha':'Escolha única'} · ${g.options.length} opção(ões)</div>
+      </div>
+      <button type="button" class="btn secondary sm" onclick="useLibraryGroup(${gi})">+ Usar</button>
+    </div>`).join('');
+  openModal('use-libgroup-modal');
+}
+function useLibraryGroup(gi){
+  const clone=JSON.parse(JSON.stringify(editingLibraryGroups[gi]));
+  clone.id='g'+Date.now().toString(36);
+  if(!clone.kind) clone.kind='variacao';
+  editingVariants.push(clone);
+  closeModal('use-libgroup-modal');
+  renderAllItemGroups();
+  showToast('✅ Grupo adicionado', `"${clone.name}" copiado pra este item.`);
+}
+// "💾 Salvar como reutilizável" — copia UM grupo do item que está sendo editado agora pra
+// Biblioteca, pra poder usar em outros itens depois sem digitar tudo de novo.
+function saveGroupToLibrary(gi){
+  const clone=JSON.parse(JSON.stringify(editingVariants[gi]));
+  if(!clone.name || !clone.name.trim()){ alert('Dê um nome ao grupo antes de salvar na biblioteca.'); return; }
+  clone.id='g'+Date.now().toString(36);
+  editingLibraryGroups.push(clone);
+  saveLibraryGroups(true);
+  showToast('📚 Salvo na Biblioteca', `"${clone.name}" já pode ser reutilizado em outros itens.`);
+}
+function openLibGroupsModal(){
+  renderVariantGroups('lib');
+  openModal('libgroups-modal');
+}
+async function saveLibraryGroups(silent){
+  const clean = editingLibraryGroups
+    .map(g=>({...g, name:(g.name||'').trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
+    .filter(g=>g.options.length>0);
+  editingLibraryGroups = clean;
+  cfg.optionGroupsLibrary = clean;
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ alert(res.data.error||'Erro ao salvar biblioteca de grupos.'); return; }
+  if(!silent){ closeModal('libgroups-modal'); showToast('✅ Biblioteca salva!', `${clean.length} grupo(s) reutilizável(is).`); }
+}
+function renderVariantGroups(which, kindFilter){
+  which = which || 'item';
+  const list = groupsList(which);
+  const el=document.getElementById(which==='lib' ? 'lib-groups-list' : ('item-variants-list-'+(kindFilter||'variacao')));
   if(!el)return;
-  el.innerHTML = editingVariants.length===0
-    ? '<div style="font-size:11px;color:var(--muted);">Nenhuma variação. Use pra tamanhos (P/G), sabores ou adicionais com preço extra.</div>'
-    : editingVariants.map((g,gi)=>`
+  // filtra mantendo o índice REAL na lista (gi) — importante porque todas as funções de edição
+  // (mover/duplicar/remover/atualizar campo) indexam groupsList(which) diretamente pelo gi.
+  const entries = list.map((g,gi)=>({g,gi})).filter(({g})=> which!=='item' || (g.kind||'variacao')===(kindFilter||'variacao'));
+  el.innerHTML = entries.length===0
+    ? '<div style="font-size:11px;color:var(--muted);">Nenhum grupo aqui ainda.</div>'
+    : entries.map(({g,gi})=>{
+      const isMultiple = g.type==='multiple';
+      return `
       <div class="vgroup">
         <div class="vgroup-head">
           <div style="display:flex;flex-direction:column;gap:0;">
-            <button type="button" onclick="moveVariantGroup(${gi},-1)" ${gi===0?'disabled':''} title="Mover grupo pra cima" style="font-size:10px;padding:0 4px;line-height:1.4;">▲</button>
-            <button type="button" onclick="moveVariantGroup(${gi},1)" ${gi===editingVariants.length-1?'disabled':''} title="Mover grupo pra baixo" style="font-size:10px;padding:0 4px;line-height:1.4;">▼</button>
+            <button type="button" onclick="moveVariantGroup('${which}',${gi},-1)" ${gi===0?'disabled':''} title="Mover grupo pra cima" style="font-size:10px;padding:0 4px;line-height:1.4;">▲</button>
+            <button type="button" onclick="moveVariantGroup('${which}',${gi},1)" ${gi===list.length-1?'disabled':''} title="Mover grupo pra baixo" style="font-size:10px;padding:0 4px;line-height:1.4;">▼</button>
           </div>
-          <input type="text" placeholder="Nome do grupo (ex: Tamanho)" value="${g.name.replace(/"/g,'&quot;')}" oninput="updateVariantGroupField(${gi},'name',this.value)"/>
-          <select onchange="updateVariantGroupField(${gi},'type',this.value)">
+          <input type="text" placeholder="Nome do grupo (ex: Tamanho, Sabores, Molhos)" value="${(g.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantGroupField('${which}',${gi},'name',this.value)"/>
+          <select onchange="updateVariantGroupField('${which}',${gi},'type',this.value)">
             <option value="single" ${g.type==='single'?'selected':''}>Escolha única</option>
-            <option value="multiple" ${g.type==='multiple'?'selected':''}>Múltipla escolha</option>
+            <option value="multiple" ${isMultiple?'selected':''}>Múltipla escolha</option>
           </select>
+          ${which==='item'?`<select onchange="updateVariantGroupField('${which}',${gi},'kind',this.value)" title="Em qual etapa este grupo aparece no editor do item">
+            <option value="tamanho" ${(g.kind||'variacao')==='tamanho'?'selected':''}>📏 Tamanhos</option>
+            <option value="montagem" ${(g.kind||'variacao')==='montagem'?'selected':''}>🧩 Montagem</option>
+            <option value="variacao" ${(g.kind||'variacao')==='variacao'?'selected':''}>🎛️ Variações</option>
+          </select>`:''}
           <label style="font-size:11px;display:flex;align-items:center;gap:4px;white-space:nowrap;">
-            <input type="checkbox" ${g.required?'checked':''} onchange="updateVariantGroupField(${gi},'required',this.checked)"/> Obrigatório
+            <input type="checkbox" ${g.required?'checked':''} onchange="updateVariantGroupField('${which}',${gi},'required',this.checked)"/> Obrigatório
           </label>
-          <button type="button" onclick="removeVariantGroup(${gi})" title="Remover grupo">🗑</button>
+          ${which==='item'?`<button type="button" onclick="saveGroupToLibrary(${gi})" title="Salvar este grupo na Biblioteca reutilizável">📚</button>`:''}
+          <button type="button" onclick="duplicateVariantGroup('${which}',${gi})" title="Duplicar grupo">⧉</button>
+          <button type="button" onclick="removeVariantGroup('${which}',${gi})" title="Remover grupo">🗑</button>
         </div>
+        ${isMultiple?`
+        <div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;padding:10px;background:var(--bg2,rgba(0,0,0,.15));border-radius:8px;">
+          <div style="font-size:10px;color:var(--muted);width:100%;">Quantidade total no grupo (opcional — deixe em branco pra não limitar por quantidade, ex: molhos onde cada um só liga/desliga)</div>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
+        </div>`:''}
         ${g.options.map((o,oi)=>`
-          <div class="vopt-row">
-            <button type="button" onclick="moveVariantOption(${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
-            <button type="button" onclick="moveVariantOption(${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
-            <input type="text" placeholder="Opção (ex: Grande)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField(${gi},${oi},'name',this.value)"/>
-            <input type="number" step="0.01" placeholder="+R$" value="${o.priceDelta||0}" oninput="updateVariantOptionField(${gi},${oi},'priceDelta',this.value)"/>
-            <button type="button" onclick="removeVariantOption(${gi},${oi})" title="Remover opção">✕</button>
+          <div class="vopt-row" style="flex-wrap:wrap;">
+            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
+            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
+            <input type="text" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)" style="flex:1;min-width:110px;"/>
+            <select style="width:110px;" onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)">
+              <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
+              <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>Adicional</option>
+              <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>Preço fixo</option>
+            </select>
+            ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="${o.priceMode==='fixo'?'R$':'+R$'}" value="${o.priceDelta||0}" style="width:78px;" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
+            ${isMultiple?`<label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;white-space:nowrap;" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Máx.un <input type="number" min="1" style="width:52px;" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></label>`:''}
+            <button type="button" onclick="removeVariantOption('${which}',${gi},${oi})" title="Remover opção">✕</button>
           </div>`).join('')}
-        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption(${gi})">+ Opção</button>
-      </div>`).join('');
+        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption('${which}',${gi})">+ Opção</button>
+      </div>`;
+    }).join('');
 }
-async function saveItem(){
+async function saveItem(andNew){
   const si=parseInt(document.getElementById('item-edit-si').value);
   const ii=parseInt(document.getElementById('item-edit-ii').value);
   const name=document.getElementById('item-name').value.trim();
-  if(!name){alert('Digite o nome do prato.');return;}
+  if(!name){alert('Digite o nome do prato.');goToWizardStep('info');return;}
   const cleanVariants = editingVariants
-    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0})).filter(o=>o.name)}))
+    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
     .filter(g=>g.options.length>0);
   const [posX, posY] = document.getElementById('item-image-pos').value.split(',').map(n=>parseInt(n)||50);
+  const nowIso = new Date().toISOString();
+  const existing = ii>-1 ? menu[si].items[ii] : null;
+  const promoPriceRaw = parseFloat(document.getElementById('item-promo-price').value);
+  const stockRaw = document.getElementById('item-stock').value.trim();
+  const tagsRaw = document.getElementById('item-tags').value.trim();
   // v43: via de impressão e dias do rodízio saíram do modal de item (agora a via é definida por
   // categoria — veja saveCategory). Aqui só preservamos o que o item já tinha, sem sobrescrever.
   const item={
+    id: (existing && existing.id) || ('item'+Date.now().toString(36)),
     name,desc:document.getElementById('item-desc').value.trim(),
     price:parseFloat(document.getElementById('item-price').value)||0,
     qty:document.getElementById('item-qty').value.trim(),
     badge:document.getElementById('item-badge').value.trim(),
     badgeMode:(document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global',
+    badgeColor: document.getElementById('item-badge-color').value||'#D9383A', // (novo)
     image:document.getElementById('item-image').value.trim(),
     imagePos:{x:posX,y:posY},
-    variants:cleanVariants
+    variants:cleanVariants,
+    available:document.getElementById('item-available-check').checked, // v107b: etapa "Disponibilidade" do wizard
+    featured: document.getElementById('item-featured-check').checked, // (novo)
+    sku: document.getElementById('item-sku').value.trim(), // (novo)
+    ean: document.getElementById('item-ean').value.trim(), // (novo)
+    tags: tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [], // (novo)
+    promoPrice: (promoPriceRaw>0) ? promoPriceRaw : null, // (novo) — ainda não conectado à vitrine/checkout, ver aviso na etapa 8
+    stock: stockRaw ? (parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
+    acceptsCoupon: document.getElementById('item-accepts-coupon').checked, // (novo) — informativo por enquanto
+    allergens: getSelectedAllergens(), // (novo)
+    nutrition: { // (novo) — por porção
+      calories: document.getElementById('item-nutri-calories').value.trim() ? Number(document.getElementById('item-nutri-calories').value) : null,
+      protein: document.getElementById('item-nutri-protein').value.trim() ? Number(document.getElementById('item-nutri-protein').value) : null,
+      carbs: document.getElementById('item-nutri-carbs').value.trim() ? Number(document.getElementById('item-nutri-carbs').value) : null,
+      fat: document.getElementById('item-nutri-fat').value.trim() ? Number(document.getElementById('item-nutri-fat').value) : null,
+    },
+    createdAt: (existing && existing.createdAt) || nowIso, // (novo)
+    updatedAt: nowIso, // (novo)
   };
-  if(ii===-1){ item.available=true; menu[si].items.push(item); }
-  else menu[si].items[ii]={...menu[si].items[ii], ...item}; // mantém "disponível/esgotado", stations e days que já estavam, não reseta ao editar
+  if(ii===-1){ menu[si].items.push(item); }
+  else menu[si].items[ii]={...menu[si].items[ii], ...item}; // mantém stations e days que já estavam, não reseta ao editar
   const res = await apiPost('/api/config', { cfg, menu });
   if(!res.ok){ alert(res.data.error||'Erro ao salvar cardápio.'); return; }
-  closeModal('item-modal');renderMenuEditor();
+  renderMenuEditor();
   showToast('✅ Salvo!',`"${name}" atualizado no cardápio.`);
+  if(andNew){ openAddItem(); } else { goPage('cardapio'); }
 }
 async function deleteItem(si,ii){
   if(!confirm(`Remover "${menu[si].items[ii].name}"?`))return;
@@ -7820,7 +8486,7 @@ function printCourierReport(){
     </tr>`).join('') || '<tr><td colspan="5">Nenhuma entrega no período.</td></tr>';
 
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Entregas — Shogatsu</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Entregas — ${esc(cfg.name||'Food')}</title>
     <style>
       body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;}
       .p-header{text-align:center;margin-bottom:18px;}
@@ -7840,7 +8506,7 @@ function printCourierReport(){
       @media print{ button{display:none;} }
     </style></head><body>
     <div class="p-header">
-      <h1>SHOGATSU RESTAURANTE</h1>
+      <h1>${esc((cfg.name||'FOOD').toUpperCase())} — RELATÓRIO DE ENTREGAS</h1>
       <h2>Relatório de Entregas</h2>
     </div>
     <div class="p-meta">
@@ -8096,7 +8762,7 @@ function loadSettings(){
   const trEl=document.getElementById('cfg-timeretirada'); if(trEl) trEl.value=cfg.timeRetirada||'';
   document.getElementById('cfg-addr').value=cfg.addr||'';
   document.getElementById('cfg-hours').value=cfg.hours||'';
-  document.getElementById('cfg-name').value=cfg.name||'Shogatsu Culinária Oriental';
+  document.getElementById('cfg-name').value=cfg.name||'Food';
   document.getElementById('cfg-days').value=cfg.days||'Ter–Dom';
   renderWeekScheduleEditor();
   renderLogoEditor();
@@ -9395,19 +10061,27 @@ async function toggleReviewVisibility(orderId, hide){
 async function loadUsersPage(){
   const res = await apiGet('/api/admin/users');
   if(!Array.isArray(res?.users)){ document.getElementById('users-list').innerHTML=`<div style="font-size:12px;color:var(--red-lt);">${res?.error||'Não foi possível carregar os usuários.'}</div>`; return; }
+  allPanelUsers = res.users; // v107: guardado pra alimentar o "Copiar Permissões de Outro Usuário"
   renderUsersList(res.users);
 }
+let allPanelUsers = [];
 function renderUsersList(users){
-  const roleLabel={master:'👑 Master',admin:'🛠 Admin',vendas:'🛒 Vendas'};
-  document.getElementById('users-list').innerHTML = users.map(u=>`
-    <div class="vgroup" style="display:flex;align-items:center;gap:12px;">
-      <div style="flex:1;">
+  const roleLabel={master:'👑 Master',admin:'🛠 Admin',vendas:'🛒 Caixa'};
+  document.getElementById('users-list').innerHTML = users.map(u=>{
+    const permCount = u.permissions ? Object.values(u.permissions).filter(v=>v===false).length : 0;
+    const permBadge = u.role==='master' ? '' : (permCount>0 ? `<span style="font-size:10px;color:var(--gold);">🔐 ${permCount} módulo(s) restrito(s)</span>` : `<span style="font-size:10px;color:var(--muted);">🔐 acesso total</span>`);
+    return `
+    <div class="vgroup" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:140px;">
         <div style="font-weight:600;font-size:13px;">${u.username}${u.username===userName?' <span style="color:var(--gold);font-size:10px;">(você)</span>':''}</div>
         <div style="font-size:11px;color:var(--muted);">${roleLabel[u.role]||u.role}</div>
+        ${permBadge?`<div style="margin-top:2px;">${permBadge}</div>`:''}
       </div>
+      ${u.role!=='master'?`<button type="button" class="btn secondary sm" onclick="openPermModal('${u.username}')">🔐 Permissões</button>`:''}
       <button type="button" class="btn secondary sm" onclick="promptResetPassword('${u.username}')">🔑 Trocar senha</button>
       <button type="button" class="mi-btn del" onclick="deleteUser('${u.username}')" ${u.username===userName?'disabled title="Você não pode remover seu próprio usuário"':''}>🗑</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 }
 async function createUser(){
   const username=document.getElementById('nu-username').value.trim();
@@ -9438,6 +10112,86 @@ async function deleteUser(username){
   if(!res.ok){ alert(data.error||'Erro ao remover usuário.'); return; }
   loadUsersPage();
   showToast('🗑 Usuário removido',username);
+}
+
+// ═══════════════════════════════════════════
+// v107 (Prompt 1) — MODAL DE PERMISSÕES POR USUÁRIO
+// ═══════════════════════════════════════════
+// Só decide o que aparece na tela desse usuário — não mexe em rota, API, Supabase nem em nenhuma
+// outra função do sistema. Categorias e módulos espelham 1:1 os itens de verdade da barra
+// lateral (nada inventado); "Usuários e Permissões" fica de fora porque só master acessa mesmo.
+const PERM_GROUPS = [
+  { label: '📋 Visão Geral', keys: [
+    { key:'pedidos', label:'📊 Pedidos (inclui Dashboard e Kanban)' },
+    { key:'reservas', label:'📅 Reservas' },
+    { key:'mensagens', label:'💬 Mensagens' },
+  ]},
+  { label: '🍱 Gestão', keys: [
+    { key:'motoboys', label:'🛵 Motoboys' },
+    { key:'cardapio', label:'🍱 Cardápio' },
+    { key:'custos', label:'💰 Custos & Ficha Técnica' },
+    { key:'ia', label:'🤖 IA do Cardápio' },
+    { key:'relatorios', label:'📈 Relatórios' },
+    { key:'avaliacoes', label:'⭐ Avaliações' },
+  ]},
+  { label: '⚙️ Sistema', keys: [
+    { key:'configuracoes', label:'⚙️ Configurações' },
+    { key:'impressao', label:'🖨 Central de Impressão' },
+  ]},
+];
+let permModalUsername = null;
+function openPermModal(username){
+  const user = allPanelUsers.find(u=>u.username===username);
+  if(!user){ showToast('⚠️ Usuário não encontrado', ''); return; }
+  if(user.role==='master'){ showToast('👑 Usuário master', 'Master sempre tem acesso total — não dá pra restringir.'); return; }
+  permModalUsername = username;
+  document.getElementById('perm-modal-username').textContent = username;
+  document.getElementById('perm-modal-target-username').value = username;
+  const perms = user.permissions || {}; // ausência de chave = marcado (acesso total por padrão)
+  document.getElementById('perm-modal-groups').innerHTML = PERM_GROUPS.map(g=>`
+    <div>
+      <div style="font-size:11px;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:8px;">${g.label}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px;">
+        ${g.keys.map(m=>`
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:8px 10px;border-radius:6px;border:1px solid var(--border);">
+            <input type="checkbox" class="perm-check" data-perm-key="${m.key}" ${perms[m.key]===false?'':'checked'}/>
+            ${m.label}
+          </label>`).join('')}
+      </div>
+    </div>`).join('');
+  // "Copiar Permissões de Outro Usuário" — lista todo mundo, menos master (sempre total) e o próprio
+  const others = allPanelUsers.filter(u=>u.role!=='master' && u.username!==username);
+  const copySelect = document.getElementById('perm-copy-from');
+  copySelect.innerHTML = others.length
+    ? `<option value="">Copiar permissões de...</option>` + others.map(u=>`<option value="${u.username}">${u.username}</option>`).join('')
+    : `<option value="">(nenhum outro usuário pra copiar)</option>`;
+  openModal('perm-modal');
+}
+function permSetAll(value){
+  document.querySelectorAll('#perm-modal-groups .perm-check').forEach(cb=>{ cb.checked = value; });
+}
+function permCopyFromOther(){
+  const src = document.getElementById('perm-copy-from').value;
+  if(!src){ showToast('Escolha um usuário', 'pra copiar as permissões dele primeiro.'); return; }
+  const user = allPanelUsers.find(u=>u.username===src);
+  const perms = (user && user.permissions) || {};
+  document.querySelectorAll('#perm-modal-groups .perm-check').forEach(cb=>{
+    cb.checked = perms[cb.dataset.permKey] !== false;
+  });
+  showToast('📋 Permissões copiadas', `Copiado de "${src}" — confira e clique em Salvar Permissões.`);
+}
+async function savePermissions(){
+  const username = document.getElementById('perm-modal-target-username').value;
+  const checks = [...document.querySelectorAll('#perm-modal-groups .perm-check')];
+  const allChecked = checks.every(cb=>cb.checked);
+  // se marcou tudo, salva null (acesso total padrão) — senão salva só o que precisa mesmo,
+  // sem inflar o config.json com um objeto cheio de "true" desnecessário
+  const permissions = allChecked ? null : Object.fromEntries(checks.map(cb=>[cb.dataset.permKey, cb.checked]));
+  const res = await apiPut('/api/admin/users/'+encodeURIComponent(username)+'/permissions', { permissions });
+  if(!res.ok){ alert(res.data.error||'Erro ao salvar permissões.'); return; }
+  closeModal('perm-modal');
+  await loadUsersPage();
+  showToast('✅ Permissões salvas!', `${username} já usa o novo acesso no próximo login (ou ao recarregar o painel dele).`);
 }
 
 // ═══════════════════════════════════════════
@@ -9612,6 +10366,7 @@ async function saveAllSettings(){
   if(statusEl) statusEl.textContent='Salvando...';
   const res = await apiPost('/api/config', { cfg, menu });
   if(!res.ok){ if(statusEl) statusEl.textContent=''; alert(res.data.error||'Erro ao salvar configurações.'); return; }
+  applyBranding(cfg); // v108: nome do sistema pode ter mudado — atualiza login/barra lateral na hora
   if(statusEl){ statusEl.textContent='✅ Salvo às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); setTimeout(()=>{statusEl.textContent='';},4000); }
   showToast('✅ Tudo salvo!','Todas as configurações foram atualizadas com sucesso.');
 }
