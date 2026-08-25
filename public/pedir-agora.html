@@ -6,16 +6,16 @@
 <meta name="theme-color" content="#0a0a0a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Shogatsu">
+<meta name="apple-mobile-web-app-title" content="Food Já">
 <link rel="manifest" href="manifest-pedir-agora.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<title>Shogatsu — Peça Agora</title>
+<title>Food Já — Peça Agora</title>
 <style>
   :root{
     --bg:#0a0a0a; --card:#161616; --border:#2a2a2a;
-    --gold:#F4B400; --text:#F5F5F5; --muted:#9a9a9a; --whats:#3fae5c;
+    --gold:#c9a84c; --text:#f2f2f2; --muted:#9a9a9a; --whats:#3fae5c;
   }
   *{box-sizing:border-box;}
   body{
@@ -50,7 +50,7 @@
 <body>
 <div class="wrap">
   <div class="logo">🍣</div>
-  <h1 id="store-name">Shogatsu Culinária Oriental</h1>
+  <h1 id="store-name">Food Já</h1>
   <div class="sub">Escolha uma opção abaixo</div>
 
   <a class="link primary" href="/">
@@ -77,7 +77,7 @@
     <span class="arrow">›</span>
   </a>
 
-  <footer id="footer-note">Shogatsu Culinária Oriental</footer>
+  <footer id="footer-note">Food Já</footer>
 </div>
 
 <script>
@@ -90,7 +90,7 @@
     const data = await r.json();
     const cfg = data.cfg || {};
     if (cfg.name) document.getElementById('store-name').textContent = cfg.name;
-    document.getElementById('footer-note').textContent = cfg.name || 'Shogatsu Culinária Oriental';
+    document.getElementById('footer-note').textContent = cfg.name || 'Food Já';
 
     const whatsDigits = (cfg.whats || cfg.storePhone || '').replace(/\D/g, '');
     const whatsLink = document.getElementById('whats-link');

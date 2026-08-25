@@ -1,6 +1,6 @@
 {
-  "name": "Shogatsu — Painel de Controle",
-  "short_name": "Painel Shogatsu",
+  "name": "Food Já — Painel de Controle",
+  "short_name": "Painel Food Já",
   "description": "Painel de controle da loja: pedidos, cardápio, reservas e configurações.",
   "start_url": "/painel.html",
   "display": "standalone",

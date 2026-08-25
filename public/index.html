@@ -6,22 +6,22 @@
 <meta name="theme-color" content="#D62828">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Shogatsu">
+<meta name="apple-mobile-web-app-title" content="Food Já">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<title>Shogatsu · Peça Agora</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- v27: fontes exclusivas da tela de Acompanhamento do Pedido (o resto do site continua em Cormorant/Jost) -->
+<title>Food Já · Peça Agora</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- v27: fontes exclusivas da tela de Acompanhamento do Pedido (o resto do site continua em Plus Jakarta Sans/Inter) -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
-  --black:#0B0B0B;--panel:#131315;--card:#1B1B1F;--border:#2A2A2E;
-  --red:#D62828;--red-lt:#E85D5D;--red-dk:#A81F1F;
-  --gold:#F4B400;--cream:#F5F5F5;--muted:#8A8A8E;--white:#F5F5F5;
-  --green:#22C55E;--green-lt:#4ADE80;
+  --black:#0B0B0B;--panel:#141416;--card:#1B1B1F;--border:#2A2A30;
+  --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;
+  --gold:#F4B400;--cream:#F5F5F5;--muted:#8A8A93;--white:#F5F5F5;
+  --green:#22C55E;--green-lt:#4ADE80;--orange:#F59E0B;--blue:#2563EB;
   /* v52 — offsets das barras fixas (header/mode-bar/cat-nav) medidos de verdade em JS
      (ver updateStickyOffsets() perto do fim do arquivo), em vez de valores fixos (60px/108px)
      que só valiam pro desktop. No celular o cabeçalho pode ocupar mais de uma linha (nome da
@@ -32,8 +32,8 @@
   --header-h:calc(60px + env(safe-area-inset-top));--modebar-h:48px;--sticky-total-h:calc(108px + env(safe-area-inset-top));
 }
 body[data-theme="light"]{
-  --black:#faf7f2;--panel:#ffffff;--card:#ffffff;--border:#e9e2d6;
-  --muted:#9c8d80;--white:#241d16;
+  --black:#F7F6F4;--panel:#ffffff;--card:#ffffff;--border:#E7E5E1;
+  --muted:#8A8681;--white:#1C1C1E;
 }
 body[data-theme="light"] .item-card,body[data-theme="light"] .cover-slider,
 body[data-theme="light"] .drawer,body[data-theme="light"] .screen{box-shadow:0 1px 4px rgba(0,0,0,.06);}
@@ -47,7 +47,7 @@ body[data-theme="light"] .drawer,body[data-theme="light"] .screen{box-shadow:0 1
    horizontal sem nunca criar esse container de rolagem escondido, preservando position:sticky. */
 html{overflow-x:hidden;overflow-x:clip;overflow-y:visible;width:100%;}
 img{max-width:100%;}
-body{background:var(--black);color:var(--white);font-family:'Jost',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden;overflow-x:clip;overflow-y:visible;}
+body{background:var(--black);color:var(--white);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden;overflow-x:clip;overflow-y:visible;-webkit-font-smoothing:antialiased;}
 /* v83 — BUG CORRIGIDO ("cabeçalho não flutua no iOS ao rolar o cardápio"): o Safari (iOS e
    macOS) tem um bug documentado (confirmado nos fóruns de desenvolvedor da própria Apple,
    ainda sem correção até a versão testada) onde "overflow-x: clip" também clipa o eixo Y por
@@ -67,7 +67,7 @@ body{background:var(--black);color:var(--white);font-family:'Jost',sans-serif;fo
   body{overflow-x:hidden;overflow-y:visible;}
 }
 a{text-decoration:none;color:inherit;}
-button{cursor:pointer;font-family:'Jost',sans-serif;}
+button{cursor:pointer;font-family:'Inter',sans-serif;}
 
 /* v97 — TOPO INTEIRO FIXO (header + mode-bar) EM UM ÚNICO CONTAINER: #top-fixed-bar é o ÚNICO
    elemento com position:fixed do bloco superior — header e mode-bar ficam dentro dele em fluxo
@@ -91,7 +91,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 #top-fixed-spacer{width:100%;height:var(--sticky-total-h,108px);}
 .header-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;min-height:60px;flex-wrap:wrap;gap:8px 0;padding:8px 0;}
 .header-brand{display:flex;align-items:center;gap:10px;}
-.header-logo{font-family:'Cormorant Garamond',serif;font-size:22px;letter-spacing:4px;color:var(--white);}
+.header-logo{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;letter-spacing:4px;color:var(--white);}
 .header-logo span{color:var(--red-lt);}
 .header-status{font-size:10px;letter-spacing:2px;color:var(--green-lt);display:flex;align-items:center;gap:5px;}
 .header-status::before{content:'';width:6px;height:6px;background:var(--green-lt);border-radius:50%;animation:pulse 2s infinite;}
@@ -136,7 +136,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 }
 .hero-strip{background:linear-gradient(135deg,#1a0e0a 0%,#2a1008 100%);border-bottom:1px solid var(--border);padding:20px 16px;}
 .hero-strip-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.hero-info h2{font-family:'Cormorant Garamond',serif;font-size:clamp(20px,5vw,28px);font-weight:400;color:var(--cream);margin-bottom:4px;}
+.hero-info h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(20px,5vw,28px);font-weight:400;color:var(--cream);margin-bottom:4px;}
 .hero-info p{font-size:12px;color:var(--muted);letter-spacing:1px;}
 .hero-chips{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;}
@@ -225,7 +225,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .main{max-width:800px;margin:0 auto;padding:24px 16px 120px;}
 
 .menu-section{margin-bottom:40px;}
-.menu-section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--red-lt);letter-spacing:3px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.menu-section-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:400;color:var(--red-lt);letter-spacing:3px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
 .section-title-icon{font-size:32px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
 .menu-section-note{font-size:11px;color:var(--muted);letter-spacing:1px;font-style:italic;margin-bottom:16px;}
 
@@ -233,14 +233,14 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .item-card:hover{border-color:var(--red-dk);}
 .item-img{width:var(--dish-img-size,80px);height:var(--dish-img-size,80px);min-width:var(--dish-img-size,80px);min-height:var(--dish-img-size,80px);border-radius:4px;object-fit:cover;background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;}
 .item-body{flex:1;}
-.item-name{font-family:'Cormorant Garamond',serif;font-size:calc(19px * var(--menu-fs-scale,1));font-weight:600;color:var(--white);margin-bottom:4px;line-height:1.25;letter-spacing:.2px;}
+.item-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:calc(19px * var(--menu-fs-scale,1));font-weight:600;color:var(--white);margin-bottom:4px;line-height:1.25;letter-spacing:.2px;}
 .item-desc{font-size:calc(12px * var(--menu-fs-scale,1));color:#b8b0a8;line-height:1.65;margin-bottom:9px;letter-spacing:.1px;}
 /* v87: descrição compacta por padrão (2 linhas), expande com "Ver mais" — ver toggleItemDesc() */
 .item-desc.clamped{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;transition:max-height .22s ease;}
 .item-desc-toggle{background:none;border:none;padding:2px 0;margin:0 0 8px;font-size:11px;font-weight:700;color:var(--gold,#F4B400);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .item-desc-toggle:active{opacity:.7;}
 .item-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.item-price{font-family:'Cormorant Garamond',serif;font-size:calc(21px * var(--menu-fs-scale,1));font-weight:700;color:var(--red-lt);letter-spacing:.2px;}
+.item-price{font-family:'Plus Jakarta Sans',sans-serif;font-size:calc(21px * var(--menu-fs-scale,1));font-weight:700;color:var(--red-lt);letter-spacing:.2px;}
 .item-badge{font-size:10px;font-weight:700;letter-spacing:.5px;color:#3a2a00;background:linear-gradient(90deg,#FFD54A,#FFB300);padding:3px 10px;border-radius:20px;margin-bottom:6px;display:inline-block;}
 .item-promo-tag{margin-top:6px;font-size:11px;font-weight:700;color:#3a2a00;background:linear-gradient(90deg,#FFD54A,#FFB300);padding:4px 10px;border-radius:6px;display:inline-block;letter-spacing:.3px;}
 
@@ -343,7 +343,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .cart-float-btn:hover{background:var(--red-lt);}
 .cart-float-left{display:flex;align-items:center;gap:10px;}
 .cart-float-badge{background:rgba(255,255,255,.2);border-radius:50px;padding:2px 10px;font-size:13px;}
-.cart-float-total{font-family:'Cormorant Garamond',serif;font-size:20px;}
+.cart-float-total{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;}
 
 .drawer-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:none;backdrop-filter:blur(4px);}
 .drawer-overlay.open{display:block;}
@@ -351,26 +351,26 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .drawer.open{transform:translateY(0);}
 .drawer-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0;}
 .drawer-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.drawer-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:2px;}
+.drawer-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:2px;}
 .drawer-close{background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:32px;height:32px;font-size:16px;display:flex;align-items:center;justify-content:center;}
 .drawer-body{padding:16px 20px;}
 
 /* ═══════════════════════════════════════════════════════════
    v66 — Chat Express (cliente): visual premium com identidade própria
    Paleta fixa deste módulo (não usa var(--...) do tema, é intencional):
-     fundo #0F1115 · bolha enviada #D32F2F · bolha recebida #1F2937
+     fundo #0F1115 · bolha enviada #D62828 · bolha recebida #1F2937
      texto #FFFFFF · detalhes/hora #BDBDBD · fonte Inter
    ═══════════════════════════════════════════════════════════ */
 #ia-drawer{padding:0;background:#0F1115;font-family:'Inter',sans-serif;}
 #ia-drawer .drawer-handle{display:none;}
 .wa-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #262b33;background:#14161c;flex-shrink:0;}
-.wa-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D32F2F,#8f1f1f);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#fff;}
+.wa-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D62828,#8f1f1f);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#fff;}
 .wa-header-info{flex:1;min-width:0;}
 .wa-header-name{font-size:17px;font-weight:600;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .wa-header-status{font-size:12px;color:#BDBDBD;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s ease;}
-.wa-header-status.wa-typing{color:#D32F2F;font-weight:500;}
+.wa-header-status.wa-typing{color:#D62828;font-weight:500;}
 .wa-close{background:none;border:1px solid #262b33;color:#BDBDBD;border-radius:50%;width:30px;height:30px;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease,color .15s ease;}
-.wa-close:hover{color:#D32F2F;border-color:#D32F2F;}
+.wa-close:hover{color:#D62828;border-color:#D62828;}
 .wa-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px;display:flex;flex-direction:column;gap:3px;background:#0F1115;background-image:
   radial-gradient(circle at 20% 10%, rgba(255,255,255,.015) 0, transparent 40%),
   radial-gradient(circle at 80% 90%, rgba(255,255,255,.015) 0, transparent 40%);
@@ -381,7 +381,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .wa-row.wa-out{justify-content:flex-end;}
 .wa-row.wa-in{justify-content:flex-start;}
 .wa-bubble{max-width:78%;padding:9px 12px 7px;border-radius:18px;font-size:15px;line-height:1.42;white-space:pre-wrap;word-break:break-word;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25);font-family:'Inter',sans-serif;}
-.wa-row.wa-out .wa-bubble{background:#D32F2F;color:#FFFFFF;border-bottom-right-radius:5px;}
+.wa-row.wa-out .wa-bubble{background:#D62828;color:#FFFFFF;border-bottom-right-radius:5px;}
 .wa-row.wa-in .wa-bubble{background:#1F2937;color:#FFFFFF;border-bottom-left-radius:5px;}
 .wa-bubble .wa-time{display:block;text-align:right;font-size:11px;color:#BDBDBD;opacity:.85;margin-top:3px;letter-spacing:.2px;}
 .wa-row.wa-out .wa-bubble .wa-time{color:rgba(255,255,255,.75);}
@@ -401,9 +401,9 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
    focar o campo) e ganhou mais espaço porque emoji/anexo saíram daqui e foram pro botão "+". */
 #ia-pergunta{background:#1F2937;color:#FFFFFF;caret-color:#FFFFFF;border:1px solid #262b33;border-radius:24px;padding:14px 18px;font-size:16px;line-height:1.4;font-family:'Inter',sans-serif;transition:border-color .18s ease,box-shadow .18s ease;flex:1;resize:none;box-sizing:border-box;min-height:50px;max-height:150px;}
 #ia-pergunta::placeholder{color:#BDBDBD;}
-#ia-pergunta:focus{outline:none;border-color:#D32F2F;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
+#ia-pergunta:focus{outline:none;border-color:#D62828;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
 .wa-icon-btn{background:none;border:none;color:#BDBDBD;width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s ease,color .2s ease,transform .15s ease;}
-.wa-icon-btn:hover{color:#D32F2F;background:rgba(211,47,47,.12);}
+.wa-icon-btn:hover{color:#D62828;background:rgba(211,47,47,.12);}
 .wa-icon-btn:active{transform:scale(.92);}
 .wa-icon-btn.wa-recording{color:#ff5252;background:rgba(255,82,82,.14);animation:waRecPulse2 1.1s infinite ease-in-out;}
 @keyframes waRecPulse2{0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,.35);}50%{box-shadow:0 0 0 6px rgba(255,82,82,0);}}
@@ -411,8 +411,8 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
    visual no rodapé, tanto no celular quanto no PC). Gira 45° e vira um "×" quando o menu abre. */
 #ia-plus-btn svg{transition:transform .2s ease;}
 #ia-plus-btn.open svg{transform:rotate(45deg);}
-#ia-plus-btn.open{color:#D32F2F;background:rgba(211,47,47,.12);}
-.wa-send-btn{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:#D32F2F;color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;transition:filter .15s ease,transform .1s ease;box-shadow:0 2px 8px rgba(211,47,47,.35);}
+#ia-plus-btn.open{color:#D62828;background:rgba(211,47,47,.12);}
+.wa-send-btn{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:#D62828;color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;transition:filter .15s ease,transform .1s ease;box-shadow:0 2px 8px rgba(211,47,47,.35);}
 .wa-send-btn:hover{filter:brightness(1.1);}
 .wa-send-btn:active{transform:scale(.92);}
 .wa-emoji-panel{position:absolute;bottom:58px;left:8px;background:#1F2937;border:1px solid #262b33;border-radius:12px;padding:8px;display:none;grid-template-columns:repeat(7,1fr);gap:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:6;max-width:270px;}
@@ -422,7 +422,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .wa-tools-panel{position:absolute;bottom:58px;left:8px;background:#1F2937;border:1px solid #262b33;border-radius:12px;padding:6px;display:none;flex-direction:column;gap:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:5;min-width:170px;transition:opacity .2s ease,transform .2s ease;}
 .wa-tools-panel.open{display:flex;}
 .wa-tools-panel button{display:flex;align-items:center;gap:10px;background:none;border:none;color:#FFFFFF;font-size:13.5px;font-family:'Inter',sans-serif;padding:10px 12px;border-radius:8px;text-align:left;}
-.wa-tools-panel button:hover{background:rgba(211,47,47,.15);color:#D32F2F;}
+.wa-tools-panel button:hover{background:rgba(211,47,47,.15);color:#D62828;}
 .wa-tools-panel button svg{flex-shrink:0;}
 .wa-rec-indicator{display:flex;align-items:center;gap:8px;flex:1;font-size:12.5px;color:#ff5252;padding:0 6px;}
 .wa-rec-dot{width:9px;height:9px;border-radius:50%;background:#ff5252;animation:waRecPulse 1s infinite;}
@@ -439,17 +439,17 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 }
 .cart-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
 .cart-item-name{flex:1;font-size:14px;color:var(--white);}
-.cart-item-price{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--red-lt);min-width:70px;text-align:right;}
-.cart-empty{text-align:center;padding:40px;color:var(--muted);font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;}
+.cart-item-price{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;color:var(--red-lt);min-width:70px;text-align:right;}
+.cart-empty{text-align:center;padding:40px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-style:italic;}
 
 .cart-summary{background:var(--card);border-radius:8px;padding:16px;margin-top:16px;}
 .summary-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px;}
 .summary-row.total{color:var(--white);font-size:16px;font-weight:600;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
-.summary-row.total span:last-child{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--red-lt);}
+.summary-row.total span:last-child{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--red-lt);}
 
 .obs-field{margin-top:12px;}
 .obs-field label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px;}
-.obs-field textarea{width:100%;background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'Jost',sans-serif;font-size:13px;padding:10px;border-radius:4px;resize:none;height:70px;outline:none;}
+.obs-field textarea{width:100%;background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'Inter',sans-serif;font-size:13px;padding:10px;border-radius:4px;resize:none;height:70px;outline:none;}
 .obs-field textarea:focus{border-color:var(--red-dk);}
 
 .checkout-btn{width:100%;background:var(--red);border:none;border-radius:8px;padding:16px;color:#fff;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-top:16px;transition:background .2s;}
@@ -460,14 +460,14 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .screen.open{display:block;}
 .screen-header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;position:sticky;top:0;}
 .back-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:36px;height:36px;font-size:18px;display:flex;align-items:center;justify-content:center;}
-.screen-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:2px;}
+.screen-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:2px;}
 .screen-body{max-width:600px;margin:0 auto;padding:24px 20px 100px;}
 
 .form-section{margin-bottom:28px;}
 .form-section-title{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--red-lt);margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;}
 .form-group{margin-bottom:14px;}
 .form-group label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Jost',sans-serif;font-size:14px;padding:12px;border-radius:4px;outline:none;transition:border-color .2s;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Inter',sans-serif;font-size:14px;padding:12px;border-radius:4px;outline:none;transition:border-color .2s;}
 .form-group input:focus,.form-group select:focus{border-color:var(--red-dk);}
 /* v107 — Prompt 2 (otimização "Finalizar Pedido"): borda vermelha só pra sinalizar campo
    obrigatório vazio quando falta algo; não muda nenhuma outra cor/estilo do formulário. */
@@ -491,7 +491,7 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .acc-profile-top{display:flex;align-items:center;gap:16px;position:relative;z-index:1;}
 .acc-avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
 .acc-profile-info{flex:1;min-width:0;}
-.acc-profile-name{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acc-profile-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .acc-profile-phone{font-size:13px;color:var(--muted);margin-top:2px;}
 .acc-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold);font-size:11px;font-weight:600;letter-spacing:.5px;margin-top:8px;}
 .acc-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;position:relative;z-index:1;}
@@ -507,12 +507,12 @@ button{cursor:pointer;font-family:'Jost',sans-serif;}
 .acc-nav-btn .acc-nav-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .acc-nav-btn .acc-nav-label{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .acc-nav-btn .acc-nav-arrow{opacity:.7;flex-shrink:0;}
-.acc-nav-pedidos .acc-nav-icon{background:rgba(214,40,40,.18);color:#E85D5D;}
-.acc-nav-editar .acc-nav-icon{background:rgba(214,40,40,.18);color:#E85D5D;}
+.acc-nav-pedidos .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
+.acc-nav-editar .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
 .acc-nav-notif .acc-nav-icon{background:rgba(201,168,76,.18);color:var(--gold);}
 .acc-nav-fidelidade .acc-nav-icon{background:rgba(185,140,214,.18);color:#b98cd6;}
-.acc-nav-reservas .acc-nav-icon{background:rgba(214,40,40,.18);color:#E85D5D;}
-.acc-nav-conta .acc-nav-icon{background:rgba(214,40,40,.18);color:#E85D5D;}
+.acc-nav-reservas .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
+.acc-nav-conta .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
 .acc-nav-btn:hover{box-shadow:0 10px 22px -10px rgba(0,0,0,.5);}
 @media (max-width:420px){.acc-nav-grid{grid-template-columns:1fr;}}
 
@@ -1444,7 +1444,7 @@ async function onCepBlur() {
     } else {
       if (data.street) document.getElementById('f-street').value = data.street;
       if (data.hood) document.getElementById('f-hood').value = data.hood;
-      statusEl.style.color = '#50c878';
+      statusEl.style.color = '#22C55E';
       statusEl.textContent = '✅ Endereço encontrado! Confirme o número.';
       const numEl = document.getElementById('f-number');
       if (numEl && !numEl.value) numEl.focus();
@@ -2233,7 +2233,7 @@ async function loadReviews(){
       section.style.display='block';
       document.getElementById('review-avg').innerHTML = `<div style="text-align:center;padding:6px 16px 4px;">
         <div style="font-size:15px;font-weight:700;color:var(--gold,#F4B400);">⭐ Avalie seu pedido</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sua opinião ajuda o Shogatsu a melhorar.</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sua opinião ajuda o Food Já a melhorar.</div>
       </div>`;
       document.getElementById('reviews-list').innerHTML = '';
       return;
@@ -2439,7 +2439,7 @@ function renderFaqRapidaIa(){
   if(!el) return;
   if(iaModoAtual==='humano'){ el.innerHTML=''; return; }
   const faq = (cfg.ia && cfg.ia.faq) || [];
-  const chipCardapio = `<button onclick="perguntarCardapioIa()" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--gold,#F4B400);background:rgba(244,180,0,.14);color:inherit;cursor:pointer;flex-shrink:0;font-weight:600;">🍣 Ver o cardápio</button>`;
+  const chipCardapio = `<button onclick="perguntarCardapioIa()" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--gold,#F4B400);background:rgba(201,168,76,.12);color:inherit;cursor:pointer;flex-shrink:0;font-weight:600;">🍣 Ver o cardápio</button>`;
   el.innerHTML = chipCardapio + faq.slice(0,6).map((f,i)=>`<button onclick="perguntarFaqRapida(${i})" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--border,#444);background:transparent;color:inherit;cursor:pointer;flex-shrink:0;">${escIa(f.pergunta)}</button>`).join('');
 }
 function perguntarFaqRapida(i){
@@ -2674,7 +2674,7 @@ function initSplashScreen(){
   const s = cfg.splash;
   const el = document.getElementById('splash-screen');
   if(!s || !s.enabled || !Array.isArray(s.photos) || !s.photos.length){ el.style.display='none'; return; }
-  document.getElementById('splash-logo').innerHTML = (cfg.name||'SHOGATSU').toUpperCase().replace(/(.{4})(.*)/, '$1<span>$2</span>');
+  document.getElementById('splash-logo').innerHTML = (cfg.name||'FOOD JÁ').toUpperCase().replace(/(.{4})(.*)/, '$1<span>$2</span>');
   document.getElementById('splash-tagline').textContent = (cfg.tagline||'CULINÁRIA ORIENTAL').toUpperCase();
   const fx = ['fx-zoom','fx-parallax','fx-fade'].includes('fx-'+s.transition) ? 'fx-'+s.transition : 'fx-zoom';
   const slidesEl = document.getElementById('splash-slides');
@@ -2870,7 +2870,7 @@ function renderMenu() {
     else style = `height:${size}px;width:auto;max-width:${size * 3}px;object-fit:contain;`;
     logoEl.innerHTML = `<img src="${cfg.logoUrl}" alt="Logo" style="${style}">`;
   } else {
-    const nm = (cfg.name || 'Shogatsu Culinária Oriental').trim();
+    const nm = (cfg.name || 'Food Já').trim();
     const words = nm.split(' ');
     const last = words.pop();
     logoEl.innerHTML = (words.length ? words.join(' ') + ' ' : '') + `<span>${last}</span>`;
@@ -2988,7 +2988,7 @@ function renderMenu() {
                 const finalPrice = effectivePrice(item, key);
                 return `<span class="item-price">
                   <span style="text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;">R$ ${item.price.toFixed(2).replace('.', ',')}</span>
-                  <span style="color:var(--red-lt,#E85D5D);">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
+                  <span style="color:var(--red-lt,#ED4245);">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
                 </span>`;
               })()}
               ${!isAvail
@@ -3610,7 +3610,7 @@ async function applyCoupon(isAuto) {
       statusEl.textContent = isAuto ? '' : '⚠️ ' + data.error; // se foi tentativa automática, não incomoda com erro
     } else {
       appliedCoupon = { code: data.code, type: data.type, discount: data.discount, freeDelivery: data.freeDelivery };
-      statusEl.style.color = '#50c878';
+      statusEl.style.color = '#22C55E';
       statusEl.textContent = (isAuto ? '🎉 Cupom aplicado automaticamente: ' : '✅ ') + data.message + '  ·  ';
       const rm = document.createElement('a');
       rm.href = 'javascript:void(0)'; rm.textContent = 'remover';
@@ -3787,7 +3787,7 @@ async function placeOrder() {
   document.getElementById('ss-total-val').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
   // WhatsApp de apoio (opcional, além do pedido já registrado no painel)
-  let msg = `🍣 *PEDIDO #${order.id} — ${(cfg.name||'SHOGATSU').toUpperCase()}*\n━━━━━━━━━━━━━━━━━━━━\n\n👤 *${name}*\n📞 ${phone}\n📍 ${address}\n\n🛒 *ITENS:*\n`;
+  let msg = `🍣 *PEDIDO #${order.id} — ${(cfg.name||'FOOD JÁ').toUpperCase()}*\n━━━━━━━━━━━━━━━━━━━━\n\n👤 *${name}*\n📞 ${phone}\n📍 ${address}\n\n🛒 *ITENS:*\n`;
   items.forEach(i => { msg += `• ${i.qty}x ${i.name} — R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}\n`; });
   if (obs) msg += `\n📝 Obs: ${obs}\n`;
   msg += `\n💰 *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*\n💳 Pagamento: ${payLabels[payMethod]}`;
@@ -3903,7 +3903,7 @@ function initOrUpdateSsMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(ssMap);
   }
   const storeLat = Number(cfg.storeLat), storeLng = Number(cfg.storeLng);
-  const goldIcon = L.divIcon({ html: '<div style="background:#F4B400;width:14px;height:14px;border-radius:50%;border:2px solid #0B0B0B;"></div>', className: '' });
+  const goldIcon = L.divIcon({ html: '<div style="background:#F4B400;width:14px;height:14px;border-radius:50%;border:2px solid #0a0a0a;"></div>', className: '' });
   const houseIcon = L.divIcon({ html: '<div style="font-size:20px;">🏠</div>', className: '' });
   const motoIcon = L.divIcon({ html: '<div style="font-size:22px;">🛵</div>', className: '' });
   if (!ssMapMarkers.customer) ssMapMarkers.customer = L.marker([currentOrderLat, currentOrderLng], { icon: houseIcon }).addTo(ssMap);
@@ -4025,7 +4025,7 @@ function fireConfetti() {
   const canvas = document.getElementById('ss-confetti');
   const ctx = canvas.getContext('2d');
   canvas.width = innerWidth; canvas.height = innerHeight;
-  const colors = ['#D62828', '#F4B400', '#E85D5D', '#F5F5F5'];
+  const colors = ['#D62828', '#F4B400', '#ED4245', '#f5ede0'];
   let particles = Array.from({ length: 90 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.2,
     vx: (Math.random() - .5) * 10, vy: Math.random() * -8 - 2,

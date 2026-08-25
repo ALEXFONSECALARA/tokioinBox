@@ -1,7 +1,7 @@
 {
-  "name": "Shogatsu — Rastreio da Entrega",
-  "short_name": "Rastreio Shogatsu",
-  "description": "Acompanhe em tempo real o status da sua entrega Shogatsu.",
+  "name": "Food Já — Rastreio da Entrega",
+  "short_name": "Rastreio Food Já",
+  "description": "Acompanhe em tempo real o status da sua entrega Food Já.",
   "start_url": "/entregador.html",
   "display": "standalone",
   "orientation": "portrait",

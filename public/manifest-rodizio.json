@@ -1,7 +1,7 @@
 {
-  "name": "Shogatsu — Cardápio do Rodízio",
-  "short_name": "Rodízio Shogatsu",
-  "description": "Cardápio completo do rodízio Shogatsu.",
+  "name": "Food Já — Cardápio do Rodízio",
+  "short_name": "Rodízio Food Já",
+  "description": "Cardápio completo do rodízio Food Já.",
   "start_url": "/cardapio-rodizio.html",
   "display": "standalone",
   "orientation": "portrait",
