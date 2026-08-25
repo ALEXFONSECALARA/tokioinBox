@@ -143,16 +143,17 @@ const DEFAULT_CFG = {
     { open: true, openTime: '18:00', closeTime: '23:00' },  // sexta
     { open: true, openTime: '18:00', closeTime: '23:00' }   // sábado
   ],
-  adminPass: 'shogatsu2026',
-  masterPass: 'shogatsuMaster2026',
+  // v108: sem senha hardcoded no código — ver bloco de bootstrap logo abaixo (gera senha
+  // aleatória só na primeira instalação, já em hash) e migratePasswordIfNeeded() (migra
+  // instalações antigas automaticamente, sem quebrar login existente).
+  adminPass: null,
+  masterPass: null,
+  mustChangePassword: false,
   // ── Usuários do painel (login por usuário + senha, com nível de acesso) ──
   // master: acesso total, inclusive gerenciar outros usuários.
   // admin: acesso total ao painel, exceto gerenciar usuários.
   // vendas: só Dashboard, Pedidos e Kanban — pra quem só precisa bater pedido no balcão.
-  users: [
-    { username: 'master', password: 'shogatsuMaster2026', role: 'master' },
-    { username: 'admin', password: 'shogatsu2026', role: 'admin' }
-  ],
+  users: [],
   // v107a — Biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚), pra montar um grupo
   // (tamanho, sabores, molhos...) uma vez e reaproveitar em vários pratos. Cada item continua
   // guardando sua PRÓPRIA cópia em variants — este array é só o "catálogo" pra copiar depois.
@@ -404,7 +405,31 @@ const DEFAULT_MENU = require('./default-menu.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: DEFAULT_CFG, menu: DEFAULT_MENU }, null, 2));
+  // v108: primeira instalação — gera senhas aleatórias (nunca hardcoded no código-fonte),
+  // salva só o HASH no config.json, e imprime o texto puro uma única vez aqui no log +
+  // num arquivo local, pra quem está subindo o sistema conseguir pegar e trocar depois.
+  const tempAdminPass = genTempPassword();
+  const tempMasterPass = genTempPassword();
+  const bootCfg = {
+    ...DEFAULT_CFG,
+    adminPass: hashPassword(tempAdminPass),
+    masterPass: hashPassword(tempMasterPass),
+    mustChangePassword: true,
+    users: [
+      { username: 'master', password: hashPassword(tempMasterPass), role: 'master' },
+      { username: 'admin', password: hashPassword(tempAdminPass), role: 'admin' }
+    ]
+  };
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: bootCfg, menu: DEFAULT_MENU }, null, 2));
+  const msg =
+    '\n==================== SENHAS INICIAIS (primeiro acesso) ====================\n' +
+    `  Usuário: admin   |  Senha: ${tempAdminPass}\n` +
+    `  Usuário: master  |  Senha: ${tempMasterPass}\n` +
+    '  Troque essa senha assim que entrar no painel — o sistema vai pedir.\n' +
+    '  Isso só aparece UMA vez. Guarde antes de fechar este log.\n' +
+    '=============================================================================\n';
+  console.log(msg);
+  try { fs.writeFileSync(path.join(DATA_DIR, 'SENHA-INICIAL.txt'), msg); } catch (e) {}
 }
 if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, '[]');
 if (!fs.existsSync(CUSTOMERS_FILE)) fs.writeFileSync(CUSTOMERS_FILE, '[]');
@@ -701,6 +726,16 @@ function getSession(token) {
   return s;
 }
 function checkAuth(token) { return !!getSession(token); }
+// v108: invalida todas as sessões de um usuário (exceto a que acabou de trocar a senha, se
+// informada) — assim quem trocou a senha continua logado, mas qualquer outra sessão antiga
+// com a senha velha (ex: outro computador, ou um token vazado) para de funcionar na hora.
+function invalidateSessionsForUser(username, keepToken) {
+  const uname = String(username || '').toLowerCase();
+  for (const [tok, s] of sessions) {
+    if (tok !== keepToken && String(s.username || '').toLowerCase() === uname) sessions.delete(tok);
+  }
+  persistSessions();
+}
 // master > admin > vendas — checa se a sessão tem o nível mínimo pedido
 const ROLE_RANK = { vendas: 1, admin: 2, master: 3 };
 function requireRole(token, minRole) {
@@ -715,6 +750,43 @@ function normalizePhone(phone) { return String(phone || '').replace(/\D/g, ''); 
 
 function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(normalizePhone(phone) + ':' + String(pin) + ':shogatsu-salt').digest('hex');
+}
+
+// ─── Hash de senhas do painel (admin/master/usuários) ───
+// v108: antes as senhas ficavam em texto puro no config.json (e algumas hardcoded no código-fonte).
+// Formato novo: "scrypt:<salt-hex>:<hash-hex>". isPasswordHashed() reconhece esse formato;
+// qualquer valor que não bata com ele é tratado como senha ANTIGA em texto puro — assim o login
+// de instalações já em produção continua funcionando sem precisar redigitar nada. Ver
+// migratePasswordIfNeeded(), chamada só no exato momento em que uma senha em texto puro é usada
+// com sucesso: nesse instante ela é re-salva já em hash, sem exigir nenhuma ação do restaurante.
+function hashPassword(plain) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(plain), salt, 64).toString('hex');
+  return `scrypt:${salt}:${hash}`;
+}
+function isPasswordHashed(stored) {
+  return typeof stored === 'string' && stored.startsWith('scrypt:') && stored.split(':').length === 3;
+}
+function verifyPassword(plain, stored) {
+  if (!stored || plain == null) return false;
+  if (isPasswordHashed(stored)) {
+    const [, salt, hashHex] = stored.split(':');
+    try {
+      const check = crypto.scryptSync(String(plain), salt, 64);
+      const stored64 = Buffer.from(hashHex, 'hex');
+      return stored64.length === check.length && crypto.timingSafeEqual(stored64, check);
+    } catch (e) { return false; }
+  }
+  // Legado: senha antiga salva em texto puro.
+  return String(plain) === String(stored);
+}
+// Gera uma senha temporária forte e legível (sem caracteres ambíguos), usada só no primeiro boot.
+function genTempPassword() {
+  const chars = 'ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789';
+  let out = '';
+  const bytes = crypto.randomBytes(12);
+  for (let i = 0; i < 12; i++) out += chars[bytes[i] % chars.length];
+  return out;
 }
 
 function findCustomer(customers, phone) {
@@ -1958,15 +2030,29 @@ async function handleRequest(req, res) {
 
   // ── POST /api/change-password — troca senha do painel (admin) ou senha master ──
   if (pathname === '/api/change-password' && req.method === 'POST') {
-    if (!checkAuth(getToken(req, query))) return sendJSON(res, 401, { error: 'unauthorized' });
+    const authToken = getToken(req, query);
+    if (!checkAuth(authToken)) return sendJSON(res, 401, { error: 'unauthorized' });
     try {
       const { which, current: curPass, next } = await readBody(req);
       const field = which === 'master' ? 'masterPass' : 'adminPass';
       const data = readConfig();
-      if (curPass !== data.cfg[field]) return sendJSON(res, 403, { error: 'senha atual incorreta' });
-      if (!next || next.length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
-      data.cfg[field] = next;
+      if (!verifyPassword(curPass, data.cfg[field])) return sendJSON(res, 403, { error: 'senha atual incorreta' });
+      if (!next || String(next).length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
+      data.cfg[field] = hashPassword(next);
+      // Só desliga a obrigatoriedade de troca se as duas senhas padrão (admin e master) já
+      // não estiverem mais na condição de "recém-geradas no primeiro boot" — como o sistema só
+      // grava um mustChangePassword global, aqui basta confirmar que esta troca aconteceu.
+      data.cfg.mustChangePassword = false;
+      // Também atualiza a mesma senha na lista de usuários, se essa role tiver um usuário
+      // correspondente por convenção (username 'admin'/'master') — mantém os dois lugares
+      // (login por usuário e login "só senha") sincronizados, sem inventar campo novo.
+      const roleUsername = which === 'master' ? 'master' : 'admin';
+      (data.cfg.users || []).forEach(u => {
+        if (String(u.username || '').toLowerCase() === roleUsername) u.password = data.cfg[field];
+      });
       writeJSON(CONFIG_FILE, data);
+      // Derruba qualquer outra sessão logada com a senha antiga (mantém a sessão atual ativa).
+      invalidateSessionsForUser(roleUsername, authToken);
       return sendJSON(res, 200, { ok: true });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -2433,10 +2519,10 @@ async function handleRequest(req, res) {
       const existing = data.cfg.users.find(u => String(u.username || '').toLowerCase() === uname);
       if (existing) {
         existing.role = role;
-        if (password) existing.password = password; // só troca a senha se veio uma nova
+        if (password) existing.password = hashPassword(password); // só troca a senha se veio uma nova
       } else {
         if (!password || password.length < 4) return sendJSON(res, 400, { error: 'Senha precisa ter pelo menos 4 caracteres.' });
-        data.cfg.users.push({ username: uname, password, role });
+        data.cfg.users.push({ username: uname, password: hashPassword(password), role });
       }
       writeJSON(CONFIG_FILE, data);
       return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })) });
@@ -2669,7 +2755,7 @@ async function handleRequest(req, res) {
     try {
       const { masterPass, beforeDate } = await readBody(req);
       const data = readConfig();
-      if (masterPass !== data.cfg.masterPass) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
+      if (!verifyPassword(masterPass, data.cfg.masterPass)) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
       if (!beforeDate) return sendJSON(res, 400, { error: 'Informe a data limite.' });
       const cutoff = new Date(beforeDate).getTime();
       let orders = readJSON(ORDERS_FILE);
@@ -2827,18 +2913,41 @@ async function handleRequest(req, res) {
 
       if (uname) {
         const user = (cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
-        if (user && password === user.password) {
+        if (user && verifyPassword(password, user.password)) {
+          // v108: se a senha desse usuário ainda estava em texto puro (instalação antiga),
+          // re-salva já em hash agora que confirmamos que ela está correta — migração
+          // automática, sem exigir nada do restaurante nem derrubar a sessão em andamento.
+          if (!isPasswordHashed(user.password)) {
+            const fresh = readConfig();
+            const fu = (fresh.cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
+            if (fu) {
+              fu.password = hashPassword(password);
+              writeJSON(CONFIG_FILE, { cfg: fresh.cfg, menu: fresh.menu });
+            }
+          }
           // v107: permissões por usuário vão junto no login pro Painel aplicar a UI na hora —
           // master sempre null (acesso total), independente do que estiver salvo.
           const permissions = user.role === 'master' ? null : normalizePermissions(user.permissions);
-          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username, permissions });
+          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username, permissions, mustChangePassword: !!cfg.mustChangePassword });
         }
         return sendJSON(res, 401, { error: 'Usuário ou senha incorretos.' });
       }
 
       // Compatibilidade: login sem usuário (só senha) continua funcionando como antes.
-      if (password === cfg.adminPass) return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null });
-      if (password === cfg.masterPass) return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null });
+      if (verifyPassword(password, cfg.adminPass)) {
+        if (!isPasswordHashed(cfg.adminPass)) {
+          const fresh = readConfig();
+          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, adminPass: hashPassword(password) }, menu: fresh.menu });
+        }
+        return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null, mustChangePassword: !!cfg.mustChangePassword });
+      }
+      if (verifyPassword(password, cfg.masterPass)) {
+        if (!isPasswordHashed(cfg.masterPass)) {
+          const fresh = readConfig();
+          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, masterPass: hashPassword(password) }, menu: fresh.menu });
+        }
+        return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null, mustChangePassword: !!cfg.mustChangePassword });
+      }
       return sendJSON(res, 401, { error: 'senha incorreta' });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -5134,7 +5243,7 @@ function estimateDeliveryWindow(order, cfg) {
 
       // v33: confere especificamente a SENHA MASTER de novo (reautenticação), não aceita mais
       // senha de admin comum nem de outros usuários.
-      const passOk = !!password && password === cfg.masterPass;
+      const passOk = !!password && verifyPassword(password, cfg.masterPass);
       if (!passOk) {
         return sendJSON(res, 403, { error: '❌ Senha inválida. Pedido não foi removido.' });
       }
@@ -5181,7 +5290,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
       const data = readConfig();
       data.menu = JSON.parse(JSON.stringify(DEFAULT_MENU)); // cópia limpa, sem referenciar o objeto original
       writeJSON(CONFIG_FILE, data);
@@ -5201,7 +5310,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(ORDERS_FILE).length;
       writeJSON(ORDERS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
@@ -5220,7 +5329,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(RESERVATIONS_FILE).length;
       writeJSON(RESERVATIONS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
