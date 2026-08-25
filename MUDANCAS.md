@@ -1,4 +1,154 @@
-# v104 — BUG CORRIGIDO: quadro "⚠️ Últimas falhas de impressão" sempre dizia "Não consegui carregar."
+# v107b — CADASTRO DE PRATOS VIROU UM EDITOR EM ETAPAS (wizard), com prévia ao vivo
+
+Reorganização visual do MESMO modal de Editar/Novo Item — mesmos campos, mesmas funções de
+salvar, foto e grupos de opções (v107a) — em **5 etapas com barra lateral, prévia do cliente ao
+lado e barra de progresso**, seguindo a referência visual pedida. Nada de dados, API, banco ou
+impressão mudou; é só como o formulário se organiza na tela. Cores e fonte do Shogatsu mantidas
+(dourado nas etapas ativas, vermelho nas ações destrutivas, verde/dourado no status).
+
+**Cabeçalho**: breadcrumb "Cardápio › Categoria › Editar/Novo Item", selo ✅ Disponível / 🚫
+Esgotado (clicável), barra de progresso ("X% completo" — nome, preço, foto, descrição e grupos).
+
+**5 etapas** (menu lateral no desktop, abas roláveis no celular):
+1. **Informações** — foto, nome, descrição, preço, porção, badge (os mesmos campos de sempre).
+2. **Tamanhos, Montagem, Variações e Extras** — o editor de Grupos de Opções da v107a. O sistema
+   não tem estruturas separadas pra "tamanho" e "montagem" — os dois já são feitos com o mesmo
+   mecanismo de Grupos (um grupo "Tamanho" de escolha única já funciona como tamanho; um grupo
+   com quantidade total já funciona como montagem de combo) — juntei na mesma etapa em vez de
+   fingir que são coisas diferentes, pra não inventar uma segunda estrutura de dados.
+3. **Disponibilidade** — checkbox "Disponível para venda", o mesmo campo que já existia como
+   toggle rápido ✅/🚫 na listagem do cardápio, agora também editável aqui de dentro. Estoque com
+   quantidade, horário e pausa por dia da semana **não existem no sistema hoje** — não criei isso
+   agora pra não inventar um recurso pela metade; aviso disso aparece na própria tela.
+4. **Impressão** — texto explicando que a via de impressão é por categoria (não por item, já era
+   assim desde a v75) com atalho pra abrir a edição da categoria — sem duplicar a configuração.
+5. **Resumo** — preço, porção, quantidade de grupos/opções, disponibilidade e impressão herdada,
+   tudo num só lugar antes de salvar.
+
+**Prévia do cliente** (coluna à direita no desktop, abaixo no celular): foto, nome, descrição,
+badge e preço atualizando ao vivo enquanto você digita — sem cálculo de preço com variações
+selecionadas (isso é só na tela do cliente de verdade; aqui é a prévia de cadastro).
+
+**Ações**: Cancelar, **Excluir** e **Duplicar** (só aparecem editando um item existente),
+**Salvar e Novo** (salva e já abre um item novo em branco na mesma categoria) e Salvar Item —
+mantém tudo que já existia, só reorganizado no rodapé.
+
+
+
+Revisão do que foi entregue na v107a, sem esperar o usuário achar em produção. Nenhuma
+funcionalidade nova, só correção.
+
+**1. Campo perdia o foco a cada dígito digitado.** Os campos numéricos novos do editor de grupos
+(Mín./Máx. total, # inclusas, +R$/excedente, Máx.un por opção) redesenhavam a tela inteira a
+cada tecla, então só dava pra digitar um dígito por vez sem clicar de novo no campo. Corrigido:
+agora só redesenha quando a mudança realmente precisa mostrar/esconder outro campo (trocar
+"Escolha única"↔"Múltipla" ou mudar o tipo de preço) — os campos numéricos digitam normalmente.
+
+**2. "Incluídas + excedente" podia ligar sozinho.** Bug de JavaScript: `Number('') >= 0` dá
+`true` (string vazia vira `0`), então bastava preencher só o campo "+R$/excedente" e deixar
+"# inclusas" em branco que o grupo inteiro passava a ignorar o preço configurado em cada opção
+(Incluído/Adicional/Preço fixo) e cobrar tudo pelo valor de excedente — sem o administrador ter
+pedido isso. Corrigido: só ativa esse modo quando os dois campos foram preenchidos de verdade.
+
+**3. "Escolha até X" não travava em opções simples.** O limite total do grupo (ex: "Escolha até
+2 molhos") só era respeitado pelos contadores +/- (stepper); em opções liga/desliga simples
+(checkbox) dava pra marcar quantas quisesse, sem parar no máximo. Corrigido: agora o grupo trava
+no máximo também pra esse tipo de opção, e a opção não marcada fica visualmente apagada (opacity)
+quando o grupo já está no total máximo, pra ficar claro que não é possível marcar mais.
+
+
+
+**Nada foi removido nem quebrado.** O sistema de "Variações" que já existia (grupos ➜ opções,
+usado pra tamanho/sabor/adicional) continua funcionando exatamente igual pra quem não mexer em
+nada — os campos novos abaixo são todos opcionais. Nenhuma rota, API, banco, impressão ou pedido
+existente foi alterado: o carrinho do cliente já salvava a seleção como um nome+preço prontos
+(ex: `"Combo Shogatsu (Sabores: Salmão x8, Atum x6)"`), então tudo que mudou fica contido no
+editor do Painel e na tela de personalizar prato do cliente — o pedido salvo, a impressão, a
+cozinha e os relatórios recebem o mesmo formato de sempre.
+
+## O que ficou mais poderoso
+
+**Grupos de Opções Reutilizáveis** — novo botão **Cardápio → 📚 Grupos Reutilizáveis**: monte um
+grupo uma vez (ex: "Molhos", "Sabores de Sushi") e use em quantos pratos quiser com **📚 Usar
+grupo existente** (dentro de Editar Item), sem digitar tudo de novo. Cada item guarda sua própria
+cópia — editar a Biblioteca depois não muda pratos que já usaram o grupo (não quebra pedido
+antigo nem duplica cobrança por engano). Também dá pra mandar um grupo de dentro de um item pra
+Biblioteca (📚 no cabeçalho do grupo) e **⧉ Duplicar** um grupo dentro do mesmo item.
+
+**Tipos de preço por opção** (Incluído / Adicional / Preço fixo) — antes só existia "+R$X" (ou
+grátis se X=0). Agora cada opção escolhe: **Incluído** (nunca cobra, nem mostra "+R$0,00"),
+**Adicional** (+R$X por unidade escolhida, igual sempre foi) ou **Preço fixo** (cobra R$X uma
+vez, não multiplica pela quantidade).
+
+**Escolha por quantidade (stepper)** — uma opção pode ter "Máx. un" > 1 (ex: Salmão até 8): no
+pedido do cliente vira um contador +/- em vez de um chip liga/desliga, permitindo montar um combo
+tipo "8 Salmão + 6 Atum + 4 Hot Filadélfia = 24 peças".
+
+**Quantidade total do grupo** (mín./máx.) — ex: "escolha entre 6 e 24 peças no total". O cliente
+vê "Total: 14 / 24" enquanto monta, e só consegue confirmar quando atinge o mínimo — sem
+inventar dezenas de produtos separados pra cada combinação de tamanho/sabor.
+
+**Incluídas + excedente** (seção 13.4 do pedido) — ex: "4 peças inclusas no combo, a partir da
+5ª cobra +R$5,00 cada": configurável por grupo (campo "# inclusas" + "+R$/excedente"), sem
+precisar mexer preço opção por opção.
+
+## O que NÃO mudou nesta versão
+
+Por ser uma evolução muito grande, priorizei o motor de verdade (preço, quantidade, reuso) sobre
+o reposicionamento visual. **Não fiz** o editor virar um assistente de 8 etapas em 3 colunas
+(Informações/Tamanhos/Montagem/Variações/Extras/Disponibilidade/Impressão/Resumo) nem uma prévia
+ao vivo dentro do modal — o cadastro continua no mesmo modal único de sempre, só que com o editor
+de grupos bem mais capaz. Se quiser, dá pra evoluir isso depois numa v107b.
+
+
+
+**Nenhuma função existente foi removida ou alterada** — pedidos, cardápio, impressoras, cozinha,
+caixa, motoboys, reservas, financeiro/custos, banco de dados, rotas, APIs, Supabase, Render e
+GitHub continuam exatamente como estavam. As duas mudanças abaixo são só camadas novas por cima
+do que já existe.
+
+## Prompt 1 — Permissões de Usuários
+
+Novo menu **Configurações → Usuários e Permissões → 🔐 Permissões** (botão por usuário, só
+aparece pra quem não é master). Lista todos os módulos reais do Painel (os mesmos itens da barra
+lateral: Pedidos, Reservas, Mensagens, Motoboys, Cardápio, Custos, Ler Nota Fiscal, IA do
+Cardápio, QR Code & Links, Relatórios, Avaliações, Configurações, Central de Impressão) com um
+checkbox ✅/❌ por módulo, mais os botões **Marcar Tudo**, **Desmarcar Tudo**, **Copiar
+Permissões de Outro Usuário** e **Salvar Permissões**.
+
+- Só o usuário **MASTER** acessa essa tela (reforça o `data-min-role="master"` que a aba
+  "Usuários" já tinha desde antes).
+- **Master sempre tem acesso total** — não dá pra restringir um master, nem o servidor aceita.
+- **Usuário sem nenhuma restrição salva continua exatamente como sempre foi**: ausência do campo
+  `permissions` (ou salvar com tudo marcado) = acesso total decidido só pelo cargo (role), igual
+  ao sistema atual. Ninguém perde acesso que já tinha antes desta versão.
+- Aplicado automaticamente no login: `POST /api/login` agora devolve também `permissions` (salvo
+  no Supabase junto com o resto de `config.json`, que já sincroniza sozinho) e o Painel esconde
+  da barra lateral (e bloqueia a navegação direta) qualquer módulo desmarcado pra aquele usuário —
+  sem tocar em nenhuma rota, API ou lógica de negócio já existente.
+- Novo endpoint `PUT /api/admin/users/:username/permissions` (só master, reaproveita
+  `requireRole` já existente). `GET`/`POST /api/admin/users` passaram a devolver também
+  `permissions` de cada usuário, sem mudar o formato usado antes.
+
+## Prompt 2 — Rolagem automática pra "Forma de Pagamento" no checkout
+
+Só usabilidade — os campos obrigatórios continuam sendo exatamente os mesmos já validados em
+`placeOrder()` (nome, telefone, rua, número e bairro pra entrega; nome e telefone pra retirada —
+CEP nunca foi obrigatório neste sistema, então não virou obrigatório agora). Cálculo de taxa,
+cupom, PIX/cartão/dinheiro e agendamento **não mudaram em nada**.
+
+- Assim que os campos obrigatórios ficam completos, a tela do cliente rola sozinha (suave) até
+  💳 Forma de Pagamento, dá um destaque visual breve (mesmo dourado do sistema) e leva o foco pra
+  primeira opção — sem escolher a forma de pagamento sozinho, quem decide continua sendo o
+  cliente.
+- Some campo obrigatório: não rola pra pagamento — só destaca em vermelho os campos vazios e
+  mostra "Preencha os campos obrigatórios para continuar." (reaproveita a mesma validação que já
+  existia em `placeOrder()`, só acrescentou o destaque visual).
+- Convive sem conflito com a rolagem campo-a-campo que já existia (Enter avança pro próximo
+  campo do formulário, testada em Android/iPhone/tablet/desktop) — só reaproveitada no fim da
+  sequência.
+
+
 
 **Achado enquanto conferíamos o v103, não relacionado a ele.** `apiGet()` devolve o JSON puro da
 resposta do servidor, mas o código desse quadro esperava um envelope `{ok, data}` (formato usado
