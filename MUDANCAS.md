@@ -1,4 +1,57 @@
-# v107h — "Editar Cardápio" modernizado: sidebar de categorias virou barra horizontal
+# v107j — NOVA PALETA PREMIUM (redesign de cores) — Preto Premium, Vermelho Intenso, Dourado
+
+Aplicada a paleta exata pedida no "REDESIGN COMPLETO", em todos os lugares do sistema — nada de
+dado, rota, API, banco, impressão, pedido, login ou regra de negócio foi tocado, só a cor.
+
+**Nova paleta** (`:root` em `public/painel.html` e `public/index.html`, mais os pequenos `:root`
+de `nota-fiscal.html`, `public/entregador.html`, `public/cardapio-rodizio.html`,
+`public/pedir-agora.html` e `public/admin-cardapio.html` — todo o "sistema", não só uma tela):
+- Fundo Principal: Preto Premium `#0B0B0B`
+- Cards: Grafite `#1B1B1F`
+- Primária: Vermelho Intenso `#D62828`
+- Secundária: Dourado Premium `#F4B400`
+- Apoio: Branco Gelo `#F5F5F5`
+- Sucesso: Verde `#22C55E` · Aviso: Laranja `#F59E0B` · Informação: Azul `#2563EB`
+
+Como quase todo o sistema já usava variáveis CSS (`var(--red)`, `var(--gold)` etc.) em vez de cor
+solta, a troca da paleta já vale pra praticamente tudo automaticamente. Além disso, caçei e
+troquei também os pontos que tinham a cor **grudada direto no código** (não numa variável) —
+telas de login, toast de aviso, ícones de mapa do motoboy, cores de gráfico, mensagens de erro,
+tema do navegador (`theme-color`) — pra não sobrar nenhum canto com a cor antiga.
+
+**Do "REDESIGN COMPLETO" gigante, isso é só a base (a paleta).** O resto do prompt — fonte nova,
+trocar todos os emojis por um único conjunto de ícones, Home nova (banner/slider/chips/busca
+fixa/barra inferior), tela de produto redesenhada com zoom, carrinho novo, timeline animada de
+rastreamento com mapa, Dashboard novo do admin com indicadores, Kanban de pedidos, Kitchen
+Display da cozinha, layout novo do motoboy com GPS, central de notificações segmentada, tela de
+fidelidade com barra de progresso, módulo de promoções — é, cada um, um projeto grande por si só.
+Não dava pra fazer tudo isso com qualidade numa rodada só, então priorizei a coisa que dá pra
+fazer bem e que sustenta tudo o resto: a identidade visual de cor, aplicada de verdade em todo
+canto, sem deixar pontas soltas com a cor antiga. Me diz qual das telas de cima quer que eu
+encare primeiro e sigo evoluindo por partes, do jeito que vimos fazendo até aqui.
+
+
+
+Passo de modernização visual **transversal** (afeta Central de Impressão, Configurações,
+Gerenciar Pedidos e Editar Cardápio de uma vez, já que compartilham os mesmos componentes) — sem
+mudar nenhuma cor de identidade, dado, rota ou função. Cores do sistema (vermelho/dourado/verde
+Shogatsu, fundo escuro) mantidas como já estavam.
+
+**Bug corrigido**: entre ~620px e ~980px de largura de janela, os cards de Configurações/Central
+de Impressão ficavam espremidos em 2 colunas estreitas demais pro conteúdo (texto cortando,
+visual de sobreposição — exatamente o que aparecia no print que você mandou). Agora só passa pra
+2/3 colunas a partir de 980px; abaixo disso fica em 1 coluna só, com espaço de sobra.
+
+**Mais "fluido"**: transição de troca de página suavizada (curva de easing igual à do resto do
+sistema, com leve zoom-in também, não só um fade). Cards de configuração, categorias do cardápio
+e do Kanban de pedidos ganharam sombra sutil + leve "elevação" ao passar o mouse — mesmo efeito
+de profundidade que os cards de produto e de pedido já tinham, agora consistente em toda tela.
+
+**O que não mexi**: os modais (edição de categoria, seletor de grupo, etc.) já tinham vidro
+fosco (blur) no fundo, borda dourada brilhante e animação de entrada — já estavam no padrão
+"moderno" que você pediu, então não precisei tocar neles.
+
+
 
 Só reorganização visual — nenhuma função, dado, categoria ou produto foi tocado. Mesmas
 `selectCat`/`moveCategory`/`openEditCategory`/`openCopyCategoryPicker`/`deleteCategory`/
