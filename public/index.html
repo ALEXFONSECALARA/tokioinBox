@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#D62828">
+<meta name="theme-color" content="#FDF6E3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Food Já">
@@ -18,10 +18,15 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
-  --black:#0B0B0B;--panel:#141416;--card:#1B1B1F;--border:#2A2A30;
-  --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;
-  --gold:#F4B400;--cream:#F5F5F5;--muted:#8A8A93;--white:#F5F5F5;
-  --green:#22C55E;--green-lt:#4ADE80;--orange:#F59E0B;--blue:#2563EB;
+  /* ═══ NOVA IDENTIDADE — creme elegante / salmão coral / dourado refinado ═══
+     v130: troca radical de paleta (antes: preto/vermelho/dourado escuro). Os NOMES das
+     variáveis foram mantidos (--black, --red, --gold, --white...) de propósito — são usados
+     em centenas de lugares no CSS/JS abaixo, então só trocar o VALOR aqui já reskina o site
+     inteiro sem precisar caçar cor por cor. */
+  --black:#FDF6E3;--panel:#FFFFFF;--card:#FFFFFF;--border:#EBDFC4;
+  --red:#FF6F59;--red-lt:#FF8B77;--red-dk:#E8543E;
+  --gold:#C19A6B;--cream:#FDF6E3;--muted:#8C7B65;--white:#3A2E22;
+  --green:#3E9B6B;--green-lt:#5CBE8A;--orange:#E08E45;--blue:#3E7CB1;
   /* v52 — offsets das barras fixas (header/mode-bar/cat-nav) medidos de verdade em JS
      (ver updateStickyOffsets() perto do fim do arquivo), em vez de valores fixos (60px/108px)
      que só valiam pro desktop. No celular o cabeçalho pode ocupar mais de uma linha (nome da
@@ -31,12 +36,16 @@
   */
   --header-h:calc(60px + env(safe-area-inset-top));--modebar-h:48px;--sticky-total-h:calc(108px + env(safe-area-inset-top));
 }
-body[data-theme="light"]{
-  --black:#F7F6F4;--panel:#ffffff;--card:#ffffff;--border:#E7E5E1;
-  --muted:#8A8681;--white:#1C1C1E;
+/* v130: o antigo "Modo Claro" virou o padrão (creme acima). Esse bloco agora guarda o visual
+   escuro anterior como opção alternativa pra quem preferir — o botão de sol/lua no cardápio
+   continua funcionando igual, só inverteu o que cada lado mostra. */
+body[data-theme="dark"]{
+  --black:#0B0B0B;--panel:#141416;--card:#1B1B1F;--border:#2A2A30;
+  --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;
+  --gold:#F4B400;--muted:#8A8A93;--white:#F5F5F5;
 }
-body[data-theme="light"] .item-card,body[data-theme="light"] .cover-slider,
-body[data-theme="light"] .drawer,body[data-theme="light"] .screen{box-shadow:0 1px 4px rgba(0,0,0,.06);}
+body[data-theme="dark"] .item-card,body[data-theme="dark"] .cover-slider,
+body[data-theme="dark"] .drawer,body[data-theme="dark"] .screen{box-shadow:0 2px 10px rgba(0,0,0,.35);}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
 /* v63 — BUG CORRIGIDO (causa raiz): html/body usavam overflow-x:hidden sem overflow-y definido.
    Pela spec do CSS, quando um eixo tem overflow diferente de "visible" e o outro fica "visible",
@@ -2603,16 +2612,16 @@ function formatPhoneDisplay(digits){
 function applyClientTheme(theme){
   document.body.dataset.theme = theme;
   const icon = document.getElementById('client-theme-icon');
-  if(icon) icon.textContent = theme==='light' ? '☀️' : '🌙';
+  if(icon) icon.textContent = theme==='dark' ? '☀️' : '🌙';
 }
 function toggleClientTheme(){
-  const next = document.body.dataset.theme==='light' ? 'dark' : 'light';
+  const next = document.body.dataset.theme==='dark' ? 'light' : 'dark';
   applyClientTheme(next);
   try{ localStorage.setItem('shogatsu-cliente-theme', next); }catch(e){}
 }
 (function initClientTheme(){
-  let saved='dark';
-  try{ saved = localStorage.getItem('shogatsu-cliente-theme') || 'dark'; }catch(e){}
+  let saved='light';
+  try{ saved = localStorage.getItem('shogatsu-cliente-theme') || 'light'; }catch(e){}
   applyClientTheme(saved);
 })();
 

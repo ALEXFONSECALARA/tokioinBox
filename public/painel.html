@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="theme-color" content="#c0392b">
+<meta name="theme-color" content="#FDF6E3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Painel Food Já">
@@ -15,6 +15,24 @@
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
+  /* ═══ NOVA IDENTIDADE — creme elegante / salmão coral / dourado refinado ═══
+     v130: troca radical de paleta (antes: preto/vermelho/dourado escuro premium). Os NOMES
+     das variáveis foram mantidos de propósito — são usados em milhares de lugares no CSS/JS
+     abaixo (cards, botões, badges, ícones, textos...), então só trocar o VALOR aqui já reskina
+     o painel inteiro sem precisar caçar cor por cor em cada componente. */
+  --bg:#FDF6E3;--sidebar:#FFFFFF;--panel:#FFFFFF;--card:#FFFFFF;--border:#EBDFC4;--border2:#D9C79E;
+  --red:#FF6F59;--red-lt:#FF8B77;--red-dk:#E8543E;--red-bg:rgba(255,111,89,.12);
+  --green:#3E9B6B;--green-lt:#5CBE8A;--green-bg:rgba(62,155,107,.12);
+  --gold:#C19A6B;--gold-bg:rgba(193,154,107,.15);
+  --blue:#3E7CB1;--blue-bg:rgba(62,124,177,.12);
+  --orange:#E08E45;--orange-bg:rgba(224,142,69,.12);
+  --white:#3A2E22;--muted:#8C7B65;--muted2:#B9AC94;
+  --radius:14px;--shadow-card:0 2px 10px rgba(120,90,55,.10);--shadow-lift:0 8px 24px rgba(120,90,55,.16);
+  --sidebar-w:220px;
+}
+/* v130: o antigo "Modo Escuro" premium (preto/vermelho/dourado) virou a opção alternativa —
+   o botão de sol/lua na barra lateral continua funcionando igual, só inverteu o padrão. */
+body[data-theme="dark"]{
   --bg:#0B0B0B;--sidebar:#111113;--panel:#1B1B1F;--card:#1B1B1F;--border:#2A2A30;--border2:#3A3A42;
   --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;--red-bg:rgba(214,40,40,.12);
   --green:#22C55E;--green-lt:#4ADE80;--green-bg:rgba(34,197,94,.12);
@@ -22,19 +40,11 @@
   --blue:#2563EB;--blue-bg:rgba(37,99,235,.12);
   --orange:#F59E0B;--orange-bg:rgba(245,158,11,.12);
   --white:#F5F5F5;--muted:#8A8A93;--muted2:#54545C;
-  --radius:14px;--shadow-card:0 2px 10px rgba(0,0,0,.35);--shadow-lift:0 8px 24px rgba(0,0,0,.45);
-  --sidebar-w:220px;
+  --shadow-card:0 2px 10px rgba(0,0,0,.35);--shadow-lift:0 8px 24px rgba(0,0,0,.45);
 }
-body[data-theme="light"]{
-  --bg:#F7F6F4;--sidebar:#ffffff;--panel:#ffffff;--card:#ffffff;--border:#E7E5E1;--border2:#D4D1CB;
-  --red-bg:rgba(214,40,40,.08);--green-bg:rgba(34,197,94,.08);--gold-bg:rgba(244,180,0,.12);
-  --blue-bg:rgba(37,99,235,.08);--orange-bg:rgba(245,158,11,.08);
-  --white:#1C1C1E;--muted:#8A8681;--muted2:#B5B1AC;
-  --shadow-card:0 1px 3px rgba(0,0,0,.06);--shadow-lift:0 6px 18px rgba(0,0,0,.10);
-}
-body[data-theme="light"] .brand-icon{box-shadow:0 1px 4px rgba(0,0,0,.15);}
-body[data-theme="light"] .order-card,body[data-theme="light"] .k-card,
-body[data-theme="light"] .settings-card,body[data-theme="light"] .menu-item-row{box-shadow:0 1px 3px rgba(0,0,0,.06);}
+body[data-theme="dark"] .brand-icon{box-shadow:0 4px 12px rgba(214,40,40,.35);}
+body[data-theme="dark"] .order-card,body[data-theme="dark"] .k-card,
+body[data-theme="dark"] .settings-card,body[data-theme="dark"] .menu-item-row{box-shadow:0 1px 3px rgba(0,0,0,.15);}
 *{box-sizing:border-box;margin:0;padding:0;}
 body{background:var(--bg);color:var(--white);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:14px;display:flex;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
 h1,h2,h3,.brand-name,.topbar-title{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.01em;}
@@ -3598,17 +3608,17 @@ function authHeaders(extra){
 // ═══════════════════════════════════════════
 function applyTheme(theme){
   document.body.dataset.theme = theme;
-  document.getElementById('theme-icon').textContent = theme==='light' ? '☀️' : '🌙';
-  document.getElementById('theme-label').textContent = theme==='light' ? 'Modo Claro' : 'Modo Escuro';
+  document.getElementById('theme-icon').textContent = theme==='dark' ? '☀️' : '🌙';
+  document.getElementById('theme-label').textContent = theme==='dark' ? 'Padrão Creme' : 'Modo Escuro';
 }
 function toggleTheme(){
-  const next = document.body.dataset.theme==='light' ? 'dark' : 'light';
+  const next = document.body.dataset.theme==='dark' ? 'light' : 'dark';
   applyTheme(next);
   try{ localStorage.setItem('shogatsu-painel-theme', next); }catch(e){}
 }
 (function initTheme(){
-  let saved='dark';
-  try{ saved = localStorage.getItem('shogatsu-painel-theme') || 'dark'; }catch(e){}
+  let saved='light';
+  try{ saved = localStorage.getItem('shogatsu-painel-theme') || 'light'; }catch(e){}
   applyTheme(saved);
 })();
 
