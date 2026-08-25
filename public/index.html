@@ -3,25 +3,25 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#D62828">
+<meta name="theme-color" content="#c0392b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Food Já">
+<meta name="apple-mobile-web-app-title" content="Shogatsu">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<title>Food Já · Peça Agora</title>
-<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-<!-- v27: fontes exclusivas da tela de Acompanhamento do Pedido (o resto do site continua em Plus Jakarta Sans/Inter) -->
+<title>Shogatsu · Peça Agora</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Jost:wght@300;400;500;600&display=swap" rel="stylesheet">
+<!-- v27: fontes exclusivas da tela de Acompanhamento do Pedido (o resto do site continua em Cormorant/Jost) -->
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Inter:wght@400;500;600&family=Poppins:wght@600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
 <style>
 :root{
-  --black:#0B0B0B;--panel:#141416;--card:#1B1B1F;--border:#2A2A30;
-  --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;
-  --gold:#F4B400;--cream:#F5F5F5;--muted:#8A8A93;--white:#F5F5F5;
-  --green:#22C55E;--green-lt:#4ADE80;--orange:#F59E0B;--blue:#2563EB;
+  --black:#0a0a0a;--panel:#161412;--card:#1e1a16;--border:#2a2420;
+  --red:#c0392b;--red-lt:#e05a4a;--red-dk:#8a1f15;
+  --gold:#c9a84c;--cream:#f5ede0;--muted:#7a6a60;--white:#f0e8e0;
+  --green:#27ae60;--green-lt:#2ecc71;
   /* v52 — offsets das barras fixas (header/mode-bar/cat-nav) medidos de verdade em JS
      (ver updateStickyOffsets() perto do fim do arquivo), em vez de valores fixos (60px/108px)
      que só valiam pro desktop. No celular o cabeçalho pode ocupar mais de uma linha (nome da
@@ -32,8 +32,8 @@
   --header-h:calc(60px + env(safe-area-inset-top));--modebar-h:48px;--sticky-total-h:calc(108px + env(safe-area-inset-top));
 }
 body[data-theme="light"]{
-  --black:#F7F6F4;--panel:#ffffff;--card:#ffffff;--border:#E7E5E1;
-  --muted:#8A8681;--white:#1C1C1E;
+  --black:#faf7f2;--panel:#ffffff;--card:#ffffff;--border:#e9e2d6;
+  --muted:#9c8d80;--white:#241d16;
 }
 body[data-theme="light"] .item-card,body[data-theme="light"] .cover-slider,
 body[data-theme="light"] .drawer,body[data-theme="light"] .screen{box-shadow:0 1px 4px rgba(0,0,0,.06);}
@@ -47,7 +47,7 @@ body[data-theme="light"] .drawer,body[data-theme="light"] .screen{box-shadow:0 1
    horizontal sem nunca criar esse container de rolagem escondido, preservando position:sticky. */
 html{overflow-x:hidden;overflow-x:clip;overflow-y:visible;width:100%;}
 img{max-width:100%;}
-body{background:var(--black);color:var(--white);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden;overflow-x:clip;overflow-y:visible;-webkit-font-smoothing:antialiased;}
+body{background:var(--black);color:var(--white);font-family:'Jost',sans-serif;font-weight:400;min-height:100vh;overflow-x:hidden;overflow-x:clip;overflow-y:visible;}
 /* v83 — BUG CORRIGIDO ("cabeçalho não flutua no iOS ao rolar o cardápio"): o Safari (iOS e
    macOS) tem um bug documentado (confirmado nos fóruns de desenvolvedor da própria Apple,
    ainda sem correção até a versão testada) onde "overflow-x: clip" também clipa o eixo Y por
@@ -67,7 +67,7 @@ body{background:var(--black);color:var(--white);font-family:'Plus Jakarta Sans',
   body{overflow-x:hidden;overflow-y:visible;}
 }
 a{text-decoration:none;color:inherit;}
-button{cursor:pointer;font-family:'Inter',sans-serif;}
+button{cursor:pointer;font-family:'Jost',sans-serif;}
 
 /* v97 — TOPO INTEIRO FIXO (header + mode-bar) EM UM ÚNICO CONTAINER: #top-fixed-bar é o ÚNICO
    elemento com position:fixed do bloco superior — header e mode-bar ficam dentro dele em fluxo
@@ -91,7 +91,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 #top-fixed-spacer{width:100%;height:var(--sticky-total-h,108px);}
 .header-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;min-height:60px;flex-wrap:wrap;gap:8px 0;padding:8px 0;}
 .header-brand{display:flex;align-items:center;gap:10px;}
-.header-logo{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;letter-spacing:4px;color:var(--white);}
+.header-logo{font-family:'Cormorant Garamond',serif;font-size:22px;letter-spacing:4px;color:var(--white);}
 .header-logo span{color:var(--red-lt);}
 .header-status{font-size:10px;letter-spacing:2px;color:var(--green-lt);display:flex;align-items:center;gap:5px;}
 .header-status::before{content:'';width:6px;height:6px;background:var(--green-lt);border-radius:50%;animation:pulse 2s infinite;}
@@ -136,7 +136,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 }
 .hero-strip{background:linear-gradient(135deg,#1a0e0a 0%,#2a1008 100%);border-bottom:1px solid var(--border);padding:20px 16px;}
 .hero-strip-inner{max-width:800px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;}
-.hero-info h2{font-family:'Plus Jakarta Sans',sans-serif;font-size:clamp(20px,5vw,28px);font-weight:400;color:var(--cream);margin-bottom:4px;}
+.hero-info h2{font-family:'Cormorant Garamond',serif;font-size:clamp(20px,5vw,28px);font-weight:400;color:var(--cream);margin-bottom:4px;}
 .hero-info p{font-size:12px;color:var(--muted);letter-spacing:1px;}
 .hero-chips{display:flex;gap:8px;flex-wrap:wrap;}
 .chip{background:rgba(255,255,255,.06);border:1px solid var(--border);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:6px;}
@@ -225,7 +225,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .main{max-width:800px;margin:0 auto;padding:24px 16px 120px;}
 
 .menu-section{margin-bottom:40px;}
-.menu-section-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;font-weight:400;color:var(--red-lt);letter-spacing:3px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
+.menu-section-title{font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:400;color:var(--red-lt);letter-spacing:3px;margin-bottom:4px;display:flex;align-items:center;gap:10px;}
 .section-title-icon{font-size:32px;line-height:1;filter:drop-shadow(0 2px 4px rgba(0,0,0,.4));}
 .menu-section-note{font-size:11px;color:var(--muted);letter-spacing:1px;font-style:italic;margin-bottom:16px;}
 
@@ -233,14 +233,14 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .item-card:hover{border-color:var(--red-dk);}
 .item-img{width:var(--dish-img-size,80px);height:var(--dish-img-size,80px);min-width:var(--dish-img-size,80px);min-height:var(--dish-img-size,80px);border-radius:4px;object-fit:cover;background:var(--panel);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:28px;overflow:hidden;}
 .item-body{flex:1;}
-.item-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:calc(19px * var(--menu-fs-scale,1));font-weight:600;color:var(--white);margin-bottom:4px;line-height:1.25;letter-spacing:.2px;}
+.item-name{font-family:'Cormorant Garamond',serif;font-size:calc(19px * var(--menu-fs-scale,1));font-weight:600;color:var(--white);margin-bottom:4px;line-height:1.25;letter-spacing:.2px;}
 .item-desc{font-size:calc(12px * var(--menu-fs-scale,1));color:#b8b0a8;line-height:1.65;margin-bottom:9px;letter-spacing:.1px;}
 /* v87: descrição compacta por padrão (2 linhas), expande com "Ver mais" — ver toggleItemDesc() */
 .item-desc.clamped{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;margin-bottom:2px;transition:max-height .22s ease;}
-.item-desc-toggle{background:none;border:none;padding:2px 0;margin:0 0 8px;font-size:11px;font-weight:700;color:var(--gold,#F4B400);cursor:pointer;-webkit-tap-highlight-color:transparent;}
+.item-desc-toggle{background:none;border:none;padding:2px 0;margin:0 0 8px;font-size:11px;font-weight:700;color:var(--gold,#c9a84c);cursor:pointer;-webkit-tap-highlight-color:transparent;}
 .item-desc-toggle:active{opacity:.7;}
 .item-footer{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.item-price{font-family:'Plus Jakarta Sans',sans-serif;font-size:calc(21px * var(--menu-fs-scale,1));font-weight:700;color:var(--red-lt);letter-spacing:.2px;}
+.item-price{font-family:'Cormorant Garamond',serif;font-size:calc(21px * var(--menu-fs-scale,1));font-weight:700;color:var(--red-lt);letter-spacing:.2px;}
 .item-badge{font-size:10px;font-weight:700;letter-spacing:.5px;color:#3a2a00;background:linear-gradient(90deg,#FFD54A,#FFB300);padding:3px 10px;border-radius:20px;margin-bottom:6px;display:inline-block;}
 .item-promo-tag{margin-top:6px;font-size:11px;font-weight:700;color:#3a2a00;background:linear-gradient(90deg,#FFD54A,#FFB300);padding:4px 10px;border-radius:6px;display:inline-block;letter-spacing:.3px;}
 
@@ -287,19 +287,6 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .vopt-chip-price{font-size:11.5px;color:var(--muted);margin-top:2px;display:block;}
 .vopt-chip-price.included{color:#4ade80;font-weight:600;letter-spacing:.3px;}
 .vopt-chip.selected .vopt-chip-price:not(.included){color:var(--gold);}
-/* v107a — Prompt "Evolução do cadastro de pratos": stepper de quantidade por opção (usado quando
-   a opção permite mais de 1 unidade, ex: "Salmão 0-8 peças") e progresso do grupo por quantidade
-   total (ex: "Total: 14 / 24 peças"). Reaproveita as mesmas cores douradas já usadas nos chips. */
-.vopt-chip.qtymode{cursor:default;}
-.vopt-stepper{display:flex;align-items:center;gap:0;border:1px solid var(--border);border-radius:50px;overflow:hidden;flex-shrink:0;}
-.vopt-stepper button{background:none;border:none;color:var(--white);width:28px;height:28px;font-size:16px;display:flex;align-items:center;justify-content:center;cursor:pointer;}
-.vopt-stepper button:disabled{opacity:.3;cursor:not-allowed;}
-.vopt-stepper button:not(:disabled):hover{background:var(--red-dk);}
-.vopt-stepper span{min-width:22px;text-align:center;font-size:13px;font-weight:700;}
-.vgroup-progress{font-size:11px;color:var(--gold);font-weight:600;margin-left:auto;white-space:nowrap;}
-.vgroup-title{justify-content:space-between;}
-.vopt-chip.disabled{opacity:.4;cursor:not-allowed;}
-.vopt-chip.disabled:hover{border-color:var(--border);}
 .coupon-chip{background:var(--card);border:1px solid var(--gold);border-radius:20px;padding:6px 12px;font-size:11px;color:var(--gold);cursor:pointer;transition:background .15s;white-space:nowrap;animation:couponGlow 2s ease-in-out infinite;}
 @keyframes couponGlow{0%,100%{box-shadow:0 0 0 rgba(201,168,76,0);}50%{box-shadow:0 0 10px rgba(201,168,76,.5);}}
 @keyframes couponFlash{0%{transform:scale(1);}30%{transform:scale(1.08);}100%{transform:scale(1);}}
@@ -343,7 +330,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .cart-float-btn:hover{background:var(--red-lt);}
 .cart-float-left{display:flex;align-items:center;gap:10px;}
 .cart-float-badge{background:rgba(255,255,255,.2);border-radius:50px;padding:2px 10px;font-size:13px;}
-.cart-float-total{font-family:'Plus Jakarta Sans',sans-serif;font-size:20px;}
+.cart-float-total{font-family:'Cormorant Garamond',serif;font-size:20px;}
 
 .drawer-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.7);display:none;backdrop-filter:blur(4px);}
 .drawer-overlay.open{display:block;}
@@ -351,26 +338,26 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .drawer.open{transform:translateY(0);}
 .drawer-handle{width:40px;height:4px;background:var(--border);border-radius:2px;margin:12px auto 0;}
 .drawer-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.drawer-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:2px;}
+.drawer-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:2px;}
 .drawer-close{background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:32px;height:32px;font-size:16px;display:flex;align-items:center;justify-content:center;}
 .drawer-body{padding:16px 20px;}
 
 /* ═══════════════════════════════════════════════════════════
    v66 — Chat Express (cliente): visual premium com identidade própria
    Paleta fixa deste módulo (não usa var(--...) do tema, é intencional):
-     fundo #0F1115 · bolha enviada #D62828 · bolha recebida #1F2937
+     fundo #0F1115 · bolha enviada #D32F2F · bolha recebida #1F2937
      texto #FFFFFF · detalhes/hora #BDBDBD · fonte Inter
    ═══════════════════════════════════════════════════════════ */
 #ia-drawer{padding:0;background:#0F1115;font-family:'Inter',sans-serif;}
 #ia-drawer .drawer-handle{display:none;}
 .wa-header{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid #262b33;background:#14161c;flex-shrink:0;}
-.wa-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D62828,#8f1f1f);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#fff;}
+.wa-avatar{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#D32F2F,#8f1f1f);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;color:#fff;}
 .wa-header-info{flex:1;min-width:0;}
 .wa-header-name{font-size:17px;font-weight:600;color:#FFFFFF;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .wa-header-status{font-size:12px;color:#BDBDBD;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:color .2s ease;}
-.wa-header-status.wa-typing{color:#D62828;font-weight:500;}
+.wa-header-status.wa-typing{color:#D32F2F;font-weight:500;}
 .wa-close{background:none;border:1px solid #262b33;color:#BDBDBD;border-radius:50%;width:30px;height:30px;font-size:14px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transition:background .15s ease,color .15s ease;}
-.wa-close:hover{color:#D62828;border-color:#D62828;}
+.wa-close:hover{color:#D32F2F;border-color:#D32F2F;}
 .wa-messages{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px 12px;display:flex;flex-direction:column;gap:3px;background:#0F1115;background-image:
   radial-gradient(circle at 20% 10%, rgba(255,255,255,.015) 0, transparent 40%),
   radial-gradient(circle at 80% 90%, rgba(255,255,255,.015) 0, transparent 40%);
@@ -381,7 +368,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .wa-row.wa-out{justify-content:flex-end;}
 .wa-row.wa-in{justify-content:flex-start;}
 .wa-bubble{max-width:78%;padding:9px 12px 7px;border-radius:18px;font-size:15px;line-height:1.42;white-space:pre-wrap;word-break:break-word;position:relative;box-shadow:0 1px 2px rgba(0,0,0,.25);font-family:'Inter',sans-serif;}
-.wa-row.wa-out .wa-bubble{background:#D62828;color:#FFFFFF;border-bottom-right-radius:5px;}
+.wa-row.wa-out .wa-bubble{background:#D32F2F;color:#FFFFFF;border-bottom-right-radius:5px;}
 .wa-row.wa-in .wa-bubble{background:#1F2937;color:#FFFFFF;border-bottom-left-radius:5px;}
 .wa-bubble .wa-time{display:block;text-align:right;font-size:11px;color:#BDBDBD;opacity:.85;margin-top:3px;letter-spacing:.2px;}
 .wa-row.wa-out .wa-bubble .wa-time{color:rgba(255,255,255,.75);}
@@ -401,9 +388,9 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
    focar o campo) e ganhou mais espaço porque emoji/anexo saíram daqui e foram pro botão "+". */
 #ia-pergunta{background:#1F2937;color:#FFFFFF;caret-color:#FFFFFF;border:1px solid #262b33;border-radius:24px;padding:14px 18px;font-size:16px;line-height:1.4;font-family:'Inter',sans-serif;transition:border-color .18s ease,box-shadow .18s ease;flex:1;resize:none;box-sizing:border-box;min-height:50px;max-height:150px;}
 #ia-pergunta::placeholder{color:#BDBDBD;}
-#ia-pergunta:focus{outline:none;border-color:#D62828;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
+#ia-pergunta:focus{outline:none;border-color:#D32F2F;box-shadow:0 0 0 3px rgba(211,47,47,.18);}
 .wa-icon-btn{background:none;border:none;color:#BDBDBD;width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:background .2s ease,color .2s ease,transform .15s ease;}
-.wa-icon-btn:hover{color:#D62828;background:rgba(211,47,47,.12);}
+.wa-icon-btn:hover{color:#D32F2F;background:rgba(211,47,47,.12);}
 .wa-icon-btn:active{transform:scale(.92);}
 .wa-icon-btn.wa-recording{color:#ff5252;background:rgba(255,82,82,.14);animation:waRecPulse2 1.1s infinite ease-in-out;}
 @keyframes waRecPulse2{0%,100%{box-shadow:0 0 0 0 rgba(255,82,82,.35);}50%{box-shadow:0 0 0 6px rgba(255,82,82,0);}}
@@ -411,8 +398,8 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
    visual no rodapé, tanto no celular quanto no PC). Gira 45° e vira um "×" quando o menu abre. */
 #ia-plus-btn svg{transition:transform .2s ease;}
 #ia-plus-btn.open svg{transform:rotate(45deg);}
-#ia-plus-btn.open{color:#D62828;background:rgba(211,47,47,.12);}
-.wa-send-btn{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:#D62828;color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;transition:filter .15s ease,transform .1s ease;box-shadow:0 2px 8px rgba(211,47,47,.35);}
+#ia-plus-btn.open{color:#D32F2F;background:rgba(211,47,47,.12);}
+.wa-send-btn{width:46px;height:46px;flex-shrink:0;border-radius:50%;background:#D32F2F;color:#FFFFFF;border:none;display:flex;align-items:center;justify-content:center;transition:filter .15s ease,transform .1s ease;box-shadow:0 2px 8px rgba(211,47,47,.35);}
 .wa-send-btn:hover{filter:brightness(1.1);}
 .wa-send-btn:active{transform:scale(.92);}
 .wa-emoji-panel{position:absolute;bottom:58px;left:8px;background:#1F2937;border:1px solid #262b33;border-radius:12px;padding:8px;display:none;grid-template-columns:repeat(7,1fr);gap:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:6;max-width:270px;}
@@ -422,7 +409,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .wa-tools-panel{position:absolute;bottom:58px;left:8px;background:#1F2937;border:1px solid #262b33;border-radius:12px;padding:6px;display:none;flex-direction:column;gap:2px;box-shadow:0 8px 24px rgba(0,0,0,.45);z-index:5;min-width:170px;transition:opacity .2s ease,transform .2s ease;}
 .wa-tools-panel.open{display:flex;}
 .wa-tools-panel button{display:flex;align-items:center;gap:10px;background:none;border:none;color:#FFFFFF;font-size:13.5px;font-family:'Inter',sans-serif;padding:10px 12px;border-radius:8px;text-align:left;}
-.wa-tools-panel button:hover{background:rgba(211,47,47,.15);color:#D62828;}
+.wa-tools-panel button:hover{background:rgba(211,47,47,.15);color:#D32F2F;}
 .wa-tools-panel button svg{flex-shrink:0;}
 .wa-rec-indicator{display:flex;align-items:center;gap:8px;flex:1;font-size:12.5px;color:#ff5252;padding:0 6px;}
 .wa-rec-dot{width:9px;height:9px;border-radius:50%;background:#ff5252;animation:waRecPulse 1s infinite;}
@@ -439,17 +426,17 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 }
 .cart-item{display:flex;align-items:center;gap:12px;padding:12px 0;border-bottom:1px solid var(--border);}
 .cart-item-name{flex:1;font-size:14px;color:var(--white);}
-.cart-item-price{font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;color:var(--red-lt);min-width:70px;text-align:right;}
-.cart-empty{text-align:center;padding:40px;color:var(--muted);font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-style:italic;}
+.cart-item-price{font-family:'Cormorant Garamond',serif;font-size:16px;color:var(--red-lt);min-width:70px;text-align:right;}
+.cart-empty{text-align:center;padding:40px;color:var(--muted);font-family:'Cormorant Garamond',serif;font-size:18px;font-style:italic;}
 
 .cart-summary{background:var(--card);border-radius:8px;padding:16px;margin-top:16px;}
 .summary-row{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px;}
 .summary-row.total{color:var(--white);font-size:16px;font-weight:600;margin-top:12px;padding-top:12px;border-top:1px solid var(--border);}
-.summary-row.total span:last-child{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--red-lt);}
+.summary-row.total span:last-child{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--red-lt);}
 
 .obs-field{margin-top:12px;}
 .obs-field label{font-size:10px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;display:block;margin-bottom:6px;}
-.obs-field textarea{width:100%;background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'Inter',sans-serif;font-size:13px;padding:10px;border-radius:4px;resize:none;height:70px;outline:none;}
+.obs-field textarea{width:100%;background:var(--black);border:1px solid var(--border);color:var(--white);font-family:'Jost',sans-serif;font-size:13px;padding:10px;border-radius:4px;resize:none;height:70px;outline:none;}
 .obs-field textarea:focus{border-color:var(--red-dk);}
 
 .checkout-btn{width:100%;background:var(--red);border:none;border-radius:8px;padding:16px;color:#fff;font-size:14px;font-weight:600;letter-spacing:2px;text-transform:uppercase;margin-top:16px;transition:background .2s;}
@@ -460,28 +447,15 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .screen.open{display:block;}
 .screen-header{background:var(--panel);border-bottom:1px solid var(--border);padding:16px 20px;padding-top:calc(16px + env(safe-area-inset-top));display:flex;align-items:center;gap:12px;position:sticky;top:0;}
 .back-btn{background:none;border:1px solid var(--border);color:var(--muted);border-radius:50%;width:36px;height:36px;font-size:18px;display:flex;align-items:center;justify-content:center;}
-.screen-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:2px;}
+.screen-title{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:2px;}
 .screen-body{max-width:600px;margin:0 auto;padding:24px 20px 100px;}
 
 .form-section{margin-bottom:28px;}
 .form-section-title{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--red-lt);margin-bottom:16px;border-bottom:1px solid var(--border);padding-bottom:8px;}
 .form-group{margin-bottom:14px;}
 .form-group label{display:block;font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:6px;}
-.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Inter',sans-serif;font-size:14px;padding:12px;border-radius:4px;outline:none;transition:border-color .2s;}
+.form-group input,.form-group select,.form-group textarea{width:100%;background:var(--card);border:1px solid var(--border);color:var(--white);font-family:'Jost',sans-serif;font-size:14px;padding:12px;border-radius:4px;outline:none;transition:border-color .2s;}
 .form-group input:focus,.form-group select:focus{border-color:var(--red-dk);}
-/* v107 — Prompt 2 (otimização "Finalizar Pedido"): borda vermelha só pra sinalizar campo
-   obrigatório vazio quando falta algo; não muda nenhuma outra cor/estilo do formulário. */
-.form-group input.field-error{border-color:var(--red);box-shadow:0 0 0 1px var(--red);}
-.checkout-missing-hint{display:none;color:var(--red);font-size:12px;margin-top:2px;}
-.checkout-missing-hint.show{display:block;}
-/* destaque suave (dourado, mesmo tom do sistema) quando a rolagem automática chega em
-   Forma de Pagamento — só um pulso visual, some sozinho, não muda o layout nem as cores padrão */
-@keyframes shogatsuPaymentPulse{
-  0%{box-shadow:0 0 0 0 rgba(201,168,76,.55);}
-  70%{box-shadow:0 0 0 10px rgba(201,168,76,0);}
-  100%{box-shadow:0 0 0 0 rgba(201,168,76,0);}
-}
-#payment-section.payment-highlight{animation:shogatsuPaymentPulse 1.4s ease-out 1;border-radius:8px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 
 /* ── Cartão de perfil "Minha Conta" (v55) ── */
@@ -491,7 +465,7 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .acc-profile-top{display:flex;align-items:center;gap:16px;position:relative;z-index:1;}
 .acc-avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.06);border:2px solid var(--gold);display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0;}
 .acc-profile-info{flex:1;min-width:0;}
-.acc-profile-name{font-family:'Plus Jakarta Sans',sans-serif;font-size:22px;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.acc-profile-name{font-family:'Cormorant Garamond',serif;font-size:22px;color:var(--white);letter-spacing:1px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .acc-profile-phone{font-size:13px;color:var(--muted);margin-top:2px;}
 .acc-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;background:rgba(201,168,76,.12);border:1px solid rgba(201,168,76,.35);color:var(--gold);font-size:11px;font-weight:600;letter-spacing:.5px;margin-top:8px;}
 .acc-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:16px;position:relative;z-index:1;}
@@ -507,12 +481,12 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .acc-nav-btn .acc-nav-icon{width:36px;height:36px;border-radius:9px;background:rgba(255,255,255,.14);display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0;}
 .acc-nav-btn .acc-nav-label{font-size:13px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .acc-nav-btn .acc-nav-arrow{opacity:.7;flex-shrink:0;}
-.acc-nav-pedidos .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
-.acc-nav-editar .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
+.acc-nav-pedidos .acc-nav-icon{background:rgba(192,57,43,.18);color:#e05a4a;}
+.acc-nav-editar .acc-nav-icon{background:rgba(192,57,43,.18);color:#e05a4a;}
 .acc-nav-notif .acc-nav-icon{background:rgba(201,168,76,.18);color:var(--gold);}
 .acc-nav-fidelidade .acc-nav-icon{background:rgba(185,140,214,.18);color:#b98cd6;}
-.acc-nav-reservas .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
-.acc-nav-conta .acc-nav-icon{background:rgba(192,57,43,.18);color:#ED4245;}
+.acc-nav-reservas .acc-nav-icon{background:rgba(192,57,43,.18);color:#e05a4a;}
+.acc-nav-conta .acc-nav-icon{background:rgba(192,57,43,.18);color:#e05a4a;}
 .acc-nav-btn:hover{box-shadow:0 10px 22px -10px rgba(0,0,0,.5);}
 @media (max-width:420px){.acc-nav-grid{grid-template-columns:1fr;}}
 
@@ -527,7 +501,6 @@ button{cursor:pointer;font-family:'Inter',sans-serif;}
 .pay-opt-icon{font-size:24px;margin-bottom:6px;}
 .pay-opt-label{font-size:11px;letter-spacing:1px;color:var(--muted);}
 .pay-opt.selected .pay-opt-label{color:var(--white);}
-.pay-opt:focus-visible{outline:2px solid var(--gold);outline-offset:2px;}
 
 .order-summary-mini{background:var(--card);border:1px solid var(--gold);border-radius:10px;padding:16px;margin-bottom:20px;box-shadow:0 2px 16px rgba(201,168,76,.08);}
 .order-summary-mini .summary-row{font-size:12px;}
@@ -1054,7 +1027,6 @@ button:active, .btn:active, [role="button"]:active, .pay-opt:active, .cat-tab:ac
       <div class="form-group"><label>Bairro *</label><input type="text" id="f-hood" placeholder="Costazul" onblur="onAddressChanged()"/></div>
       <div class="form-group"><label>Ponto de referência</label><input type="text" id="f-ref" placeholder="Próximo ao mercado"/></div>
       <p class="hint" id="fee-calc-status" style="font-size:12px;color:var(--muted);margin-top:4px;"></p>
-      <p class="checkout-missing-hint" id="checkout-missing-hint">Preencha os campos obrigatórios para continuar.</p>
       <div id="checkout-save-account-box" style="margin-top:10px;padding:12px;background:var(--card);border-radius:8px;">
         <label style="display:flex;align-items:center;gap:8px;font-size:12px;cursor:pointer;">
           <input type="checkbox" id="f-save-account" onchange="toggleSaveAccountBox()"/> 💾 Salvar meus dados pros próximos pedidos (criar senha de 4 dígitos)
@@ -1071,16 +1043,15 @@ button:active, .btn:active, [role="button"]:active, .pay-opt:active, .cat-tab:ac
       <div class="form-group"><label>Nome para retirada *</label><input type="text" id="f-name-r" placeholder="Seu nome"/></div>
       <div class="form-group"><label>WhatsApp / Telefone *</label><input type="tel" inputmode="numeric" id="f-phone-r" placeholder="(22) 99999-9999" maxlength="15" oninput="maskPhone(this)"/></div>
       <p style="font-size:12px;color:var(--muted);margin-top:4px;" id="retirada-addr-note"></p>
-      <p class="checkout-missing-hint" id="checkout-missing-hint-r">Preencha os campos obrigatórios para continuar.</p>
     </div>
 
-    <div class="form-section" id="payment-section">
+    <div class="form-section">
       <div class="form-section-title">💳 Forma de Pagamento</div>
       <div class="payment-grid">
-        <div class="pay-opt" onclick="selectPay('pix')" id="pay-pix" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('pix');}"><div class="pay-opt-icon">📱</div><div class="pay-opt-label">PIX</div></div>
-        <div class="pay-opt" onclick="selectPay('credito')" id="pay-credito" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('credito');}"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Crédito</div></div>
-        <div class="pay-opt" onclick="selectPay('debito')" id="pay-debito" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('debito');}"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Débito</div></div>
-        <div class="pay-opt" onclick="selectPay('dinheiro')" id="pay-dinheiro" tabindex="0" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();selectPay('dinheiro');}"><div class="pay-opt-icon">💵</div><div class="pay-opt-label">Dinheiro</div></div>
+        <div class="pay-opt" onclick="selectPay('pix')" id="pay-pix"><div class="pay-opt-icon">📱</div><div class="pay-opt-label">PIX</div></div>
+        <div class="pay-opt" onclick="selectPay('credito')" id="pay-credito"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Crédito</div></div>
+        <div class="pay-opt" onclick="selectPay('debito')" id="pay-debito"><div class="pay-opt-icon">💳</div><div class="pay-opt-label">Débito</div></div>
+        <div class="pay-opt" onclick="selectPay('dinheiro')" id="pay-dinheiro"><div class="pay-opt-icon">💵</div><div class="pay-opt-label">Dinheiro</div></div>
       </div>
       <div id="troco-wrap" style="display:none;margin-top:12px;">
         <div class="form-group"><label>Troco para quanto?</label><input type="number" id="f-troco" placeholder="ex: 100"/></div>
@@ -1444,7 +1415,7 @@ async function onCepBlur() {
     } else {
       if (data.street) document.getElementById('f-street').value = data.street;
       if (data.hood) document.getElementById('f-hood').value = data.hood;
-      statusEl.style.color = '#22C55E';
+      statusEl.style.color = '#50c878';
       statusEl.textContent = '✅ Endereço encontrado! Confirme o número.';
       const numEl = document.getElementById('f-number');
       if (numEl && !numEl.value) numEl.focus();
@@ -2232,8 +2203,8 @@ async function loadReviews(){
     if(!data.reviews || !data.reviews.length){
       section.style.display='block';
       document.getElementById('review-avg').innerHTML = `<div style="text-align:center;padding:6px 16px 4px;">
-        <div style="font-size:15px;font-weight:700;color:var(--gold,#F4B400);">⭐ Avalie seu pedido</div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sua opinião ajuda o Food Já a melhorar.</div>
+        <div style="font-size:15px;font-weight:700;color:var(--gold,#c9a84c);">⭐ Avalie seu pedido</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">Sua opinião ajuda o Shogatsu a melhorar.</div>
       </div>`;
       document.getElementById('reviews-list').innerHTML = '';
       return;
@@ -2439,7 +2410,7 @@ function renderFaqRapidaIa(){
   if(!el) return;
   if(iaModoAtual==='humano'){ el.innerHTML=''; return; }
   const faq = (cfg.ia && cfg.ia.faq) || [];
-  const chipCardapio = `<button onclick="perguntarCardapioIa()" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--gold,#F4B400);background:rgba(201,168,76,.12);color:inherit;cursor:pointer;flex-shrink:0;font-weight:600;">🍣 Ver o cardápio</button>`;
+  const chipCardapio = `<button onclick="perguntarCardapioIa()" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--gold,#c9a84c);background:rgba(201,168,76,.12);color:inherit;cursor:pointer;flex-shrink:0;font-weight:600;">🍣 Ver o cardápio</button>`;
   el.innerHTML = chipCardapio + faq.slice(0,6).map((f,i)=>`<button onclick="perguntarFaqRapida(${i})" style="white-space:nowrap;font-size:11px;padding:6px 10px;border-radius:14px;border:1px solid var(--border,#444);background:transparent;color:inherit;cursor:pointer;flex-shrink:0;">${escIa(f.pergunta)}</button>`).join('');
 }
 function perguntarFaqRapida(i){
@@ -2567,7 +2538,7 @@ async function enviarMensagemIa(payload){
     renderFaqRapidaIa();
     iniciarPollingIaSeNecessario();
   }catch(e){
-    el.insertAdjacentHTML('beforeend', `<div class="wa-sys" style="color:#D62828;">⚠️ ${escIa(e.message || 'Não consegui enviar agora, tenta o WhatsApp.')}</div>`);
+    el.insertAdjacentHTML('beforeend', `<div class="wa-sys" style="color:#c0392b;">⚠️ ${escIa(e.message || 'Não consegui enviar agora, tenta o WhatsApp.')}</div>`);
   }finally{
     btn.disabled = false;
   }
@@ -2674,7 +2645,7 @@ function initSplashScreen(){
   const s = cfg.splash;
   const el = document.getElementById('splash-screen');
   if(!s || !s.enabled || !Array.isArray(s.photos) || !s.photos.length){ el.style.display='none'; return; }
-  document.getElementById('splash-logo').innerHTML = (cfg.name||'FOOD JÁ').toUpperCase().replace(/(.{4})(.*)/, '$1<span>$2</span>');
+  document.getElementById('splash-logo').innerHTML = (cfg.name||'SHOGATSU').toUpperCase().replace(/(.{4})(.*)/, '$1<span>$2</span>');
   document.getElementById('splash-tagline').textContent = (cfg.tagline||'CULINÁRIA ORIENTAL').toUpperCase();
   const fx = ['fx-zoom','fx-parallax','fx-fade'].includes('fx-'+s.transition) ? 'fx-'+s.transition : 'fx-zoom';
   const slidesEl = document.getElementById('splash-slides');
@@ -2870,7 +2841,7 @@ function renderMenu() {
     else style = `height:${size}px;width:auto;max-width:${size * 3}px;object-fit:contain;`;
     logoEl.innerHTML = `<img src="${cfg.logoUrl}" alt="Logo" style="${style}">`;
   } else {
-    const nm = (cfg.name || 'Food Já').trim();
+    const nm = (cfg.name || 'Shogatsu Culinária Oriental').trim();
     const words = nm.split(' ');
     const last = words.pop();
     logoEl.innerHTML = (words.length ? words.join(' ') + ' ' : '') + `<span>${last}</span>`;
@@ -2968,7 +2939,7 @@ function renderMenu() {
         <div class="item-card" id="card-${key}" style="${isAvail ? '' : 'opacity:.55;'}">
           ${badgeAboveImg ? badgeHtml : ''}
           <div class="item-img" style="position:relative;">
-            ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;transform:scale(${((item.imagePos&&item.imagePos.zoom)||100)/100}) rotate(${(item.imagePos&&item.imagePos.rotate)||0}deg);">` : itemPlaceholderHtml(sec.icon)}
+            ${item.image ? `<img src="${item.image}" alt="${item.name}" style="width:100%;height:100%;object-fit:cover;object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;">` : itemPlaceholderHtml(sec.icon)}
             ${badgeInsideImg ? `<div style="${badgeCornerStyle}">${badgeHtml}</div>` : ''}
             <button onclick="toggleFavorite('${key}', event)" title="Favoritar" style="position:absolute;top:6px;right:6px;background:rgba(10,10,10,.55);border:none;border-radius:50%;width:28px;height:28px;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;">${isFav ? '❤️' : '🤍'}</button>
           </div>
@@ -2988,7 +2959,7 @@ function renderMenu() {
                 const finalPrice = effectivePrice(item, key);
                 return `<span class="item-price">
                   <span style="text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;">R$ ${item.price.toFixed(2).replace('.', ',')}</span>
-                  <span style="color:var(--red-lt,#ED4245);">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
+                  <span style="color:var(--red-lt,#e05a4a);">R$ ${finalPrice.toFixed(2).replace('.', ',')}</span>
                 </span>`;
               })()}
               ${!isAvail
@@ -3179,15 +3150,7 @@ function changeQty(key, delta) {
 // ═══════════════════════════════════════════
 // VARIAÇÕES (tamanho, sabor, complementos...)
 // ═══════════════════════════════════════════
-// v107a — Prompt "Evolução do cadastro de pratos": o formato salvo pelo Painel pode trazer, além
-// do que já existia (name/type/required/options[].name/priceDelta), estes campos NOVOS e
-// OPCIONAIS por grupo: min, max (quantidade total mínima/máxima somando todas as opções — ex:
-// "escolha entre 6 e 24 peças"), includedQty + overagePrice ("as 4 primeiras inclusas, a partir
-// da 5ª +R$5,00 cada"); e por opção: priceMode ('incluido'|'adicional'|'fixo') e maxQty (máximo
-// de unidades daquela opção — >1 vira um stepper +/- em vez de um chip simples). Um item salvo
-// ANTES desta versão não tem nenhum desses campos — os "||" abaixo cobrem esse caso e o
-// comportamento fica idêntico ao de sempre (chip único, priceDelta somado direto).
-let variantPicker = null; // { key, item, selections: { groupId: { optionIdx: qty } }, qty }
+let variantPicker = null; // { key, item, selections: { groupId: [optionIdx,...] }, qty }
 function openVariantPicker(key) {
   const item = getItemByKey(key);
   if (!item) return;
@@ -3203,153 +3166,59 @@ function closeVariantPicker() {
   document.getElementById('variant-drawer').classList.remove('open');
   variantPicker = null;
 }
-function variantGroupTotalQty(g) {
-  const sel = variantPicker.selections[g.id] || {};
-  return Object.values(sel).reduce((s, n) => s + (Number(n) || 0), 0);
-}
-// Clique num chip simples (opção com maxQty<=1, comportamento igual ao de sempre: liga/desliga).
-// v107a-fix: BUG — quando o grupo tinha um "Máx. total" (ex: "Escolha até 2 molhos"), esse limite
-// só era respeitado pelos steppers (+/-), não pelos chips simples de liga/desliga: dava pra
-// marcar quantos molhos quisesse, sem parar em 2. Agora, ao tentar LIGAR um chip com o grupo já
-// no total máximo, o clique não faz nada (chip fica visualmente desabilitado — ver renderVariantPicker).
 function toggleVariantOption(gi, oi) {
   const item = variantPicker.item;
   const group = item.variants[gi];
-  const sel = variantPicker.selections[group.id] || {};
+  const sel = variantPicker.selections[group.id] || [];
   if (group.type === 'multiple') {
-    if (sel[oi]) {
-      sel[oi] = 0;
-    } else {
-      const groupMax = Number(group.max) > 0 ? Number(group.max) : Infinity;
-      if (variantGroupTotalQty(group) >= groupMax) return; // grupo já no máximo — não deixa marcar mais
-      sel[oi] = 1;
-    }
+    const idx = sel.indexOf(oi);
+    if (idx === -1) sel.push(oi); else sel.splice(idx, 1);
+    variantPicker.selections[group.id] = sel;
   } else {
-    Object.keys(sel).forEach(k => delete sel[k]);
-    sel[oi] = 1;
+    variantPicker.selections[group.id] = [oi];
   }
-  variantPicker.selections[group.id] = sel;
   renderVariantPicker();
 }
-// Stepper +/- (opção com maxQty>1, ex: "Salmão 0-8 peças"), respeitando o máximo da opção e,
-// se o grupo tiver um total máximo (ex: "até 24 peças"), também o quanto ainda cabe no grupo.
-function changeVariantOptionQty(gi, oi, delta) {
-  const item = variantPicker.item;
-  const group = item.variants[gi];
-  const option = group.options[oi];
-  const sel = variantPicker.selections[group.id] || {};
-  const current = Number(sel[oi]) || 0;
-  const optionMax = Number(option.maxQty) > 1 ? Number(option.maxQty) : Infinity;
-  const groupMax = Number(group.max) > 0 ? Number(group.max) : Infinity;
-  const remainingInGroup = groupMax - (variantGroupTotalQty(group) - current);
-  const next = Math.max(0, Math.min(current + delta, optionMax, current + Math.max(0, remainingInGroup)));
-  sel[oi] = next;
-  variantPicker.selections[group.id] = sel;
-  renderVariantPicker();
-}
-// v107a-fix: BUG — `Number(g.includedQty) >= 0` dava `true` mesmo com o campo "# inclusas"
-// vazio (Number('')===0, e 0>=0 é verdadeiro). Resultado: bastava preencher só "+R$/excedente" e
-// deixar "# inclusas" em branco que o grupo inteiro passava a ignorar o preço individual de cada
-// opção (Incluído/Adicional/Preço fixo) e cobrar tudo pelo valor de excedente, mesmo sem o
-// administrador ter pedido isso. Agora só ativa esse modo quando os DOIS campos foram
-// preenchidos de verdade pelo administrador.
-function groupUsesOverage(g) {
-  return g.includedQty !== '' && g.includedQty != null && g.overagePrice !== '' && g.overagePrice != null && Number(g.overagePrice) > 0;
-}
-// Preço extra de uma unidade da opção `o`, dentro do grupo `g`.
 function variantUnitPrice() {
   const item = variantPicker.item;
   let extra = 0;
   item.variants.forEach(g => {
-    const sel = variantPicker.selections[g.id] || {};
-    // Grupo com "incluídas + excedente" (seção 13.4): as N primeiras unidades do GRUPO INTEIRO
-    // (somando todas as opções, não por opção) saem de graça; da N+1ª em diante cobra o valor
-    // por unidade configurado no grupo — substitui o preço individual das opções desse grupo.
-    const groupOverage = groupUsesOverage(g);
-    let unitPos = 0;
-    g.options.forEach((o, oi) => {
-      const qty = Number(sel[oi]) || 0;
-      if (!qty) return;
-      if (groupOverage) {
-        for (let u = 0; u < qty; u++) { extra += unitPos < Number(g.includedQty) ? 0 : (Number(g.overagePrice) || 0); unitPos++; }
-      } else if (o.priceMode === 'fixo') {
-        extra += Number(o.priceDelta) || 0; // preço fixo: cobra o valor inteiro 1x, não multiplica pela quantidade
-      } else if (o.priceMode === 'incluido') {
-        // já está no preço base, não soma nada
-      } else {
-        extra += (Number(o.priceDelta) || 0) * qty; // 'adicional' (ou item antigo, sem priceMode) — cobra por unidade, igual sempre foi
-      }
-    });
+    const sel = variantPicker.selections[g.id] || [];
+    sel.forEach(oi => { extra += Number(g.options[oi].priceDelta) || 0; });
   });
   return item.price + extra;
 }
 function variantCanConfirm() {
   const item = variantPicker.item;
-  return item.variants.every(g => {
-    const totalQty = variantGroupTotalQty(g);
-    const min = Number(g.min) || 0;
-    if (min > 0) return totalQty >= min; // grupo com mínimo por quantidade (novo)
-    if (g.required) return totalQty > 0; // comportamento de sempre
-    return true;
-  });
+  return item.variants.every(g => !g.required || (variantPicker.selections[g.id] || []).length > 0);
 }
 function changeVariantQty(delta) {
   variantPicker.qty = Math.max(1, variantPicker.qty + delta);
   renderVariantPicker();
-}
-function variantOptionPriceLabel(g, o) {
-  if (groupUsesOverage(g)) {
-    return `<span class="vopt-chip-price">até ${g.includedQty} inclusas · excedente + R$ ${Number(g.overagePrice).toFixed(2).replace('.', ',')}/un.</span>`;
-  }
-  if (o.priceMode === 'incluido' || !o.priceDelta) return `<span class="vopt-chip-price included">INCLUSO NO VALOR</span>`;
-  if (o.priceMode === 'fixo') return `<span class="vopt-chip-price">R$ ${Number(o.priceDelta).toFixed(2).replace('.', ',')}</span>`;
-  const d = Number(o.priceDelta) || 0;
-  return `<span class="vopt-chip-price">${d >= 0 ? '+' : '-'} R$ ${Math.abs(d).toFixed(2).replace('.', ',')}${Number(o.maxQty) > 1 ? '/un.' : ''}</span>`;
 }
 function renderVariantPicker() {
   const { item, selections, qty } = variantPicker;
   document.getElementById('variant-title').textContent = item.name;
   const unitPrice = variantUnitPrice();
   const groupsHTML = item.variants.map((g, gi) => {
-    const totalQty = variantGroupTotalQty(g);
-    const hasQtyMode = g.type === 'multiple' && (g.options.some(o => Number(o.maxQty) > 1) || Number(g.max) > 0);
-    const isSingleRequired = g.required && g.type !== 'multiple' && !hasQtyMode;
-    let subLabel = isSingleRequired ? 'Obrigatório • escolha 1' : (g.required || Number(g.min) > 0 ? 'Obrigatório' : 'Opcional');
-    if (Number(g.min) > 0) subLabel = `Escolha no mínimo ${g.min}${Number(g.max) > 0 ? ` (máximo ${g.max})` : ''}`;
-    const progressHTML = hasQtyMode ? `<span class="vgroup-progress">Total: ${totalQty}${Number(g.max) > 0 ? ' / ' + g.max : ''}</span>` : '';
+    const isSingleRequired = g.required && g.type !== 'multiple';
+    const subLabel = isSingleRequired ? 'Obrigatório • escolha 1' : (g.required ? 'Obrigatório' : 'Opcional');
     return `
-    <div class="vgroup-title">${g.name}${progressHTML}</div>
+    <div class="vgroup-title">${g.name}</div>
     <div class="vgroup-sub">${subLabel}</div>
     ${g.options.map((o, oi) => {
-      if (o.hidden) return ''; // (novo v107d) opção oculta no painel — não aparece pro cliente, mas o índice oi continua igual (não afeta seleções/preço de quem já tinha escolhido antes de ser ocultada)
-      const optQty = Number((selections[g.id] || {})[oi]) || 0;
-      const isSel = optQty > 0;
-      const usesStepper = g.type === 'multiple' && Number(o.maxQty) > 1;
-      const precoHTML = variantOptionPriceLabel(g, o);
-      if (usesStepper) {
-        const groupMax = Number(g.max) > 0 ? Number(g.max) : Infinity;
-        const canAdd = optQty < (Number(o.maxQty) || Infinity) && totalQty < groupMax;
-        return `
-        <div class="vopt-chip qtymode ${isSel ? 'selected' : ''}">
-          <span class="vopt-marker">${isSel ? '🔘' : '⚪'}</span>
-          <span class="vopt-chip-body">
-            <span class="vopt-chip-name">${o.name}</span>
-            ${precoHTML}
-          </span>
-          <span class="vopt-stepper">
-            <button type="button" onclick="changeVariantOptionQty(${gi},${oi},-1)" ${optQty <= 0 ? 'disabled' : ''}>−</button>
-            <span>${optQty}</span>
-            <button type="button" onclick="changeVariantOptionQty(${gi},${oi},1)" ${canAdd ? '' : 'disabled'}>+</button>
-          </span>
-        </div>`;
+      const isSel = (selections[g.id] || []).includes(oi);
+      const marker = isSel ? (g.type === 'multiple' ? '🔘' : '🔘') : '⚪';
+      let precoHTML;
+      if (!o.priceDelta) {
+        precoHTML = `<span class="vopt-chip-price included">INCLUSO NO VALOR</span>`;
+      } else if (o.priceDelta > 0) {
+        precoHTML = `<span class="vopt-chip-price">+ R$ ${o.priceDelta.toFixed(2).replace('.', ',')}</span>`;
+      } else {
+        precoHTML = `<span class="vopt-chip-price">- R$ ${Math.abs(o.priceDelta).toFixed(2).replace('.', ',')}</span>`;
       }
-      const marker = isSel ? '🔘' : '⚪';
-      // v107a-fix: mesmo limite de "Máx. total" do grupo, agora refletido visualmente — chip
-      // desmarcado fica opaco/sem clique quando o grupo já está no máximo (antes parecia travado
-      // sem explicação nenhuma, porque o clique simplesmente não fazia nada).
-      const groupMaxReached = !isSel && g.type === 'multiple' && Number(g.max) > 0 && totalQty >= Number(g.max);
       return `
-      <div class="vopt-chip ${isSel ? 'selected' : ''} ${groupMaxReached ? 'disabled' : ''}" onclick="${groupMaxReached ? '' : `toggleVariantOption(${gi},${oi})`}">
+      <div class="vopt-chip ${isSel ? 'selected' : ''}" onclick="toggleVariantOption(${gi},${oi})">
         <span class="vopt-marker">${marker}</span>
         <span class="vopt-chip-body">
           <span class="vopt-chip-name">${o.name}</span>
@@ -3376,19 +3245,12 @@ function confirmVariantPicker() {
   const { key, item, selections, qty } = variantPicker;
   const parts = [];
   item.variants.forEach(g => {
-    const sel = selections[g.id] || {};
-    const names = Object.keys(sel).map(oi => ({ oi, q: Number(sel[oi]) || 0 })).filter(x => x.q > 0)
-      .map(x => { const o = g.options[x.oi]; return o.maxQty > 1 ? `${o.name} x${x.q}` : o.name; });
-    if (names.length) parts.push(`${g.name}: ${names.join(', ')}`);
+    const sel = (selections[g.id] || []).map(oi => g.options[oi].name);
+    if (sel.length) parts.push(`${g.name}: ${sel.join(', ')}`);
   });
   const suffix = parts.length ? ` (${parts.join(' · ')})` : '';
   const unitPrice = variantUnitPrice();
-  // combo key precisa refletir as quantidades escolhidas, não só quais opções — senão "8 Salmão"
-  // e "2 Salmão" cairiam no mesmo item agrupado do carrinho por engano
-  const comboKey = key + '::' + item.variants.map(g => {
-    const sel = selections[g.id] || {};
-    return Object.keys(sel).filter(oi => sel[oi] > 0).sort().map(oi => `${oi}:${sel[oi]}`).join(',');
-  }).join('|');
+  const comboKey = key + '::' + item.variants.map(g => (selections[g.id] || []).slice().sort().join(',')).join('|');
   if (!cart[comboKey]) cart[comboKey] = { baseKey: key, name: item.name + suffix, price: unitPrice, stations: stationsForItemKey(key, item), qty: 0 };
   cart[comboKey].qty += qty;
   closeVariantPicker();
@@ -3503,7 +3365,6 @@ function openCheckout(silent) {
   }
   if (!silent) {
     openFullScreen('checkout-screen');
-    if (typeof resetCheckoutAutoAdvance === 'function') resetCheckoutAutoAdvance(); // v107: reabrir o checkout permite rolar pro pagamento de novo
     loadCheckoutDraft(); // v52: preenche com o rascunho salvo (só campos ainda vazios)
     if (mode === 'delivery') calcDeliveryFee(); // recalcula caso o cliente volte pra editar
     if (!autoCouponChecked) tryAutoApplyCoupon();
@@ -3610,7 +3471,7 @@ async function applyCoupon(isAuto) {
       statusEl.textContent = isAuto ? '' : '⚠️ ' + data.error; // se foi tentativa automática, não incomoda com erro
     } else {
       appliedCoupon = { code: data.code, type: data.type, discount: data.discount, freeDelivery: data.freeDelivery };
-      statusEl.style.color = '#22C55E';
+      statusEl.style.color = '#50c878';
       statusEl.textContent = (isAuto ? '🎉 Cupom aplicado automaticamente: ' : '✅ ') + data.message + '  ·  ';
       const rm = document.createElement('a');
       rm.href = 'javascript:void(0)'; rm.textContent = 'remover';
@@ -3664,10 +3525,7 @@ async function placeOrder() {
     const comp = document.getElementById('f-comp').value.trim();
     const ref = document.getElementById('f-ref').value.trim();
     const cep = document.getElementById('f-cep').value.trim();
-    if (!name || !phone || !street || !number || !hood) {
-      if (typeof highlightMissingCheckoutFields === 'function') highlightMissingCheckoutFields('delivery'); // v107: mesma validação, só acrescenta a borda vermelha
-      alert('Preencha nome, telefone, rua, número e bairro.'); return;
-    }
+    if (!name || !phone || !street || !number || !hood) { alert('Preencha nome, telefone, rua, número e bairro.'); return; }
     if (feeCalcBusy) { alert('Aguarde só um instante, ainda estamos calculando a taxa de entrega.'); return; }
     if (deliveryBlocked) { alert('Esse endereço está fora da nossa área de entrega. Fale com a gente pelo WhatsApp para verificar.'); return; }
     if (!customer && document.getElementById('f-save-account').checked) {
@@ -3684,10 +3542,7 @@ async function placeOrder() {
   } else {
     name = document.getElementById('f-name-r').value.trim();
     phone = document.getElementById('f-phone-r').value.trim();
-    if (!name || !phone) {
-      if (typeof highlightMissingCheckoutFields === 'function') highlightMissingCheckoutFields('retirada');
-      alert('Preencha nome e telefone.'); return;
-    }
+    if (!name || !phone) { alert('Preencha nome e telefone.'); return; }
     address = 'RETIRADA NO RESTAURANTE';
   }
   if (!payMethod) { alert('Escolha a forma de pagamento.'); return; }
@@ -3787,7 +3642,7 @@ async function placeOrder() {
   document.getElementById('ss-total-val').textContent = `R$ ${total.toFixed(2).replace('.', ',')}`;
 
   // WhatsApp de apoio (opcional, além do pedido já registrado no painel)
-  let msg = `🍣 *PEDIDO #${order.id} — ${(cfg.name||'FOOD JÁ').toUpperCase()}*\n━━━━━━━━━━━━━━━━━━━━\n\n👤 *${name}*\n📞 ${phone}\n📍 ${address}\n\n🛒 *ITENS:*\n`;
+  let msg = `🍣 *PEDIDO #${order.id} — ${(cfg.name||'SHOGATSU').toUpperCase()}*\n━━━━━━━━━━━━━━━━━━━━\n\n👤 *${name}*\n📞 ${phone}\n📍 ${address}\n\n🛒 *ITENS:*\n`;
   items.forEach(i => { msg += `• ${i.qty}x ${i.name} — R$ ${(i.price * i.qty).toFixed(2).replace('.', ',')}\n`; });
   if (obs) msg += `\n📝 Obs: ${obs}\n`;
   msg += `\n💰 *TOTAL: R$ ${total.toFixed(2).replace('.', ',')}*\n💳 Pagamento: ${payLabels[payMethod]}`;
@@ -3903,7 +3758,7 @@ function initOrUpdateSsMap() {
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(ssMap);
   }
   const storeLat = Number(cfg.storeLat), storeLng = Number(cfg.storeLng);
-  const goldIcon = L.divIcon({ html: '<div style="background:#F4B400;width:14px;height:14px;border-radius:50%;border:2px solid #0a0a0a;"></div>', className: '' });
+  const goldIcon = L.divIcon({ html: '<div style="background:#c9a84c;width:14px;height:14px;border-radius:50%;border:2px solid #0a0a0a;"></div>', className: '' });
   const houseIcon = L.divIcon({ html: '<div style="font-size:20px;">🏠</div>', className: '' });
   const motoIcon = L.divIcon({ html: '<div style="font-size:22px;">🛵</div>', className: '' });
   if (!ssMapMarkers.customer) ssMapMarkers.customer = L.marker([currentOrderLat, currentOrderLng], { icon: houseIcon }).addTo(ssMap);
@@ -4025,7 +3880,7 @@ function fireConfetti() {
   const canvas = document.getElementById('ss-confetti');
   const ctx = canvas.getContext('2d');
   canvas.width = innerWidth; canvas.height = innerHeight;
-  const colors = ['#D62828', '#F4B400', '#ED4245', '#f5ede0'];
+  const colors = ['#c0392b', '#c9a84c', '#e05a4a', '#f5ede0'];
   let particles = Array.from({ length: 90 }, () => ({
     x: innerWidth / 2, y: innerHeight * 0.2,
     vx: (Math.random() - .5) * 10, vy: Math.random() * -8 - 2,
@@ -4270,7 +4125,6 @@ function setMode(m) {
   const chipTime = document.getElementById('chip-time');
   if (chipTime) chipTime.textContent = m === 'retirada' ? (cfg.timeRetirada || cfg.time) : cfg.time;
   if (m === 'delivery') { onAddressChanged(); } else { deliveryBlocked = false; }
-  if (typeof resetCheckoutAutoAdvance === 'function') resetCheckoutAutoAdvance(); // v107: trocar entrega/retirada reavalia os campos obrigatórios do zero
   updateCartUI();
 }
 function scrollCat(id) {
@@ -4656,88 +4510,12 @@ updatePushButtonState();
     if (next) {
       next.focus();
     } else {
-      // último campo da lista: tira o foco do teclado. Se os campos obrigatórios já estiverem
-      // completos, quem cuida de rolar até o pagamento é o setupCheckoutAutoAdvance (v107)
-      // logo abaixo — senão, mostra a validação em vez de rolar pra lugar nenhum.
+      // último campo da lista: tira o foco do teclado e rola até o botão Finalizar Pedido,
+      // sem apertar sozinho — quem confirma o pedido continua sendo o cliente
       el.blur();
-      if (typeof checkCheckoutAutoAdvance === 'function' && checkCheckoutAutoAdvance()) {
-        // já rolou pro pagamento
-      } else if (typeof highlightMissingCheckoutFields === 'function') {
-        highlightMissingCheckoutFields(currentOrder() === FIELD_ORDER.delivery ? 'delivery' : 'retirada');
-      } else {
-        document.getElementById('place-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
+      document.getElementById('place-btn')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   });
-})();
-
-// ═══════════════════════════════════════════
-// v107 (Prompt 2) — AVANÇO AUTOMÁTICO PRA "FORMA DE PAGAMENTO" NO CHECKOUT
-// ═══════════════════════════════════════════
-// Só usabilidade/velocidade — nenhuma regra de negócio muda: os campos obrigatórios continuam
-// exatamente os mesmos já validados em placeOrder() (nome, telefone, rua, número, bairro pra
-// entrega; nome e telefone pra retirada — CEP nunca foi obrigatório neste sistema). Quando todos
-// ficam preenchidos, a tela rola sozinha até 💳 Forma de Pagamento, abre/destaca a seção e leva o
-// foco pra primeira opção — sem precisar mais rolar manualmente. Se faltar algo, não rola: só
-// destaca em vermelho os campos vazios com uma mensagem discreta (não bloqueia nem altera nada
-// além da borda/mensagem).
-let checkoutAutoAdvanced = false;
-function resetCheckoutAutoAdvance() {
-  checkoutAutoAdvanced = false;
-  document.querySelectorAll('#checkout-screen .field-error').forEach(el => el.classList.remove('field-error'));
-  document.querySelectorAll('.checkout-missing-hint').forEach(el => el.classList.remove('show'));
-}
-function highlightMissingCheckoutFields(checkoutMode) {
-  const REQUIRED = {
-    delivery: ['f-name', 'f-phone', 'f-street', 'f-number', 'f-hood'],
-    retirada: ['f-name-r', 'f-phone-r']
-  };
-  const ids = REQUIRED[checkoutMode] || [];
-  let firstEmpty = null;
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const empty = !el.value.trim();
-    el.classList.toggle('field-error', empty);
-    if (empty && !firstEmpty) firstEmpty = el;
-  });
-  const hint = document.getElementById(checkoutMode === 'delivery' ? 'checkout-missing-hint' : 'checkout-missing-hint-r');
-  if (hint) hint.classList.toggle('show', !!firstEmpty);
-  return !firstEmpty;
-}
-// Confere se os campos obrigatórios do modo atual estão completos e, se estiverem (e ainda não
-// tiver rolado nesta visita ao checkout), rola pra Forma de Pagamento. Retorna true se rolou.
-function checkCheckoutAutoAdvance() {
-  const checkoutMode = document.getElementById('delivery-section')?.style.display !== 'none' ? 'delivery' : 'retirada';
-  const complete = highlightMissingCheckoutFields(checkoutMode);
-  if (!complete || checkoutAutoAdvanced) return false;
-  checkoutAutoAdvanced = true;
-  const paymentSection = document.getElementById('payment-section');
-  if (!paymentSection) return false;
-  setTimeout(() => {
-    paymentSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    paymentSection.classList.add('payment-highlight');
-    setTimeout(() => paymentSection.classList.remove('payment-highlight'), 1500);
-    // foco na primeira opção de pagamento, sem escolher por conta própria — quem decide a forma
-    // de pagamento continua sendo o cliente
-    setTimeout(() => document.getElementById('pay-pix')?.focus({ preventScroll: true }), 350);
-  }, 250); // pequeno atraso pra não brigar com o scroll do campo que acabou de perder o foco
-  return true;
-}
-(function setupCheckoutAutoAdvance(){
-  const checkoutScreen = document.getElementById('checkout-screen');
-  if (!checkoutScreen) return;
-  const REQUIRED_IDS = ['f-name', 'f-phone', 'f-street', 'f-number', 'f-hood', 'f-name-r', 'f-phone-r'];
-  let debounceTimer = null;
-  function onFieldChange(e) {
-    const id = e.target && e.target.id;
-    if (!REQUIRED_IDS.includes(id)) return;
-    e.target.classList.remove('field-error'); // digitando de novo já tira o alerta daquele campo
-    clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(checkCheckoutAutoAdvance, 200);
-  }
-  checkoutScreen.addEventListener('input', onFieldChange);
-  checkoutScreen.addEventListener('blur', onFieldChange, true); // captura, já que blur não borbulha
 })();
 
 </script>

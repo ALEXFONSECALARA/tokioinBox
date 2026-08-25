@@ -1,7 +1,7 @@
 {
-  "name": "Food Já — Avaliar Rodízio",
-  "short_name": "Avaliar Food Já",
-  "description": "Deixe sua avaliação sobre o rodízio Food Já.",
+  "name": "Shogatsu — Avaliar Rodízio",
+  "short_name": "Avaliar Shogatsu",
+  "description": "Deixe sua avaliação sobre o rodízio Shogatsu.",
   "start_url": "/avaliar-rodizio.html",
   "display": "standalone",
   "orientation": "portrait",
