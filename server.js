@@ -108,20 +108,6 @@ try { PKG_VERSION = require('./package.json').version || PKG_VERSION; } catch (e
 const APP_VERSION = PKG_VERSION + '-' + BUILD_COMMIT;
 
 // ─── Config / Menu padrão (usados só na primeira execução) ───
-// v107 — Prompt 1: módulo de Permissões de Usuários (só o usuário MASTER gerencia). Lista de
-// módulos/telas que podem ser ligados/desligados por usuário — mapeia 1:1 as páginas reais que já
-// existem no Painel (public/painel.html, data-page dos nav-item), pra não inventar telas que não
-// existem. "usuarios" fica de fora de propósito: só master acessa mesmo (data-min-role="master"),
-// então nunca é atribuível a outro usuário. Ausência do campo "permissions" num usuário = acesso
-// total (comportamento de sempre, ninguém perde acesso que já tinha antes desta versão).
-const PERMISSION_MODULES = ['pedidos', 'reservas', 'mensagens', 'motoboys', 'cardapio', 'custos', 'notafiscal', 'ia', 'qrlinks', 'relatorios', 'avaliacoes', 'configuracoes', 'impressao'];
-function normalizePermissions(perms) {
-  if (!perms || typeof perms !== 'object') return null;
-  const out = {};
-  for (const key of PERMISSION_MODULES) { if (key in perms) out[key] = !!perms[key]; }
-  return out;
-}
-
 const DEFAULT_CFG = {
   whats: '552227641333', storePhone: '(22) 2764-1333', fee: 8, min: 60,
   name: 'Shogatsu Culinária Oriental', days: 'Ter–Dom',
@@ -143,20 +129,16 @@ const DEFAULT_CFG = {
     { open: true, openTime: '18:00', closeTime: '23:00' },  // sexta
     { open: true, openTime: '18:00', closeTime: '23:00' }   // sábado
   ],
-  // v108: sem senha hardcoded em texto puro no código — a senha original continua a mesma de
-  // sempre (não muda pra ninguém), só passa a ser salva em HASH em vez de texto puro. Ver
-  // bloco de bootstrap logo abaixo e migratePasswordIfNeeded() pra instalações já em produção.
-  adminPass: null,
-  masterPass: null,
+  adminPass: 'shogatsu2026',
+  masterPass: 'shogatsuMaster2026',
   // ── Usuários do painel (login por usuário + senha, com nível de acesso) ──
   // master: acesso total, inclusive gerenciar outros usuários.
   // admin: acesso total ao painel, exceto gerenciar usuários.
   // vendas: só Dashboard, Pedidos e Kanban — pra quem só precisa bater pedido no balcão.
-  users: [],
-  // v107a — Biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚), pra montar um grupo
-  // (tamanho, sabores, molhos...) uma vez e reaproveitar em vários pratos. Cada item continua
-  // guardando sua PRÓPRIA cópia em variants — este array é só o "catálogo" pra copiar depois.
-  optionGroupsLibrary: [],
+  users: [
+    { username: 'master', password: 'shogatsuMaster2026', role: 'master' },
+    { username: 'admin', password: 'shogatsu2026', role: 'admin' }
+  ],
   logoUrl: '',
   // v70: avatar do Chat Express agora é separado da logo geral da marca (logoUrl acima) — o
   // restaurante pode usar um mascote/ícone diferente no chat sem mexer na logo do cabeçalho.
@@ -404,19 +386,7 @@ const DEFAULT_MENU = require('./default-menu.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) {
-  // v108: a senha padrão continua sendo a mesma de sempre (shogatsu2026 / shogatsuMaster2026)
-  // — só passa a ser salva já em HASH no config.json em vez de texto puro. Não força troca
-  // nem gera senha aleatória: quem já usa o sistema continua entrando com a senha de sempre.
-  const bootCfg = {
-    ...DEFAULT_CFG,
-    adminPass: hashPassword('shogatsu2026'),
-    masterPass: hashPassword('shogatsuMaster2026'),
-    users: [
-      { username: 'master', password: hashPassword('shogatsuMaster2026'), role: 'master' },
-      { username: 'admin', password: hashPassword('shogatsu2026'), role: 'admin' }
-    ]
-  };
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: bootCfg, menu: DEFAULT_MENU }, null, 2));
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: DEFAULT_CFG, menu: DEFAULT_MENU }, null, 2));
 }
 if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, '[]');
 if (!fs.existsSync(CUSTOMERS_FILE)) fs.writeFileSync(CUSTOMERS_FILE, '[]');
@@ -713,16 +683,6 @@ function getSession(token) {
   return s;
 }
 function checkAuth(token) { return !!getSession(token); }
-// v108: invalida todas as sessões de um usuário (exceto a que acabou de trocar a senha, se
-// informada) — assim quem trocou a senha continua logado, mas qualquer outra sessão antiga
-// com a senha velha (ex: outro computador, ou um token vazado) para de funcionar na hora.
-function invalidateSessionsForUser(username, keepToken) {
-  const uname = String(username || '').toLowerCase();
-  for (const [tok, s] of sessions) {
-    if (tok !== keepToken && String(s.username || '').toLowerCase() === uname) sessions.delete(tok);
-  }
-  persistSessions();
-}
 // master > admin > vendas — checa se a sessão tem o nível mínimo pedido
 const ROLE_RANK = { vendas: 1, admin: 2, master: 3 };
 function requireRole(token, minRole) {
@@ -737,35 +697,6 @@ function normalizePhone(phone) { return String(phone || '').replace(/\D/g, ''); 
 
 function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(normalizePhone(phone) + ':' + String(pin) + ':shogatsu-salt').digest('hex');
-}
-
-// ─── Hash de senhas do painel (admin/master/usuários) ───
-// v108: antes as senhas ficavam em texto puro no config.json (e algumas hardcoded no código-fonte).
-// Formato novo: "scrypt:<salt-hex>:<hash-hex>". isPasswordHashed() reconhece esse formato;
-// qualquer valor que não bata com ele é tratado como senha ANTIGA em texto puro — assim o login
-// de instalações já em produção continua funcionando sem precisar redigitar nada. Ver
-// migratePasswordIfNeeded(), chamada só no exato momento em que uma senha em texto puro é usada
-// com sucesso: nesse instante ela é re-salva já em hash, sem exigir nenhuma ação do restaurante.
-function hashPassword(plain) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(String(plain), salt, 64).toString('hex');
-  return `scrypt:${salt}:${hash}`;
-}
-function isPasswordHashed(stored) {
-  return typeof stored === 'string' && stored.startsWith('scrypt:') && stored.split(':').length === 3;
-}
-function verifyPassword(plain, stored) {
-  if (!stored || plain == null) return false;
-  if (isPasswordHashed(stored)) {
-    const [, salt, hashHex] = stored.split(':');
-    try {
-      const check = crypto.scryptSync(String(plain), salt, 64);
-      const stored64 = Buffer.from(hashHex, 'hex');
-      return stored64.length === check.length && crypto.timingSafeEqual(stored64, check);
-    } catch (e) { return false; }
-  }
-  // Legado: senha antiga salva em texto puro.
-  return String(plain) === String(stored);
 }
 
 function findCustomer(customers, phone) {
@@ -2009,25 +1940,15 @@ async function handleRequest(req, res) {
 
   // ── POST /api/change-password — troca senha do painel (admin) ou senha master ──
   if (pathname === '/api/change-password' && req.method === 'POST') {
-    const authToken = getToken(req, query);
-    if (!checkAuth(authToken)) return sendJSON(res, 401, { error: 'unauthorized' });
+    if (!checkAuth(getToken(req, query))) return sendJSON(res, 401, { error: 'unauthorized' });
     try {
       const { which, current: curPass, next } = await readBody(req);
       const field = which === 'master' ? 'masterPass' : 'adminPass';
       const data = readConfig();
-      if (!verifyPassword(curPass, data.cfg[field])) return sendJSON(res, 403, { error: 'senha atual incorreta' });
-      if (!next || String(next).length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
-      data.cfg[field] = hashPassword(next);
-      // Também atualiza a mesma senha na lista de usuários, se essa role tiver um usuário
-      // correspondente por convenção (username 'admin'/'master') — mantém os dois lugares
-      // (login por usuário e login "só senha") sincronizados, sem inventar campo novo.
-      const roleUsername = which === 'master' ? 'master' : 'admin';
-      (data.cfg.users || []).forEach(u => {
-        if (String(u.username || '').toLowerCase() === roleUsername) u.password = data.cfg[field];
-      });
+      if (curPass !== data.cfg[field]) return sendJSON(res, 403, { error: 'senha atual incorreta' });
+      if (!next || next.length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
+      data.cfg[field] = next;
       writeJSON(CONFIG_FILE, data);
-      // Derruba qualquer outra sessão logada com a senha antiga (mantém a sessão atual ativa).
-      invalidateSessionsForUser(roleUsername, authToken);
       return sendJSON(res, 200, { ok: true });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -2480,8 +2401,7 @@ async function handleRequest(req, res) {
   if (pathname === '/api/admin/users' && req.method === 'GET') {
     if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
     const { cfg } = readConfig();
-    // v107: inclui permissions (null = acesso total, comportamento de sempre)
-    return sendJSON(res, 200, { users: (cfg.users || []).map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })), permissionModules: PERMISSION_MODULES });
+    return sendJSON(res, 200, { users: (cfg.users || []).map(u => ({ username: u.username, role: u.role })) });
   }
   if (pathname === '/api/admin/users' && req.method === 'POST') {
     if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
@@ -2494,30 +2414,13 @@ async function handleRequest(req, res) {
       const existing = data.cfg.users.find(u => String(u.username || '').toLowerCase() === uname);
       if (existing) {
         existing.role = role;
-        if (password) existing.password = hashPassword(password); // só troca a senha se veio uma nova
+        if (password) existing.password = password; // só troca a senha se veio uma nova
       } else {
         if (!password || password.length < 4) return sendJSON(res, 400, { error: 'Senha precisa ter pelo menos 4 caracteres.' });
-        data.cfg.users.push({ username: uname, password: hashPassword(password), role });
+        data.cfg.users.push({ username: uname, password, role });
       }
       writeJSON(CONFIG_FILE, data);
-      return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })) });
-    } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
-  }
-  // ── PUT /api/admin/users/:username/permissions — v107: liga/desliga módulos pra um usuário
-  // específico (só master). Não mexe em senha, nem em role, nem em mais nada do usuário. ──
-  if (pathname.startsWith('/api/admin/users/') && pathname.endsWith('/permissions') && req.method === 'PUT') {
-    if (!requireRole(getToken(req, query), 'master')) return sendJSON(res, 403, { error: 'Só o usuário master pode gerenciar usuários.' });
-    const uname = decodeURIComponent(pathname.split('/')[4] || '').toLowerCase();
-    try {
-      const { permissions } = await readBody(req);
-      const data = readConfig();
-      const target = data.cfg.users.find(u => String(u.username || '').toLowerCase() === uname);
-      if (!target) return sendJSON(res, 404, { error: 'Usuário não encontrado.' });
-      if (target.role === 'master') return sendJSON(res, 400, { error: 'O usuário master sempre tem acesso total — não dá pra restringir.' });
-      // null/undefined explícito = "marcar tudo" (remove a restrição, volta ao acesso total)
-      target.permissions = (permissions === null) ? null : normalizePermissions(permissions);
-      writeJSON(CONFIG_FILE, data);
-      return sendJSON(res, 200, { ok: true, username: target.username, permissions: target.permissions });
+      return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role })) });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
   if (pathname.startsWith('/api/admin/users/') && req.method === 'DELETE') {
@@ -2730,7 +2633,7 @@ async function handleRequest(req, res) {
     try {
       const { masterPass, beforeDate } = await readBody(req);
       const data = readConfig();
-      if (!verifyPassword(masterPass, data.cfg.masterPass)) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
+      if (masterPass !== data.cfg.masterPass) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
       if (!beforeDate) return sendJSON(res, 400, { error: 'Informe a data limite.' });
       const cutoff = new Date(beforeDate).getTime();
       let orders = readJSON(ORDERS_FILE);
@@ -2888,41 +2791,15 @@ async function handleRequest(req, res) {
 
       if (uname) {
         const user = (cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
-        if (user && verifyPassword(password, user.password)) {
-          // v108: se a senha desse usuário ainda estava em texto puro (instalação antiga),
-          // re-salva já em hash agora que confirmamos que ela está correta — migração
-          // automática, sem exigir nada do restaurante nem derrubar a sessão em andamento.
-          if (!isPasswordHashed(user.password)) {
-            const fresh = readConfig();
-            const fu = (fresh.cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
-            if (fu) {
-              fu.password = hashPassword(password);
-              writeJSON(CONFIG_FILE, { cfg: fresh.cfg, menu: fresh.menu });
-            }
-          }
-          // v107: permissões por usuário vão junto no login pro Painel aplicar a UI na hora —
-          // master sempre null (acesso total), independente do que estiver salvo.
-          const permissions = user.role === 'master' ? null : normalizePermissions(user.permissions);
-          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username, permissions });
+        if (user && password === user.password) {
+          return sendJSON(res, 200, { token: newSession(user.role, user.username), role: user.role, username: user.username });
         }
         return sendJSON(res, 401, { error: 'Usuário ou senha incorretos.' });
       }
 
       // Compatibilidade: login sem usuário (só senha) continua funcionando como antes.
-      if (verifyPassword(password, cfg.adminPass)) {
-        if (!isPasswordHashed(cfg.adminPass)) {
-          const fresh = readConfig();
-          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, adminPass: hashPassword(password) }, menu: fresh.menu });
-        }
-        return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null });
-      }
-      if (verifyPassword(password, cfg.masterPass)) {
-        if (!isPasswordHashed(cfg.masterPass)) {
-          const fresh = readConfig();
-          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, masterPass: hashPassword(password) }, menu: fresh.menu });
-        }
-        return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null });
-      }
+      if (password === cfg.adminPass) return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin' });
+      if (password === cfg.masterPass) return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master' });
       return sendJSON(res, 401, { error: 'senha incorreta' });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -5218,7 +5095,7 @@ function estimateDeliveryWindow(order, cfg) {
 
       // v33: confere especificamente a SENHA MASTER de novo (reautenticação), não aceita mais
       // senha de admin comum nem de outros usuários.
-      const passOk = !!password && verifyPassword(password, cfg.masterPass);
+      const passOk = !!password && password === cfg.masterPass;
       if (!passOk) {
         return sendJSON(res, 403, { error: '❌ Senha inválida. Pedido não foi removido.' });
       }
@@ -5265,7 +5142,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
+      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
       const data = readConfig();
       data.menu = JSON.parse(JSON.stringify(DEFAULT_MENU)); // cópia limpa, sem referenciar o objeto original
       writeJSON(CONFIG_FILE, data);
@@ -5285,7 +5162,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(ORDERS_FILE).length;
       writeJSON(ORDERS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
@@ -5304,7 +5181,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(RESERVATIONS_FILE).length;
       writeJSON(RESERVATIONS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
