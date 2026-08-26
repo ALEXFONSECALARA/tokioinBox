@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cardápio Digital</title>
+<meta name="theme-color" content="#B4223C" id="meta-theme-color">
+<meta name="description" content="Cardápio digital — peça pelo WhatsApp em poucos toques.">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ HEADER (injetado dinamicamente por JS) ============ -->
+  <header class="app-header">
+    <div class="brand-logo" id="brand-logo">🍣</div>
+    <div class="brand-block">
+      <div class="brand-name" id="brand-name">Carregando...</div>
+      <div class="brand-tagline" id="brand-tagline">&nbsp;</div>
+    </div>
+    <div class="status-pill" id="status-pill">
+      <span class="status-dot"></span>
+      <span id="status-text">—</span>
+    </div>
+  </header>
+
+  <!-- Trocador de marca — apenas para demonstração/testes locais.
+       Em produção, cada marca normalmente teria seu próprio domínio/link
+       fixo (ex: cardapio.com/?rest=tokio) e este bloco pode ser removido. -->
+  <nav class="brand-switcher" id="brand-switcher" aria-label="Selecionar restaurante (demo)"></nav>
+
+  <!-- ============ PÁGINA 1 · INÍCIO / DESTAQUES ============ -->
+  <main class="page active" id="page-home" data-page="home">
+    <div class="hero-banner" id="hero-banner" data-emoji="🍣">
+      <div class="hero-eyebrow" id="hero-hours">Horário</div>
+      <div class="hero-title" id="hero-title">Bem-vindo!</div>
+      <div class="hero-meta">
+        <span>⏱️ <span id="hero-delivery">—</span></span>
+        <span>🛵 Entrega e retirada</span>
+      </div>
+    </div>
+
+    <div class="info-strip">
+      <div class="info-chip">
+        <div class="label">Pedido mínimo</div>
+        <div class="value" id="info-min">—</div>
+      </div>
+      <div class="info-chip">
+        <div class="label">Funcionamento</div>
+        <div class="value" id="info-hours">—</div>
+      </div>
+    </div>
+
+    <div class="section-title">Destaques do chef</div>
+    <div class="section-sub">Os pedidos favoritos de quem já provou</div>
+    <div class="featured-row" id="featured-row"></div>
+  </main>
+
+  <!-- ============ PÁGINA 2 · CARDÁPIO / PRODUTOS ============ -->
+  <section class="page" id="page-menu" data-page="menu">
+    <div class="section-title" id="menu-title">Cardápio</div>
+    <div class="section-sub">Toque em <strong>+</strong> para adicionar ao carrinho</div>
+
+    <div class="search-bar">
+      <span class="icon">🔎</span>
+      <input type="text" id="search-input" placeholder="Buscar prato ou bebida...">
+    </div>
+
+    <nav class="category-nav" id="category-nav"></nav>
+
+    <div id="menu-list"></div>
+  </section>
+
+  <!-- ============ PÁGINA 3 · SOBRE / INFORMAÇÕES ============ -->
+  <section class="page" id="page-about" data-page="about">
+    <div class="section-title">Sobre</div>
+    <div class="section-sub" id="about-name">—</div>
+
+    <div class="about-card">
+      <p id="about-text">—</p>
+    </div>
+
+    <div class="about-card">
+      <ul class="about-list">
+        <li>
+          <span class="ic">📍</span>
+          <div><span class="k">Endereço</span><span id="about-address">—</span></div>
+        </li>
+        <li>
+          <span class="ic">⏱️</span>
+          <div><span class="k">Tempo médio de entrega</span><span id="about-delivery">—</span></div>
+        </li>
+        <li>
+          <span class="ic">🕒</span>
+          <div><span class="k">Funcionamento</span><span id="about-hours">—</span></div>
+        </li>
+      </ul>
+      <div class="social-row" id="about-social"></div>
+    </div>
+  </section>
+
+  <!-- ============ PÁGINA 4 · MEUS PEDIDOS ============ -->
+  <section class="page" id="page-orders" data-page="orders">
+    <div class="section-title">Meus pedidos</div>
+    <div class="section-sub">Histórico salvo neste dispositivo, por restaurante</div>
+    <div id="orders-list"></div>
+  </section>
+
+  <!-- ============ NAV INFERIOR ============ -->
+  <nav class="bottom-nav" aria-label="Navegação principal">
+    <button class="nav-btn active" data-page="home">
+      <span class="nic">🏠</span><span>Início</span>
+    </button>
+    <button class="nav-btn" data-page="menu">
+      <span class="nic">📋</span><span>Cardápio</span>
+    </button>
+    <button class="nav-btn" data-page="about">
+      <span class="nic">ℹ️</span><span>Sobre</span>
+    </button>
+    <button class="nav-btn" data-page="orders">
+      <span class="nic">🧾</span><span>Pedidos</span>
+      <span class="nav-badge" id="orders-badge" style="display:none;">0</span>
+    </button>
+  </nav>
+
+  <!-- ============ CARRINHO FLUTUANTE ============ -->
+  <button class="cart-fab" id="cart-fab">
+    <span class="cf-left">
+      <span class="cf-count" id="cf-count">0</span>
+      Ver carrinho
+    </span>
+    <span class="cf-total" id="cf-total">R$ 0,00</span>
+  </button>
+
+  <!-- ============ MODAL · CARRINHO ============ -->
+  <div class="modal-overlay" id="cart-modal">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title-row">
+        <div class="sheet-title">Seu carrinho</div>
+        <button class="sheet-close" data-close="cart-modal">✕</button>
+      </div>
+
+      <div id="cart-lines"></div>
+
+      <div class="summary-row">
+        <span>Subtotal</span>
+        <span id="cart-subtotal">R$ 0,00</span>
+      </div>
+      <div class="summary-row total">
+        <span>Total</span>
+        <span id="cart-total">R$ 0,00</span>
+      </div>
+
+      <button class="btn-primary" id="go-checkout-btn">Continuar para entrega →</button>
+      <button class="btn-ghost" data-close="cart-modal">Continuar comprando</button>
+    </div>
+  </div>
+
+  <!-- ============ MODAL · CHECKOUT ============ -->
+  <div class="modal-overlay" id="checkout-modal">
+    <div class="modal-sheet">
+      <div class="sheet-handle"></div>
+      <div class="sheet-title-row">
+        <div class="sheet-title">Finalizar pedido</div>
+        <button class="sheet-close" data-close="checkout-modal">✕</button>
+      </div>
+
+      <form id="checkout-form">
+        <div class="field">
+          <label for="ck-name">Nome completo</label>
+          <input type="text" id="ck-name" required autocomplete="name">
+        </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="ck-phone">Telefone / WhatsApp</label>
+            <input type="tel" id="ck-phone" required autocomplete="tel" placeholder="(11) 90000-0000">
+          </div>
+        </div>
+        <div class="field">
+          <label for="ck-address">Endereço de entrega</label>
+          <textarea id="ck-address" required placeholder="Rua, número, bairro, complemento"></textarea>
+        </div>
+
+        <div class="field">
+          <label>Forma de pagamento</label>
+          <div class="pay-options" id="pay-options">
+            <button type="button" class="pay-chip active" data-pay="Pix">Pix</button>
+            <button type="button" class="pay-chip" data-pay="Cartão na entrega">Cartão</button>
+            <button type="button" class="pay-chip" data-pay="Dinheiro">Dinheiro</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="ck-notes">Observações (opcional)</label>
+          <textarea id="ck-notes" placeholder="Ex: sem cebola, troco para R$100..."></textarea>
+        </div>
+
+        <div class="summary-row total">
+          <span>Total do pedido</span>
+          <span id="checkout-total">R$ 0,00</span>
+        </div>
+
+        <button type="submit" class="btn-primary">📲 Enviar pedido pelo WhatsApp</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- toast -->
+  <div class="toast" id="toast"></div>
+
+</div>
+
+<script src="js/restaurants-data.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>
