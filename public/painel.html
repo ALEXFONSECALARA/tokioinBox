@@ -276,7 +276,7 @@ table{max-width:100%;}
    de cards no topo (com rolagem própria) — SEM mudar nenhuma função por trás (mesmas
    selectCat/moveCategory/openEditCategory/deleteCategory/setupCatDragDrop de sempre, só o HTML
    que mudou de coluna vertical pra fileira horizontal). */
-.menu-editor{display:flex;flex-direction:column;gap:14px;height:calc(100vh - 140px);min-height:0;}
+.menu-editor{display:flex;flex-direction:column;gap:14px;height:calc(100vh - 140px);min-height:0;width:100%;max-width:1900px;margin:0 auto;box-sizing:border-box;}
 .menu-editor-subtitle{font-size:12px;color:var(--muted);margin:-8px 0 0;}
 .menu-cats-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
 .menu-cats-wrap{flex-shrink:0;}
@@ -360,7 +360,7 @@ table{max-width:100%;}
 .wizard-progress-bar{flex:1;height:5px;background:var(--card);border-radius:3px;overflow:hidden;}
 .wizard-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-2,#C5A059),var(--gold));transition:width .25s;}
 .wizard-progress-pct{font-size:10px;color:var(--gold);font-weight:600;white-space:nowrap;}
-.wizard-layout{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;align-items:start;gap:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;}
+.wizard-layout{display:grid;grid-template-columns:220px minmax(0,1fr) 320px;align-items:start;gap:0;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;width:100%;max-width:1900px;margin:0 auto;box-sizing:border-box;}
 .wizard-steps{width:100%;min-width:0;display:flex;flex-direction:column;gap:2px;border-right:1px solid var(--border);padding-right:12px;margin-right:16px;}
 .wizard-step-btn{display:flex;align-items:flex-start;gap:8px;padding:9px 10px;border-radius:8px;background:none;border:none;border-left:3px solid transparent;color:var(--white);text-align:left;cursor:pointer;font-size:12.5px;width:100%;}
 .wizard-step-btn:hover{background:rgba(255,255,255,.04);}
