@@ -6,36 +6,39 @@
 <meta name="theme-color" content="#c0392b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Painel Shogatsu">
+<meta name="apple-mobile-web-app-title" content="Painel Food Já">
 <link rel="manifest" href="manifest-painel.json">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="favicon-16.png">
-<title>Shogatsu — Painel de Controle</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<title>Food Já — Painel de Controle</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#0f0f0f;--sidebar:#141414;--panel:#1a1a1a;--card:#202020;--border:#2a2a2a;--border2:#333;
-  --red:#c0392b;--red-lt:#e05a4a;--red-dk:#8a1f15;--red-bg:rgba(192,57,43,.1);
-  --green:#27ae60;--green-lt:#2ecc71;--green-bg:rgba(39,174,96,.1);
-  --gold:#c9a84c;--gold-bg:rgba(201,168,76,.1);
-  --blue:#2980b9;--blue-bg:rgba(41,128,185,.1);
-  --orange:#e67e22;--orange-bg:rgba(230,126,34,.1);
-  --white:#f0f0f0;--muted:#666;--muted2:#444;
+  --bg:#0B0B0B;--sidebar:#111113;--panel:#1B1B1F;--card:#1B1B1F;--border:#2A2A30;--border2:#3A3A42;
+  --red:#D62828;--red-lt:#ED4245;--red-dk:#9E1B1B;--red-bg:rgba(214,40,40,.12);
+  --green:#22C55E;--green-lt:#4ADE80;--green-bg:rgba(34,197,94,.12);
+  --gold:#F4B400;--gold-bg:rgba(244,180,0,.12);
+  --blue:#2563EB;--blue-bg:rgba(37,99,235,.12);
+  --orange:#F59E0B;--orange-bg:rgba(245,158,11,.12);
+  --white:#F5F5F5;--muted:#8A8A93;--muted2:#54545C;
+  --radius:14px;--shadow-card:0 2px 10px rgba(0,0,0,.35);--shadow-lift:0 8px 24px rgba(0,0,0,.45);
   --sidebar-w:220px;
 }
 body[data-theme="light"]{
-  --bg:#f4f3f1;--sidebar:#ffffff;--panel:#ffffff;--card:#ffffff;--border:#e2e0dc;--border2:#cfcdc8;
-  --red-bg:rgba(192,57,43,.08);--green-bg:rgba(39,174,96,.08);--gold-bg:rgba(201,168,76,.12);
-  --blue-bg:rgba(41,128,185,.08);--orange-bg:rgba(230,126,34,.08);
-  --white:#201f1d;--muted:#8a8681;--muted2:#b5b1ac;
+  --bg:#F7F6F4;--sidebar:#ffffff;--panel:#ffffff;--card:#ffffff;--border:#E7E5E1;--border2:#D4D1CB;
+  --red-bg:rgba(214,40,40,.08);--green-bg:rgba(34,197,94,.08);--gold-bg:rgba(244,180,0,.12);
+  --blue-bg:rgba(37,99,235,.08);--orange-bg:rgba(245,158,11,.08);
+  --white:#1C1C1E;--muted:#8A8681;--muted2:#B5B1AC;
+  --shadow-card:0 1px 3px rgba(0,0,0,.06);--shadow-lift:0 6px 18px rgba(0,0,0,.10);
 }
 body[data-theme="light"] .brand-icon{box-shadow:0 1px 4px rgba(0,0,0,.15);}
 body[data-theme="light"] .order-card,body[data-theme="light"] .k-card,
 body[data-theme="light"] .settings-card,body[data-theme="light"] .menu-item-row{box-shadow:0 1px 3px rgba(0,0,0,.06);}
 *{box-sizing:border-box;margin:0;padding:0;}
-body{background:var(--bg);color:var(--white);font-family:'Inter',sans-serif;font-size:14px;display:flex;height:100vh;overflow:hidden;}
-button{cursor:pointer;font-family:'Inter',sans-serif;}
+body{background:var(--bg);color:var(--white);font-family:'Plus Jakarta Sans','Inter',sans-serif;font-size:14px;display:flex;height:100vh;overflow:hidden;-webkit-font-smoothing:antialiased;}
+h1,h2,h3,.brand-name,.topbar-title{font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.01em;}
+button{cursor:pointer;font-family:'Plus Jakarta Sans','Inter',sans-serif;}
 input,select,textarea{font-family:'Inter',sans-serif;}
 ::-webkit-scrollbar{width:5px;height:5px;}
 ::-webkit-scrollbar-track{background:transparent;}
@@ -124,17 +127,17 @@ table{max-width:100%;}
 .panel,.settings-card,.stat-card{max-width:100%;}
 
 .sidebar-brand{padding:20px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;}
-.brand-icon{width:36px;height:36px;background:var(--red);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
-.brand-name{font-family:'Cormorant Garamond',serif;font-size:17px;letter-spacing:2px;color:var(--white);line-height:1.1;}
+.brand-icon{width:38px;height:38px;background:linear-gradient(135deg,var(--red),var(--red-dk));border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 12px rgba(214,40,40,.35);}
+.brand-name{font-family:'Plus Jakarta Sans',sans-serif;font-weight:700;font-size:16px;letter-spacing:.5px;color:var(--white);line-height:1.1;}
 .brand-sub{font-size:10px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;}
 
 .sidebar-nav{flex:1;overflow-y:auto;padding:10px 8px;}
 .nav-section{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--muted);padding:14px 8px 6px;}
-.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:6px;color:var(--muted);cursor:pointer;transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-size:14px;}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:9px;color:var(--muted);cursor:pointer;transition:all .15s;margin-bottom:2px;border:none;background:none;width:100%;text-align:left;font-size:14px;font-weight:500;}
 .nav-item:hover{background:var(--panel);color:var(--white);}
-.nav-item.active{background:var(--red-bg);color:var(--red-lt);border-left:2px solid var(--red);}
+.nav-item.active{background:var(--red-bg);color:var(--red-lt);border-left:2px solid var(--gold);font-weight:600;}
 .nav-item .ni{font-size:16px;width:20px;text-align:center;}
-.nav-item .nb{font-size:11px;background:var(--red);color:#fff;border-radius:50px;padding:1px 7px;margin-left:auto;}
+.nav-item .nb{font-size:11px;background:var(--gold);color:#1a1405;font-weight:700;border-radius:50px;padding:1px 7px;margin-left:auto;}
 
 .sidebar-footer{padding:12px;border-top:1px solid var(--border);}
 .store-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--panel);border-radius:14px;padding:10px 14px;}
@@ -148,11 +151,11 @@ table{max-width:100%;}
 
 /* ── MAIN ── */
 .main{flex:1;display:flex;flex-direction:column;overflow:hidden;}
-.topbar{min-height:54px;height:auto;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;padding:8px 24px;background:var(--sidebar);flex-shrink:0;row-gap:8px;}
-.topbar-title{font-size:16px;font-weight:600;color:var(--white);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:60px;flex:1 1 auto;margin-right:12px;}
-.topbar-right{display:flex;align-items:center;gap:12px;flex-wrap:wrap;row-gap:8px;justify-content:flex-end;}
-.topbar-time{font-size:13px;color:var(--muted);flex-shrink:0;}
-.topbar-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:13px;transition:all .15s;flex-shrink:0;white-space:nowrap;}
+.topbar{height:54px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:var(--sidebar);flex-shrink:0;}
+.topbar-title{font-size:16px;font-weight:600;color:var(--white);}
+.topbar-right{display:flex;align-items:center;gap:12px;}
+.topbar-time{font-size:13px;color:var(--muted);}
+.topbar-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 14px;font-size:13px;transition:all .15s;}
 .topbar-btn:hover{border-color:var(--red);color:var(--red-lt);}
 .topbar-btn.primary{background:var(--red);border-color:var(--red);color:#fff;}
 .topbar-btn.primary:hover{background:var(--red-lt);}
@@ -172,11 +175,13 @@ table{max-width:100%;}
 
 /* ── CARDS GRID ── */
 .stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px;}
-.stat-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;}
-.stat-icon{font-size:24px;margin-bottom:10px;}
-.stat-value{font-size:26px;font-weight:700;margin-bottom:2px;line-height:1;}
-.stat-label{font-size:12px;color:var(--muted);letter-spacing:.5px;}
-.stat-delta{font-size:12px;margin-top:6px;}
+.stat-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius,14px);padding:20px;position:relative;overflow:hidden;box-shadow:var(--shadow-card);transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;}
+.stat-card:hover{transform:translateY(-2px);box-shadow:var(--shadow-lift);border-color:var(--border2);}
+.stat-card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,var(--red),var(--gold));opacity:.7;}
+.stat-icon{font-size:20px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:10px;background:var(--panel);margin-bottom:12px;}
+.stat-value{font-size:28px;font-weight:700;margin-bottom:2px;line-height:1;font-family:'Plus Jakarta Sans',sans-serif;letter-spacing:-.02em;}
+.stat-label{font-size:12px;color:var(--muted);letter-spacing:.5px;text-transform:uppercase;font-weight:600;}
+.stat-delta{font-size:12px;margin-top:8px;}
 .stat-delta.up{color:var(--green-lt);}
 .stat-delta.dn{color:var(--red-lt);}
 
@@ -245,20 +250,20 @@ table{max-width:100%;}
 
 /* ── KANBAN ── */
 .kanban{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:0;}
-.kanban-col{background:var(--panel);border:1px solid var(--border);border-radius:14px;overflow:hidden;}
-.kanban-header{padding:12px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.kanban-title{font-size:13px;font-weight:600;letter-spacing:.5px;}
-.kanban-count{font-size:12px;background:var(--border2);border-radius:50px;padding:1px 8px;color:var(--muted);}
+.kanban-col{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius,14px);overflow:hidden;box-shadow:var(--shadow-card);}
+.kanban-header{padding:14px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;background:var(--sidebar);}
+.kanban-title{font-size:13px;font-weight:700;letter-spacing:.4px;font-family:'Plus Jakarta Sans',sans-serif;}
+.kanban-count{font-size:12px;background:var(--border2);border-radius:50px;padding:2px 10px;color:var(--white);font-weight:600;}
 .kanban-body{padding:10px;min-height:200px;max-height:calc(100vh - 280px);overflow-y:auto;}
-.k-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:11px;margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
-.k-card:hover{border-color:var(--border2);}
-.k-card-id{font-size:11px;color:var(--muted);margin-bottom:4px;}
-.k-card-name{font-size:14px;font-weight:500;margin-bottom:3px;}
+.k-card{background:var(--card);border:1px solid var(--border);border-radius:12px;padding:12px;margin-bottom:9px;cursor:pointer;box-shadow:var(--shadow-card);transition:border-color .15s,box-shadow .15s,transform .15s;}
+.k-card:hover{box-shadow:var(--shadow-lift);transform:translateY(-2px);border-color:var(--gold);}
+.k-card-id{font-size:11px;color:var(--muted);margin-bottom:4px;letter-spacing:.3px;}
+.k-card-name{font-size:14px;font-weight:600;margin-bottom:3px;}
 .k-card-items{font-size:12px;color:var(--muted);margin-bottom:6px;line-height:1.4;}
 .k-card-footer{display:flex;align-items:center;justify-content:space-between;}
-.k-card-total{font-size:15px;font-weight:600;color:var(--green-lt);}
+.k-card-total{font-size:15px;font-weight:700;color:var(--green-lt);}
 .k-card-time{font-size:11px;color:var(--muted);}
-.k-btn{width:100%;border:none;border-radius:5px;padding:6px;font-size:12px;font-weight:500;margin-top:7px;transition:all .15s;}
+.k-btn{width:100%;border:none;border-radius:8px;padding:8px;font-size:12px;font-weight:700;margin-top:8px;transition:all .15s;letter-spacing:.2px;}
 
 /* ── MENU EDITOR ── */
 /* BUG CORRIGIDO (v42): a coluna de categorias tinha 200px fixos e o item de categoria
@@ -267,24 +272,31 @@ table{max-width:100%;}
    nos 200px simplesmente ficava cortado (janela "cortada"). Agora a coluna é mais larga,
    o item de categoria quebra em duas linhas (nome em cima, ações embaixo) e nada usa
    overflow:hidden, então o conteúdo sempre aparece inteiro.  */
-.menu-editor{display:grid;grid-template-columns:260px 1fr;gap:16px;height:calc(100vh - 140px);}
-.menu-cats-wrap{display:flex;flex-direction:column;gap:8px;min-width:0;}
+/* v107h — "Editar Cardápio" modernizado: sidebar de categorias removida, virou barra horizontal
+   de cards no topo (com rolagem própria) — SEM mudar nenhuma função por trás (mesmas
+   selectCat/moveCategory/openEditCategory/deleteCategory/setupCatDragDrop de sempre, só o HTML
+   que mudou de coluna vertical pra fileira horizontal). */
+.menu-editor{display:flex;flex-direction:column;gap:14px;height:calc(100vh - 140px);min-height:0;}
+.menu-editor-subtitle{font-size:12px;color:var(--muted);margin:-8px 0 0;}
 .menu-cats-header{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
-.menu-cats{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow-y:auto;overflow-x:hidden;flex:1;}
-.menu-cat-item{padding:10px 12px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s;display:flex;flex-direction:column;gap:6px;}
-.menu-cat-item:hover{background:var(--panel);}
-.menu-cat-item.active{background:var(--red-bg);color:var(--red-lt);border-left:2px solid var(--red);}
-.menu-cat-item-top{display:flex;align-items:center;gap:8px;min-width:0;}
-.menu-cat-name{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
-.menu-cat-count{font-size:11px;color:var(--muted);flex-shrink:0;}
-.menu-cat-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:8px;}
-.cat-actions{display:flex;gap:6px;}
-.cat-actions button{border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:13px;padding:4px 8px;border-radius:6px;transition:all .15s;white-space:nowrap;}
+.menu-cats-wrap{flex-shrink:0;}
+.menu-cats{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;padding:4px 2px 10px;scroll-behavior:smooth;}
+.menu-cat-item{flex:0 0 auto;min-width:132px;max-width:180px;background:var(--card);border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;cursor:pointer;transition:border-color .15s,background .15s;display:flex;flex-direction:column;gap:4px;}
+.menu-cat-item:hover{border-color:var(--red-dk);}
+.menu-cat-item.active{background:var(--red-bg);border-color:var(--red);color:var(--red-lt);}
+.menu-cat-item-top{display:flex;align-items:center;gap:6px;min-width:0;}
+.menu-cat-icon{font-size:17px;flex-shrink:0;}
+.menu-cat-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0;}
+.menu-cat-count{font-size:11px;color:var(--muted);}
+.menu-cat-item.active .menu-cat-count{color:var(--red-lt);opacity:.85;}
+.menu-cat-item-bottom{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-top:2px;}
+.cat-actions{display:flex;gap:3px;}
+.cat-actions button{border:1px solid var(--border);background:var(--panel);color:var(--muted);font-size:11px;padding:2px 6px;border-radius:5px;transition:all .15s;white-space:nowrap;}
 .cat-actions button.edit{background:var(--blue-bg);color:var(--blue);border-color:var(--blue);}
 .cat-actions button.edit:hover{background:var(--blue);color:#fff;}
 .cat-actions button.del{background:var(--red-bg);color:var(--red-lt);border-color:var(--red-dk);}
 .cat-actions button.del:hover{background:var(--red);color:#fff;}
-.menu-items-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;}
+.menu-items-panel{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;display:flex;flex-direction:column;flex:1;min-height:0;}
 .menu-items-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
 /* v77: BUG CORRIGIDO — faltava esse container ser flex também; sem isso, "flex:1" do
    .menu-items-body (mais abaixo) não tinha efeito nenhum (só funciona dentro de um pai flex),
@@ -312,7 +324,8 @@ table{max-width:100%;}
 .cancel-reason-chip{display:flex;align-items:center;gap:8px;background:var(--bg);border:1px solid var(--border);border-radius:14px;padding:11px 14px;cursor:pointer;font-size:14px;transition:border-color .15s,background .15s;}
 .cancel-reason-chip:hover{border-color:var(--red-dk);}
 .cancel-reason-chip.selected{border-color:var(--red);background:var(--red-bg);color:var(--red-lt);}
-.vgroup{border:1px solid var(--border);border-radius:14px;padding:10px;background:var(--bg);}
+.vgroup{border:1px solid var(--border);border-radius:14px;padding:12px;background:var(--bg);transition:border-color .15s;}
+.vgroup:hover{border-color:rgba(212,163,115,.4);}
 .vgroup-head{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap;}
 .vgroup-head input[type=text]{flex:1;}
 .vopt-row{display:flex;gap:6px;align-items:center;margin-bottom:5px;}
@@ -324,7 +337,12 @@ table{max-width:100%;}
    visual pedida. Campos/API continuam os mesmos + campos novos guardados como chaves extras
    no mesmo objeto `item` (ver comentário no HTML da página). */
 .item-editor-page{max-width:1400px;margin:0 auto;}
-.item-editor-header{margin-bottom:18px;}
+/* v107g — cabeçalho fixo durante toda a edição, como pedido ("sempre visível ao rolar"): como o
+   editor de item é uma página cheia (não modal), o container que rola é o `.content` (ver
+   .content{overflow-y:auto}); sticky aqui gruda o cabeçalho — com todos os botões de ação já
+   dentro dele (Cancelar/Visualizar/Duplicar/Excluir/Salvar) — no topo desse scroll, sem precisar
+   duplicar os botões numa segunda barra fixa embaixo. */
+.item-editor-header{margin-bottom:18px;position:sticky;top:0;z-index:20;background:var(--bg);padding-bottom:14px;}
 .item-editor-header-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;flex-wrap:wrap;}
 .item-editor-header-left{min-width:0;flex:1;}
 .item-editor-title{font-size:24px;font-weight:800;margin:2px 0 4px;color:var(--white);}
@@ -337,6 +355,7 @@ table{max-width:100%;}
 .wizard-status-pill.available{color:#4ade80;border-color:#4ade8055;}
 .wizard-status-pill.unavailable{color:#f87171;border-color:#f8717155;}
 .wizard-status-pill.featured-on{color:var(--gold);border-color:var(--gold);}
+.wizard-status-pill.hidden-state{color:#9ca3af;border-color:#9ca3af55;background:rgba(156,163,175,.1);}
 .wizard-progress-wrap{display:flex;align-items:center;gap:8px;margin-top:10px;max-width:420px;}
 .wizard-progress-bar{flex:1;height:5px;background:var(--card);border-radius:3px;overflow:hidden;}
 .wizard-progress-fill{height:100%;background:linear-gradient(90deg,var(--gold-2,#C5A059),var(--gold));transition:width .25s;}
@@ -366,6 +385,10 @@ table{max-width:100%;}
 .wizard-preview-price{color:var(--gold);font-weight:700;font-size:14px;}
 .wizard-preview-price .old{text-decoration:line-through;color:var(--muted);font-size:11px;font-weight:400;margin-right:5px;}
 .wizard-preview-badge{display:inline-block;font-size:10px;background:var(--red-dk);padding:2px 7px;border-radius:20px;margin-bottom:6px;color:#fff;}
+/* v107e — Biblioteca de Badges: os botões prontos mostram a cor de verdade (preenchida, não só
+   a borda), pra já dar uma prévia de como o badge fica antes mesmo de aplicar no item. */
+.badge-lib-preset-btn{border:none;border-radius:20px;padding:7px 13px;font-size:12px;font-weight:600;color:#fff;text-shadow:0 1px 2px rgba(0,0,0,.35);cursor:pointer;}
+.badge-lib-preset-btn:hover{filter:brightness(1.1);}
 .wizard-preview-summary{margin-top:12px;font-size:11px;color:var(--muted);display:flex;flex-direction:column;gap:4px;}
 .wizard-preview-status-list{margin-top:12px;font-size:11px;display:flex;flex-direction:column;gap:6px;border-top:1px solid var(--border);padding-top:10px;}
 .wizard-preview-status-row{display:flex;justify-content:space-between;gap:8px;color:var(--muted);}
@@ -376,20 +399,46 @@ table{max-width:100%;}
 @media (max-width:1050px){
   .wizard-layout{grid-template-columns:200px minmax(0,1fr) 280px;}
 }
+.item-editor-page{scroll-behavior:smooth;}
+.wizard-content{scroll-behavior:smooth;}
 @media (max-width:900px){
   .item-editor-header-actions{width:100%;}
-  .item-editor-header-actions .btn{flex:1;}
+  .item-editor-header-actions .btn{flex:1;min-height:44px;}
   .wizard-layout{grid-template-columns:1fr;padding:14px;}
   .wizard-steps{width:100%;flex-direction:row;overflow-x:auto;border-right:none;border-bottom:1px solid var(--border);padding-right:0;padding-bottom:8px;margin-right:0;margin-bottom:14px;}
-  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;}
+  .wizard-step-btn{flex-shrink:0;border-left:none;border-bottom:3px solid transparent;min-height:44px;}
   .wizard-step-btn.active{border-left-color:transparent;border-bottom-color:var(--gold);}
   .wizard-step-btn-sub{display:none;}
   .wizard-preview{width:100%;border-left:none;padding-left:0;margin-left:0;margin-top:16px;border-top:1px solid var(--border);padding-top:14px;}
+  .vopt-icon-btn{font-size:17px;padding:6px 8px;}
+  .btn-add-option-big{padding:14px;}
+  .photo-tool-btn{padding:9px 12px;font-size:12px;}
 }
 .vopt-row input[type=text]{flex:1;}
 .vopt-row input[type=number]{width:90px;}
-.vopt-row button,.vgroup-head button{border:none;background:var(--red-bg);color:var(--red-lt);border-radius:5px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.vopt-row button,.vgroup-head button{border:1px solid var(--border);background:var(--panel);color:var(--muted);border-radius:6px;padding:4px 8px;font-size:12px;cursor:pointer;}
+.vopt-row button:hover,.vgroup-head button:hover{border-color:var(--gold);color:var(--gold);}
 .vgroup input,.vgroup select{background:var(--panel);border:1px solid var(--border);border-radius:5px;padding:6px 8px;color:var(--white);font-size:13px;}
+/* v107d: linha de opção redesenhada — handle pra arrastar, campos compactos, ícones de ação
+   neutros (nada de botão vermelho pequeno) no lugar do ✕ solto de antes. */
+.vopt-row2{display:flex;align-items:center;gap:8px;padding:7px 9px;background:var(--panel);border:1px solid var(--border);border-radius:8px;margin-bottom:6px;flex-wrap:wrap;}
+.vopt-row2.hidden-opt{opacity:.45;}
+.vopt-row2[draggable="true"]{cursor:grab;}
+.vopt-row2.drag-over{border-color:var(--gold);}
+.vopt-drag{color:var(--muted);font-size:13px;user-select:none;flex-shrink:0;}
+.vopt-row2 .vopt-name-input{flex:1;min-width:100px;}
+.vopt-price-cell{display:flex;align-items:center;gap:4px;flex-shrink:0;}
+.vopt-price-cell select{width:84px;font-size:10.5px;padding:5px 4px;}
+.vopt-price-cell input[type=number]{width:66px;padding:5px 6px;}
+.vopt-maxqty-cell{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--muted);white-space:nowrap;flex-shrink:0;}
+.vopt-maxqty-cell input{width:44px;padding:5px 4px;}
+.vopt-icon-btn{background:none;border:none;color:var(--muted);cursor:pointer;font-size:14px;padding:3px 5px;border-radius:5px;line-height:1;flex-shrink:0;}
+.vopt-icon-btn:hover{background:rgba(212,163,115,.12);color:var(--gold);}
+.btn-add-option-big{width:100%;padding:11px;font-size:13px;font-weight:700;margin-top:2px;}
+/* (novo v107e) Card de Preço — Economia % e Lucro interno, no mesmo lugar dos campos de preço */
+.price-card{border:1px solid rgba(212,163,115,.35);border-radius:10px;padding:10px 12px;margin:4px 0 14px;background:var(--panel);display:flex;flex-direction:column;gap:7px;}
+.price-card-row{display:flex;justify-content:space-between;align-items:center;gap:10px;font-size:11.5px;color:var(--muted);}
+.price-card-row b{color:var(--white);font-weight:700;font-size:12.5px;}
 .cat-reorder{display:flex;gap:2px;}
 .cat-reorder button{border:none;background:var(--border2);color:var(--muted);font-size:10px;width:16px;height:16px;line-height:16px;padding:0;border-radius:3px;cursor:pointer;}
 .cat-reorder button:hover:not(:disabled){color:var(--white);background:var(--gold);}
@@ -414,7 +463,7 @@ table{max-width:100%;}
 .menu-filter-chip{border:1px solid var(--border2);background:var(--panel);color:var(--muted);border-radius:20px;padding:6px 14px;font-size:12px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap;}
 .menu-filter-chip:hover{border-color:var(--gold);color:var(--white);}
 .menu-filter-chip.active{background:var(--red);border-color:var(--red);color:#fff;}
-.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:16px;padding:2px;}
+.mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:2px;}
 .mi-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:default;}
 .mi-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.35);border-color:var(--border2);}
 .mi-card.dragging{opacity:.4;}
@@ -452,15 +501,15 @@ table{max-width:100%;}
   .mi-card-name{font-size:13px;}
   .mi-card-desc{font-size:11px;min-height:2.4em;}
 }
-/* v76: BUG CORRIGIDO — essa regra responsiva do editor de cardápio precisa vir DEPOIS da regra
-   base ".menu-editor{grid-template-columns:260px 1fr}" (lá em cima, perto do topo do arquivo)
-   pra realmente ganhar no empate de especificidade CSS. Colocada antes, o navegador ignorava e
-   o cardápio ficava espremido/cortado no celular mesmo com a media query "batendo". */
+@media (min-width:641px) and (max-width:1024px){
+  .mi-grid{grid-template-columns:repeat(auto-fill,minmax(220px,1fr));}
+}
+/* v107h: layout já é horizontal em qualquer tamanho de tela agora (não muda mais de estrutura
+   no mobile) — aqui só ajusta tamanhos pra caber melhor em tela pequena, sem cortar nada. */
 @media (max-width:760px){
-  .menu-editor{grid-template-columns:1fr;grid-template-rows:auto 1fr;height:auto;}
-  .menu-cats-wrap{flex-direction:row;}
-  .menu-cats{display:flex;overflow-x:auto;overflow-y:hidden;max-height:120px;}
-  .menu-cat-item{flex:0 0 210px;border-bottom:none;border-right:1px solid var(--border);}
+  .menu-editor{height:auto;min-height:calc(100vh - 140px);}
+  .menu-cat-item{min-width:112px;padding:8px 10px;}
+  .menu-cat-name{font-size:12px;}
   .menu-items-panel{min-height:60vh;}
 }
 
@@ -517,22 +566,36 @@ table{max-width:100%;}
    caixinha. Agora o <img> começa escondido por CSS e só aparece quando o JS confirma que há
    uma foto de verdade pra mostrar. */
 .photo-preview{width:100%;height:100%;object-fit:cover;display:none;}
+/* (novo v107e) barra de ferramentas de foto — zoom/girar/centralizar/corte automático, borda
+   dourada fina, no lugar dos dois sliders soltos de antes. */
+.photo-toolbar{margin-top:10px;padding:12px;border:1px solid rgba(212,163,115,.35);border-radius:10px;background:var(--panel);}
+.photo-toolbar-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
+.photo-tool-btn{border:1px solid var(--border);background:var(--card);color:var(--white);border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer;}
+.photo-tool-btn:hover{border-color:var(--gold);color:var(--gold);}
+.photo-toolbar-slider{display:flex;align-items:center;gap:10px;margin-top:6px;}
+.photo-toolbar-label{font-size:10px;color:var(--muted);width:76px;flex-shrink:0;}
+.photo-toolbar-slider input[type=range]{flex:1;accent-color:var(--gold);}
 .photo-placeholder-icon{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted);pointer-events:none;}
 .photo-upload-actions{display:flex;flex-direction:column;gap:6px;}
 .photo-upload-actions input[type=file]{display:none;}
 .photo-upload-status{font-size:12px;color:var(--muted);}
 
 /* ── BUTTONS ── */
-.btn{border:none;border-radius:12px;padding:9px 18px;font-size:14px;font-weight:500;letter-spacing:.3px;transition:all .15s;}
-.btn.primary{background:var(--red);color:#fff;}
-.btn.primary:hover{background:var(--red-lt);}
+.btn{border:none;border-radius:12px;padding:9px 18px;font-size:14px;font-weight:600;letter-spacing:.2px;transition:all .15s;}
+.btn.primary{background:var(--red);color:#fff;box-shadow:0 4px 14px rgba(214,40,40,.28);}
+.btn.primary:hover{background:var(--red-lt);box-shadow:0 6px 18px rgba(214,40,40,.4);}
 .btn.secondary{background:var(--panel);color:var(--muted);border:1px solid var(--border);}
 .btn.secondary:hover{color:var(--white);border-color:var(--border2);}
-.btn.success{background:var(--green);color:#fff;}
+.btn.success{background:var(--green);color:#fff;box-shadow:0 4px 14px rgba(34,197,94,.25);}
 .btn.success:hover{background:var(--green-lt);}
 .btn.danger{background:var(--red-dk);color:#fff;}
 .btn.danger:hover{background:var(--red);}
+.btn.gold{background:var(--gold);color:#1a1405;box-shadow:0 4px 14px rgba(244,180,0,.28);}
+.btn.gold:hover{filter:brightness(1.08);}
 .btn.sm{padding:6px 12px;font-size:13px;}
+.btn:disabled,button:disabled{opacity:.5;cursor:not-allowed;filter:grayscale(.3);box-shadow:none !important;}
+@keyframes skeleton-pulse{0%,100%{opacity:.55}50%{opacity:.9}}
+.skeleton{background:linear-gradient(90deg,var(--panel) 25%,var(--border) 50%,var(--panel) 75%);background-size:200% 100%;animation:skeleton-pulse 1.4s ease-in-out infinite;border-radius:8px;}
 
 /* ── SETTINGS ── */
 .settings-section-title{font-size:15px;font-weight:700;color:var(--gold);letter-spacing:.5px;margin:28px 0 12px;padding-bottom:8px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;}
@@ -558,11 +621,14 @@ table{max-width:100%;}
 .card-minimized{padding-bottom:20px;}
 .card-pinned{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold);}
 .card-favorited{border-color:var(--gold);}
-.conn-status{font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.06);white-space:nowrap;transition:background .2s,color .2s;flex-shrink:0;}
+.conn-status{font-size:12px;padding:4px 10px;border-radius:20px;background:rgba(255,255,255,.06);white-space:nowrap;transition:background .2s,color .2s;}
 .conn-connected{color:#4ade80;}
 .conn-connecting{color:#facc15;}
 .conn-lost{color:#f87171;background:rgba(248,113,113,.12);cursor:pointer;}
 .settings-card-title{font-size:14px;font-weight:600;margin-bottom:16px;color:var(--white);display:flex;align-items:center;gap:8px;}
+.settings-group-title{grid-column:1/-1;font-size:13px;font-weight:700;color:var(--gold);letter-spacing:.3px;margin:10px 0 -6px;padding-top:14px;border-top:1px dashed var(--border);display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.settings-group-title:first-child{border-top:none;padding-top:0;margin-top:0;}
+.settings-group-sub{font-size:11px;font-weight:400;color:var(--muted);letter-spacing:0;}
 
 /* ── v69: BUSCA + ACORDEÃO + FAVORITOS (página de Configurações) ── */
 .settings-topbar{position:sticky;top:0;z-index:20;background:var(--bg,#12141a);padding:10px 0 12px;margin-bottom:10px;border-bottom:1px solid var(--border);display:flex;gap:10px;align-items:center;}
@@ -619,13 +685,20 @@ table{max-width:100%;}
 .login-icon{width:56px;height:56px;background:var(--red);border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 18px;}
 .login-title{font-family:'Cormorant Garamond',serif;font-size:22px;letter-spacing:2px;color:var(--white);margin-bottom:4px;}
 .login-sub{font-size:11px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:26px;}
+.login-user-picker{display:flex;gap:10px;margin-bottom:14px;}
+.login-user-btn{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:14px;padding:16px 10px;font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;}
+.login-user-btn-icon{font-size:22px;}
+.login-user-btn:hover{border-color:var(--border2);color:var(--white);}
+.login-user-btn.selected{border-color:var(--gold);background:var(--gold-bg);color:var(--white);box-shadow:0 4px 14px rgba(244,180,0,.18);}
+.login-other-user-link{background:none;border:none;color:var(--muted);font-size:12px;text-decoration:underline;cursor:pointer;margin-bottom:14px;padding:2px;}
+.login-other-user-link:hover{color:var(--white);}
 .login-input{width:100%;background:var(--panel);border:1px solid var(--border);color:var(--white);font-size:16px;padding:12px;border-radius:14px;outline:none;text-align:center;letter-spacing:2px;margin-bottom:14px;transition:border-color .2s;}
 .login-input:focus{border-color:var(--red);}
 .login-btn{width:100%;background:var(--red);color:#fff;border:none;font-size:13px;letter-spacing:2px;text-transform:uppercase;padding:13px;border-radius:14px;transition:all .2s;font-weight:600;}
 .login-btn:hover{background:var(--red-lt);}
 .login-err{color:var(--red-lt);font-size:13px;margin-top:12px;display:none;}
 #app-shell{display:none;width:100%;}
-.logout-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 12px;font-size:13px;transition:all .15s;flex-shrink:0;white-space:nowrap;}
+.logout-btn{background:var(--panel);border:1px solid var(--border);color:var(--muted);border-radius:6px;padding:7px 12px;font-size:13px;transition:all .15s;}
 .logout-btn:hover{border-color:var(--red);color:var(--red-lt);}
 
 /* ── v37: MODERNIZAÇÃO VISUAL — só aparência (sombra, blur, animação, elevação); nenhuma lógica muda ── */
@@ -741,12 +814,24 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- LOGIN -->
 <div id="login-screen">
   <div class="login-box">
-    <div class="login-icon" id="login-icon">🍣</div>
-    <div class="login-title" id="login-title">Food</div>
+    <div class="login-icon">🍣</div>
+    <div class="login-title">FOOD JÁ</div>
     <div class="login-sub">Painel Admin</div>
-    <input type="text" class="login-input" id="login-user" placeholder="Usuário" autocomplete="username" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
-    <input type="password" class="login-input" id="login-pass" placeholder="Senha" autocomplete="current-password" onkeydown="if(event.key==='Enter')doLogin()"/>
-    <button class="login-btn" onclick="doLogin()">Entrar</button>
+    <!-- v108: usuário fixo e clicável em vez de digitar toda vez — mais rápido no dia a dia
+         (principalmente em tablet/touch no balcão). Quem não é admin/master (ex: um usuário
+         "vendas" cadastrado à parte) usa "Outro usuário" pra digitar normalmente. -->
+    <div class="login-user-picker" id="login-user-picker">
+      <button type="button" class="login-user-btn" data-user="admin" onclick="selectLoginUser('admin')">
+        <span class="login-user-btn-icon">🔑</span><span>Admin</span>
+      </button>
+      <button type="button" class="login-user-btn" data-user="master" onclick="selectLoginUser('master')">
+        <span class="login-user-btn-icon">👑</span><span>Master</span>
+      </button>
+    </div>
+    <input type="text" class="login-input" id="login-user" placeholder="Usuário" autocomplete="username" style="display:none;" onkeydown="if(event.key==='Enter')document.getElementById('login-pass').focus()"/>
+    <button type="button" class="login-other-user-link" id="login-other-user-link" onclick="showLoginOtherUser()">Outro usuário</button>
+    <input type="password" class="login-input" id="login-pass" placeholder="Senha" autocomplete="current-password" style="display:none;" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="login-btn" id="login-btn" style="display:none;" onclick="doLogin()">Entrar</button>
     <div class="login-err" id="login-err">Senha incorreta.</div>
   </div>
 </div>
@@ -757,9 +842,9 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 <!-- SIDEBAR -->
 <aside class="sidebar" id="sidebar">
   <div class="sidebar-brand">
-    <div class="brand-icon" id="sidebar-brand-icon">🍣</div>
+    <div class="brand-icon">🍣</div>
     <div>
-      <div class="brand-name" id="sidebar-brand-name">Food</div>
+      <div class="brand-name">FOOD JÁ</div>
       <div class="brand-sub">Painel Admin</div>
     </div>
     <button class="sidebar-collapse-btn" id="sidebar-collapse-btn" onclick="toggleSidebarCollapse()" title="Recolher/expandir menu" style="margin-left:auto;">◀</button>
@@ -775,7 +860,9 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     <button class="nav-item" data-page="cardapio" data-min-role="admin" onclick="goPage('cardapio')"><span class="ni">🍱</span> Cardápio</button>
     <button class="nav-item" data-page="custos" data-min-role="admin" onclick="goPage('custos')"><span class="ni">💰</span> Custos</button>
     <!-- v99 — ferramenta isolada, abre em nova aba; não usa goPage()/roteamento do SPA, não mexe em nenhum outro item -->
+    <button class="nav-item" data-perm="notafiscal" data-min-role="admin" onclick="window.open('/nota-fiscal.html','_blank')"><span class="ni">📷</span> Ler Nota Fiscal</button>
     <button class="nav-item" data-page="ia" data-min-role="admin" onclick="goPage('ia')"><span class="ni">🤖</span> IA do Cardápio <span class="nb" id="nb-ia-aprovacoes" style="display:none">0</span></button>
+    <button class="nav-item" data-page="qrlinks" data-min-role="admin" onclick="goPage('qrlinks')"><span class="ni">🔗</span> QR Code &amp; Links</button>
     <button class="nav-item" data-page="relatorios" data-min-role="admin" onclick="goPage('relatorios')"><span class="ni">📈</span> Relatórios</button>
     <button class="nav-item" data-page="avaliacoes" data-min-role="admin" onclick="goPage('avaliacoes')"><span class="ni">⭐</span> Avaliações</button>
     <div class="nav-section" data-min-role="admin">Sistema</div>
@@ -1064,7 +1151,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div style="font-size:11px;color:var(--gold);margin-bottom:12px;line-height:1.5;">
             ⚠️ Se a conta Twilio ainda for do tipo <b>Trial (gratuita)</b>, TODA mensagem chega
             pro cliente com um aviso automático em inglês grudado na frente (algo como
-            "Sent from your Twilio trial account - "). Isso não é o Shogatsu escrevendo em
+            "Sent from your Twilio trial account - "). Isso não é o Food Já escrevendo em
             inglês — é a própria Twilio quem obriga esse aviso em contas trial, e não tem como
             tirar por configuração nenhuma. Some sozinho assim que a conta Twilio vira paga.
           </div>
@@ -1141,7 +1228,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px;">
             <input type="checkbox" id="push-send-all"/> 📢 Enviar pra TODOS os inscritos (ignora a lista abaixo — inclui quem ativou sem ter conta)
           </label>
-          <div class="field"><label style="font-size:10px;">Título da notificação</label><input id="push-title" placeholder="Ex: Shogatsu"/></div>
+          <div class="field"><label style="font-size:10px;">Título da notificação</label><input id="push-title" placeholder="Ex: Food Já"/></div>
           <textarea id="push-message" placeholder="Ex: 🍣 Hoje tem 15% OFF com o cupom PROMO15! Peça já no site." style="width:100%;min-height:70px;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:10px;color:var(--white);font-size:13px;margin-top:8px;"></textarea>
           <div class="field" style="margin-top:8px;">
             <label style="font-size:10px;">Imagem grande (opcional — deixa a notificação parecida com apps de delivery tipo iFood; cole o link de uma foto do prato/promoção)</label>
@@ -1273,123 +1360,8 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
 
     <!-- ── CARDÁPIO ── -->
     <div class="page" id="page-cardapio">
-      <!-- v108: "Editar Cardápio Popular" morava dentro de "QR Code & Links" (que foi removida) —
-           mudou de endereço pra cá porque é edição de conteúdo real (não tem nada de QR code), e
-           "Cardápio" é o lugar que já existia e faz sentido pra essa função. Nada do código interno
-           mudou, só o lugar onde o painel encaixa (renderRpEditor/saveRodizioPopular etc. seguem
-           idênticos). -->
-      <div class="panel" style="margin-bottom:16px;">
-        <div class="panel-header" style="cursor:pointer;" onclick="toggleRpEditor()">
-          <span class="panel-title">✏️ Editar Cardápio Popular</span>
-          <span style="display:flex;align-items:center;gap:10px;">
-            <a href="/cardapio-rodizio-popular.html" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:var(--gold);text-decoration:none;">🔗 Pré-visualizar página</a>
-            <span id="rp-editor-toggle-icon" style="font-size:12px;color:var(--muted);">▾ mostrar</span>
-          </span>
-        </div>
-        <div style="font-size:11px;color:var(--muted);margin:2px 0 12px;">
-          Edita o conteúdo da página pública do Rodízio Popular — preços por dia, destaques, categorias e itens, frases do topo e dados de rodapé.
-        </div>
-        <div id="rp-editor-body" style="display:none;">
-
-          <div class="settings-card-title" style="margin-top:4px;">🎨 Aparência — fontes e cores</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ajusta a tipografia e a cor de destaque da página pública, sem precisar mexer em código.</div>
-          <div class="field-row" style="margin-bottom:14px;">
-            <div class="field">
-              <label style="font-size:10px;">Fonte dos títulos</label>
-              <select id="rp-theme-headingfont" onchange="rpDraft.theme.headingFont=this.value">
-                <option value="serif">Serifada (elegante — padrão)</option>
-                <option value="sans-serif">Sem serifa (moderna/limpa)</option>
-                <option value="rounded">Arredondada (amigável)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label style="font-size:10px;">Fonte do texto</label>
-              <select id="rp-theme-bodyfont" onchange="rpDraft.theme.bodyFont=this.value">
-                <option value="sans-serif">Sem serifa (padrão)</option>
-                <option value="serif">Serifada</option>
-              </select>
-            </div>
-            <div class="field" style="max-width:110px;">
-              <label style="font-size:10px;">Cor de destaque</label>
-              <input type="color" id="rp-theme-color" oninput="rpDraft.theme.accentColor=this.value" style="width:100%;height:36px;padding:2px;"/>
-            </div>
-            <div class="field">
-              <label style="font-size:10px;">Tamanho do texto (<span id="rp-theme-scale-label">100%</span>)</label>
-              <input type="range" id="rp-theme-scale" min="0.85" max="1.25" step="0.05" oninput="rpDraft.theme.fontScale=Number(this.value);document.getElementById('rp-theme-scale-label').textContent=Math.round(this.value*100)+'%';"/>
-            </div>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:4px;">📷 Foto de capa</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Aparece no topo da página, em tela cheia. Envie do dispositivo ou cole um link — a prévia abaixo mostra a foto no formato original (sem cortar), do jeito que ela é enviada.</div>
-          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;">
-            <img id="rp-hero-preview" src="" alt="" style="width:160px;max-height:120px;object-fit:contain;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:none;"/>
-            <div style="flex:1;min-width:200px;">
-              <input id="rp-herophoto" placeholder="https://.../capa.jpg (ou envie do dispositivo →)" oninput="rpDraft.heroPhoto=this.value;rpUpdateHeroPreview();" style="width:100%;margin-bottom:6px;"/>
-              <input type="file" accept="image/*" id="rp-hero-file" style="display:none;" onchange="uploadRpHeroPhoto(this)"/>
-              <button type="button" class="btn secondary sm" onclick="document.getElementById('rp-hero-file').click()">📤 Enviar foto de capa</button>
-              <span id="rp-hero-status" style="font-size:10px;color:var(--muted);margin-left:6px;"></span>
-            </div>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">🖼️ Galeria de fotos</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Fotos do rodízio/ambiente mostradas na galeria da página. Envie do dispositivo ou cole um link.</div>
-          <div id="rp-gallery-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddGalleryPhoto()">+ Foto na galeria</button>
-
-          <div class="settings-card-title" style="margin-top:4px;">💰 Preços por grupo de dias</div>
-          <div id="rp-pricegroups-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddPriceGroup()">+ Grupo de dias</button>
-          <div class="field" style="margin-top:12px;max-width:420px;">
-            <label>Observação do preço (aceita HTML simples, ex: &lt;b&gt;18:30&lt;/b&gt;)</label>
-            <input id="rp-pricenote" placeholder="Valores válidos a partir das 18:30."/>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">⭐ Destaques do rodízio</div>
-          <div id="rp-highlights-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddHighlight()">+ Destaque</button>
-
-          <div class="settings-card-title" style="margin-top:20px;">🍽️ Categorias e itens</div>
-          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Um item por linha. Pra dar um subtítulo (ex: "sob consulta"), escreva assim: <code>Nome do item | subtítulo</code></div>
-          <div id="rp-categories-list" style="display:flex;flex-direction:column;gap:14px;margin-bottom:10px;"></div>
-          <button type="button" class="btn secondary sm" onclick="rpAddCategory()">+ Categoria</button>
-
-          <div class="settings-card-title" style="margin-top:20px;">💬 Frases do topo (giram automaticamente)</div>
-          <div class="field">
-            <textarea id="rp-phrases" rows="5" placeholder="Uma frase por linha" style="width:100%;font-family:inherit;font-size:12px;padding:8px;"></textarea>
-          </div>
-
-          <div class="settings-card-title" style="margin-top:20px;">📍 Rodapé</div>
-          <div class="field-row">
-            <div class="field"><label>Endereço</label><input id="rp-address" placeholder="Av. Gov. Roberto Silveira, 109 — Costa Azul, Rio das Ostras"/></div>
-            <div class="field"><label>WhatsApp (só números, com DDI)</label><input id="rp-whatsapp" placeholder="552227641333"/></div>
-          </div>
-          <div class="field-row">
-            <div class="field"><label>Instagram (sem @)</label><input id="rp-instagram" placeholder="shogatsurestaurante"/></div>
-            <div class="field"><label>Link do delivery</label><input id="rp-deliveryurl" placeholder="/"/></div>
-          </div>
-          <div class="field">
-            <label>Aviso de taxa de desperdício</label>
-            <input id="rp-wastenote" placeholder="Taxa de desperdício: valor da peça do cardápio..."/>
-          </div>
-
-          <button type="button" class="btn secondary sm" style="margin-top:14px;" onclick="rpToggleManualEditor()">🛠️ Editar manualmente (avançado)</button>
-          <div id="rp-manual-editor" style="display:none;margin-top:10px;">
-            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
-              Edita tudo de uma vez em formato JSON — útil pra copiar/colar entre lojas ou fazer
-              ajustes finos. Clique em "Aplicar" pra recarregar os campos acima a partir daqui
-              (ainda precisa clicar em Salvar depois pra confirmar de vez).
-            </div>
-            <textarea id="rp-manual-json" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;background:var(--bg);color:var(--white);border:1px solid var(--border);border-radius:6px;"></textarea>
-            <button type="button" class="btn secondary sm" style="margin-top:8px;" onclick="rpApplyManualJson()">↻ Aplicar JSON aos campos</button>
-          </div>
-
-          <div style="margin-top:18px;display:flex;gap:10px;">
-            <button type="button" class="btn primary" onclick="saveRodizioPopular()">💾 Salvar Cardápio Popular</button>
-            <button type="button" class="btn secondary" onclick="renderRpEditor()">↺ Descartar alterações</button>
-          </div>
-        </div>
-      </div>
       <div class="menu-editor">
+        <div class="menu-editor-subtitle">Gerencie e organize os itens do seu cardápio</div>
         <div class="menu-cats-wrap">
           <div class="menu-cats-header">
             <span class="panel-title" style="font-size:12px;">Categorias</span>
@@ -1407,10 +1379,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <span class="panel-title" id="menu-active-cat-title">Selecione uma categoria</span>
             <button class="btn primary sm" onclick="openAddItem()">+ Novo Item</button>
           </div>
-          <div style="padding:8px 14px 0;border-bottom:1px solid var(--border);display:flex;gap:6px;">
-            <button type="button" class="btn sm" id="menu-tabbtn-itens" onclick="switchMenuMainTab('itens')" style="border-radius:6px 6px 0 0;">📋 Edição</button>
-            <button type="button" class="btn sm secondary" id="menu-tabbtn-photos" onclick="switchMenuMainTab('photos')" style="border-radius:6px 6px 0 0;">🏷 Badge Global</button>
-          </div>
           <div id="menu-tab-content-itens">
             <div style="padding:10px 14px;border-bottom:1px solid var(--border);">
               <input id="menu-search" placeholder="🔎 Buscar prato em todo o cardápio..." oninput="onMenuSearch(this.value)" style="width:100%;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:8px 10px;color:var(--white);font-size:12px;"/>
@@ -1421,13 +1389,18 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               <button type="button" class="menu-filter-chip" data-filter="indisponivel" onclick="setMenuFilter('indisponivel')">🚫 Indisponível</button>
               <button type="button" class="menu-filter-chip" data-filter="promocao" onclick="setMenuFilter('promocao')">🏷️ Promoção</button>
               <button type="button" class="menu-filter-chip" data-filter="destaque" onclick="setMenuFilter('destaque')">⭐ Destaque</button>
-              <button type="button" class="btn secondary sm" style="margin-left:auto;" onclick="openClientPreview()" title="Ver como o cliente vê o cardápio">👁 Ver como cliente</button>
+              <select id="menu-sort" onchange="setMenuSort(this.value)" title="Ordenar por" style="margin-left:auto;background:var(--panel);border:1px solid var(--border);color:var(--white);border-radius:6px;padding:6px 8px;font-size:12px;">
+                <option value="padrao">↕ Ordem padrão</option>
+                <option value="nome">🔤 Nome A-Z</option>
+                <option value="preco-asc">💲 Preço: menor primeiro</option>
+                <option value="preco-desc">💲 Preço: maior primeiro</option>
+              </select>
+              <button type="button" class="btn secondary sm" onclick="openClientPreview()" title="Ver como o cliente vê o cardápio">👁 Ver como cliente</button>
             </div>
             <div class="menu-items-body mi-grid" id="menu-items-body">
               <div style="text-align:center;padding:40px;color:var(--muted)">Selecione uma categoria</div>
             </div>
           </div>
-          <div id="menu-tab-content-photos" class="menu-items-body" style="display:none;"></div>
         </div>
       </div>
     </div>
@@ -1570,6 +1543,151 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     </div>
 
     <!-- ── QR CODE & LINKS ── -->
+    <div class="page" id="page-qrlinks">
+      <div style="font-size:12px;color:var(--muted);margin-bottom:14px;">
+        Link e QR Code prontos pra cada página pública do sistema — copie o link ou baixe/imprima o QR
+        pra usar nas mesas, na bio do Instagram, no cardápio impresso, etc. Cada aba abaixo é uma página
+        diferente.
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;" id="qrl-tabs"></div>
+      <div class="panel" id="qrl-content" style="max-width:520px;"></div>
+
+      <!-- v44: aba pra editar o conteúdo da página pública "Cardápio Rodízio Popular" (preços,
+           destaques, categorias/itens, frases e rodapé) direto pelo painel, sem mexer em código.
+           Os dados ficam em cfg.rodizioPopular (já existia no servidor) e a página pública
+           cardapio-rodizio-popular.html passou a ler daqui, com fallback pro conteúdo padrão. -->
+      <div class="panel" style="max-width:720px;margin-top:18px;">
+        <div class="panel-header" style="cursor:pointer;" onclick="toggleRpEditor()">
+          <span class="panel-title">✏️ Editar Cardápio Popular</span>
+          <span style="display:flex;align-items:center;gap:10px;">
+            <a href="/cardapio-rodizio-popular.html" target="_blank" onclick="event.stopPropagation();" style="font-size:11px;color:var(--gold);text-decoration:none;">🔗 Pré-visualizar página</a>
+            <span id="rp-editor-toggle-icon" style="font-size:12px;color:var(--muted);">▾ mostrar</span>
+          </span>
+        </div>
+        <div style="font-size:11px;color:var(--muted);margin:2px 0 12px;">
+          Edita o conteúdo da página pública do Rodízio Popular (a mesma do QR "Cardápio Rodízio Popular" acima) — preços por dia, destaques, categorias e itens, frases do topo e dados de rodapé.
+        </div>
+        <div id="rp-editor-body" style="display:none;">
+
+          <div class="settings-card-title" style="margin-top:4px;">🎨 Aparência — fontes e cores</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Ajusta a tipografia e a cor de destaque da página pública, sem precisar mexer em código.</div>
+          <div class="field-row" style="margin-bottom:14px;">
+            <div class="field">
+              <label style="font-size:10px;">Fonte dos títulos</label>
+              <select id="rp-theme-headingfont" onchange="rpDraft.theme.headingFont=this.value">
+                <option value="serif">Serifada (elegante — padrão)</option>
+                <option value="sans-serif">Sem serifa (moderna/limpa)</option>
+                <option value="rounded">Arredondada (amigável)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label style="font-size:10px;">Fonte do texto</label>
+              <select id="rp-theme-bodyfont" onchange="rpDraft.theme.bodyFont=this.value">
+                <option value="sans-serif">Sem serifa (padrão)</option>
+                <option value="serif">Serifada</option>
+              </select>
+            </div>
+            <div class="field" style="max-width:110px;">
+              <label style="font-size:10px;">Cor de destaque</label>
+              <input type="color" id="rp-theme-color" oninput="rpDraft.theme.accentColor=this.value" style="width:100%;height:36px;padding:2px;"/>
+            </div>
+            <div class="field">
+              <label style="font-size:10px;">Tamanho do texto (<span id="rp-theme-scale-label">100%</span>)</label>
+              <input type="range" id="rp-theme-scale" min="0.85" max="1.25" step="0.05" oninput="rpDraft.theme.fontScale=Number(this.value);document.getElementById('rp-theme-scale-label').textContent=Math.round(this.value*100)+'%';"/>
+            </div>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:4px;">📷 Foto de capa</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Aparece no topo da página, em tela cheia. Envie do dispositivo ou cole um link — a prévia abaixo mostra a foto no formato original (sem cortar), do jeito que ela é enviada.</div>
+          <div style="display:flex;gap:12px;align-items:flex-start;flex-wrap:wrap;margin-bottom:8px;">
+            <img id="rp-hero-preview" src="" alt="" style="width:160px;max-height:120px;object-fit:contain;background:var(--bg);border:1px solid var(--border);border-radius:8px;display:none;"/>
+            <div style="flex:1;min-width:200px;">
+              <input id="rp-herophoto" placeholder="https://.../capa.jpg (ou envie do dispositivo →)" oninput="rpDraft.heroPhoto=this.value;rpUpdateHeroPreview();" style="width:100%;margin-bottom:6px;"/>
+              <input type="file" accept="image/*" id="rp-hero-file" style="display:none;" onchange="uploadRpHeroPhoto(this)"/>
+              <button type="button" class="btn secondary sm" onclick="document.getElementById('rp-hero-file').click()">📤 Enviar foto de capa</button>
+              <span id="rp-hero-status" style="font-size:10px;color:var(--muted);margin-left:6px;"></span>
+            </div>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">🖼️ Galeria de fotos</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Fotos do rodízio/ambiente mostradas na galeria da página. Envie do dispositivo ou cole um link.</div>
+          <div id="rp-gallery-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddGalleryPhoto()">+ Foto na galeria</button>
+
+          <div class="settings-card-title" style="margin-top:4px;">💰 Preços por grupo de dias</div>
+          <div id="rp-pricegroups-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddPriceGroup()">+ Grupo de dias</button>
+          <div class="field" style="margin-top:12px;max-width:420px;">
+            <label>Observação do preço (aceita HTML simples, ex: &lt;b&gt;18:30&lt;/b&gt;)</label>
+            <input id="rp-pricenote" placeholder="Valores válidos a partir das 18:30."/>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">⭐ Destaques do rodízio</div>
+          <div id="rp-highlights-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddHighlight()">+ Destaque</button>
+
+          <div class="settings-card-title" style="margin-top:20px;">🍽️ Categorias e itens</div>
+          <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Um item por linha. Pra dar um subtítulo (ex: "sob consulta"), escreva assim: <code>Nome do item | subtítulo</code></div>
+          <div id="rp-categories-list" style="display:flex;flex-direction:column;gap:14px;margin-bottom:10px;"></div>
+          <button type="button" class="btn secondary sm" onclick="rpAddCategory()">+ Categoria</button>
+
+          <div class="settings-card-title" style="margin-top:20px;">💬 Frases do topo (giram automaticamente)</div>
+          <div class="field">
+            <textarea id="rp-phrases" rows="5" placeholder="Uma frase por linha" style="width:100%;font-family:inherit;font-size:12px;padding:8px;"></textarea>
+          </div>
+
+          <div class="settings-card-title" style="margin-top:20px;">📍 Rodapé</div>
+          <div class="field-row">
+            <div class="field"><label>Endereço</label><input id="rp-address" placeholder="Av. Gov. Roberto Silveira, 109 — Costa Azul, Rio das Ostras"/></div>
+            <div class="field"><label>WhatsApp (só números, com DDI)</label><input id="rp-whatsapp" placeholder="552227641333"/></div>
+          </div>
+          <div class="field-row">
+            <div class="field"><label>Instagram (sem @)</label><input id="rp-instagram" placeholder="foodjarestaurante"/></div>
+            <div class="field"><label>Link do delivery</label><input id="rp-deliveryurl" placeholder="/"/></div>
+          </div>
+          <div class="field">
+            <label>Aviso de taxa de desperdício</label>
+            <input id="rp-wastenote" placeholder="Taxa de desperdício: valor da peça do cardápio..."/>
+          </div>
+
+          <button type="button" class="btn secondary sm" style="margin-top:14px;" onclick="rpToggleManualEditor()">🛠️ Editar manualmente (avançado)</button>
+          <div id="rp-manual-editor" style="display:none;margin-top:10px;">
+            <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">
+              Edita tudo de uma vez em formato JSON — útil pra copiar/colar entre lojas ou fazer
+              ajustes finos. Clique em "Aplicar" pra recarregar os campos acima a partir daqui
+              (ainda precisa clicar em Salvar depois pra confirmar de vez).
+            </div>
+            <textarea id="rp-manual-json" rows="12" style="width:100%;font-family:monospace;font-size:11px;padding:8px;background:var(--bg);color:var(--white);border:1px solid var(--border);border-radius:6px;"></textarea>
+            <button type="button" class="btn secondary sm" style="margin-top:8px;" onclick="rpApplyManualJson()">↻ Aplicar JSON aos campos</button>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:10px;">
+            <button type="button" class="btn primary" onclick="saveRodizioPopular()">💾 Salvar Cardápio Popular</button>
+            <button type="button" class="btn secondary" onclick="renderRpEditor()">↺ Descartar alterações</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" style="max-width:520px;margin-top:18px;">
+        <div class="panel-title" style="margin-bottom:10px;">🔧 Gerador Personalizado</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Cole qualquer link (ou texto) e gere um QR Code na hora — útil pra promoções, cardápios de terceiros, cupons, etc.</div>
+        <div class="field">
+          <label>Link ou texto</label>
+          <div style="display:flex;gap:8px;">
+            <input id="qrl-custom-input" placeholder="https://..." style="flex:1;"/>
+            <button class="btn primary sm" onclick="generateCustomQr()">Gerar QR</button>
+          </div>
+        </div>
+        <div id="qrl-custom-result" style="display:none;margin-top:12px;text-align:center;">
+          <img id="qrl-custom-img" style="width:160px;height:160px;border-radius:8px;background:#fff;padding:6px;"/>
+          <div style="margin-top:8px;display:flex;gap:8px;justify-content:center;">
+            <a class="btn secondary sm" id="qrl-custom-download" download="qrcode.png" target="_blank">⬇️ Baixar</a>
+            <button class="btn secondary sm" onclick="printQrImage('qrl-custom-img')">🖨 Imprimir</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <!-- ── RELATÓRIOS ── -->
     <div class="page" id="page-relatorios">
       <div id="reports-kpis" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px;margin-bottom:16px;"></div>
@@ -1690,7 +1808,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             </div>
             <div class="field"><label style="font-size:10px;">Tamanho (px)</label><input type="number" id="print-size" min="10" max="28" oninput="updatePrintFontPreview()"/></div>
             <div class="field" style="flex:0 0 100%;"><label style="font-size:10px;">Pré-visualização</label>
-              <div id="print-font-preview" style="background:#fff;color:#000;padding:10px 14px;border-radius:6px;font-size:14px;">SHOGATSU — Pedido #AB12CD · R$ 45,00</div>
+              <div id="print-font-preview" style="background:#fff;color:#000;padding:10px 14px;border-radius:6px;font-size:14px;">FOOD JÁ — Pedido #AB12CD · R$ 45,00</div>
             </div>
             <div class="field"><label style="font-size:10px;">Cor do texto</label><input type="color" id="print-color" style="height:34px;padding:2px;" oninput="updatePrintFontPreview()"/></div>
           </div>
@@ -1710,7 +1828,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               <button type="button" class="btn secondary sm" style="margin-left:6px;padding:1px 8px;" onclick="navigator.clipboard.writeText(PRINT_STATION_ID).then(()=>showToast('📋 Copiado','Código da estação copiado.',2000)).catch(()=>{})">Copiar</button>
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:4px;">
-              Só o computador com o Painel aberto e conectado pode imprimir de verdade em <b>modo Navegador</b>. Se abrir o Painel em outro computador, ele assume a impressão automaticamente. Isso não afeta o Agente Local (print-agent.js) — ele imprime de forma independente e já evita duplicidade sozinho, sem precisar de nenhuma configuração extra.
+              Só o computador com o Painel aberto e conectado pode imprimir de verdade (Agente Local ou modo Navegador). Se abrir o Painel em outro computador, ele assume a impressão automaticamente. Pra travar um Agente Local específico nesta estação, copie este código e cole em "stationId" no config.json dele.
             </div>
             <div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
               Já colocou um nome escolhido por você (ex.: <code>PC-CAIXA</code>) no config.json do Agente Local, em vez do código acima? Digite o MESMO nome aqui pra esta estação assumir com ele:
@@ -1804,6 +1922,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         </div>
         <div class="settings-accordion-body" id="acc-body-restaurante">
           <div class="settings-grid">
+<div class="settings-group-title">🤖 Funcionamento & Automação <span class="settings-group-sub">— status da loja, aceite automático e os horários que controlam tudo isso</span></div>
 <div class="settings-card" style="grid-column:1/-1;">
           <div class="settings-card-title">🤖 Automações</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
@@ -1836,7 +1955,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         </div>
 <div class="settings-card">
           <div class="settings-card-title">📋 Dados do Restaurante</div>
-          <div class="field"><label>Nome do Restaurante</label><input id="cfg-name" placeholder="Shogatsu Culinária Oriental"/></div>
+          <div class="field"><label>Nome do Restaurante</label><input id="cfg-name" placeholder="Food Já"/></div>
           <div class="field"><label>Endereço Completo</label><input id="cfg-addr" placeholder="Av. Gov. Roberto Silveira, 109"/></div>
           <div class="field-row">
             <div class="field"><label>Horário</label><input id="cfg-hours" placeholder="18h30–23h"/></div>
@@ -1848,6 +1967,19 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               Usado pra avisar "fechado" e travar o relógio de agendamento/reserva dentro do horário certo de cada dia.
             </div>
             <div id="week-schedule-editor" style="display:flex;flex-direction:column;gap:6px;"></div>
+          </div>
+          <div class="field" style="border-top:1px solid var(--border);padding-top:14px;margin-top:4px;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+              <input type="checkbox" id="sched-enabled"/> ⏰ Abrir e fechar sozinho, automaticamente
+            </label>
+            <div style="font-size:10px;color:var(--muted);margin:4px 0 10px;">
+              Usa o horário configurado acima (por dia da semana) pra abrir/fechar o restaurante sozinho — o botão manual "Restaurante Aberto/Fechado" (veja abaixo, em 🤖 Automações) deixa de valer enquanto isso estiver ligado.
+            </div>
+            <div class="field-row">
+              <div class="field"><label style="font-size:10px;">Abre às</label><input type="time" id="sched-open" value="18:00"/></div>
+              <div class="field"><label style="font-size:10px;">Fecha às</label><input type="time" id="sched-close" value="23:00"/></div>
+            </div>
+            <div style="font-size:10px;color:var(--muted);">Exemplo: 18:00 até 23:00 — abre 18h, fecha 23h, todo dia. Funciona mesmo passando da meia-noite (ex: 18:00 até 02:00).</div>
           </div>
           <div class="field"><label>Frase da avaliação (pedida ao cliente após receber o pedido)</label><input id="cfg-reviewPrompt" placeholder="O que você achou do seu pedido?"/></div>
           <div class="field">
@@ -1940,6 +2072,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             </select>
           </div>
         </div>
+<div class="settings-group-title">🖼️ Identidade Visual do App <span class="settings-group-sub">— logo, avatar do chat e a sequência de fotos exibida ao abrir</span></div>
 <div class="settings-card" style="grid-column:1/-1;">
           <div class="settings-card-title">Logo exibida no topo do cardápio</div>
           <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
@@ -2024,12 +2157,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               <div id="chatbg-status" style="font-size:12px;margin-top:10px;"></div>
             </div>
           </div>
-
-          <div class="field">
-            <label>Galeria de fundos prontos</label>
-            <div style="font-size:10px;color:var(--muted);margin-bottom:8px;">Clique numa foto para usar direto — ou envie a sua própria acima.</div>
-            <div id="chatbg-gallery" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;"></div>
-          </div>
         </div>
 <div class="settings-card" style="grid-column:1/-1;">
           <div class="settings-card-title">✨ Sequência de fotos ao abrir o app</div>
@@ -2062,33 +2189,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           </div>
           <button type="button" class="btn primary" style="margin-top:14px;" onclick="saveSplashConfig()">💾 Salvar Splash Screen</button>
           <div id="splash-save-status" style="font-size:12px;margin-top:8px;"></div>
-        </div>
-          </div>
-        </div>
-      </div>
-      <div class="settings-accordion" data-accordion-key="funcionamento">
-        <div class="settings-accordion-header" onclick="toggleSettingsAccordion('funcionamento')">
-          <span class="acc-title">🕒 Funcionamento</span>
-          <span class="acc-chevron" id="acc-chevron-funcionamento">▾</span>
-        </div>
-        <div class="settings-accordion-body" id="acc-body-funcionamento">
-          <div class="settings-grid">
-<div class="settings-card">
-          <div class="settings-card-title">⏰ Auto-Abertura / Fechamento</div>
-          <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">
-            Se ativado, o restaurante abre e fecha sozinho no horário configurado — o botão manual
-            "Restaurante Aberto/Fechado" no menu lateral deixa de valer enquanto isso estiver ligado.
-          </div>
-          <div class="field">
-            <label style="display:flex;align-items:center;gap:8px;">
-              <input type="checkbox" id="sched-enabled"/> Ativar auto-programação
-            </label>
-          </div>
-          <div class="field-row">
-            <div class="field"><label style="font-size:10px;">Abre às</label><input type="time" id="sched-open" value="18:00"/></div>
-            <div class="field"><label style="font-size:10px;">Fecha às</label><input type="time" id="sched-close" value="23:00"/></div>
-          </div>
-          <div style="font-size:10px;color:var(--muted);">Exemplo: 18:00 até 23:00 — abre 18h, fecha 23h, todo dia. Funciona mesmo passando da meia-noite (ex: 18:00 até 02:00).</div>
         </div>
           </div>
         </div>
@@ -2310,7 +2410,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">
             <b>Master</b>: acesso total, inclusive gerenciar outros usuários.
             <b>Admin</b>: acesso total ao painel, menos gerenciar usuários.
-            <b>Caixa</b>: só Dashboard, Pedidos e Kanban — ideal pra quem só bate pedido no balcão/telefone.
+            <b>Vendas</b>: só Dashboard, Pedidos e Kanban — ideal pra quem só bate pedido no balcão/telefone.
             Além do cargo, dá pra afinar módulo por módulo em <b>🔐 Permissões</b> (não vale pra usuários master, que sempre têm acesso total).
           </div>
           <div id="users-list" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;"></div>
@@ -2320,7 +2420,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <div class="field"><label style="font-size:10px;">Senha</label><input id="nu-password" type="password" placeholder="mín. 4 caracteres"/></div>
             <div class="field"><label style="font-size:10px;">Nível de acesso</label>
               <select id="nu-role">
-                <option value="vendas">Caixa</option>
+                <option value="vendas">Vendas</option>
                 <option value="admin">Admin</option>
                 <option value="master">Master</option>
               </select>
@@ -2383,6 +2483,7 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
     <input type="hidden" id="item-image-pos" value="50,50"/>
     <input type="hidden" id="item-available" value="true"/>
     <input type="hidden" id="item-featured" value="false"/>
+    <input type="hidden" id="item-hidden" value="false"/>
 
     <div class="wizard-layout">
       <div class="wizard-steps" id="wizard-steps"></div>
@@ -2400,28 +2501,58 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
               </div>
               <div class="photo-upload-actions">
                 <input type="file" accept="image/png,image/jpeg,image/webp" id="item-photo-file" onchange="uploadItemPhoto(this)"/>
-                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Selecionar Foto</button>
+                <button type="button" class="btn secondary sm" onclick="document.getElementById('item-photo-file').click()">📷 Trocar Foto</button>
                 <button type="button" class="btn secondary sm" onclick="removeItemPhoto()">🗑 Remover Foto</button>
                 <span class="photo-upload-status" id="item-photo-status"></span>
               </div>
             </div>
-            <div id="item-photo-pos-wrap" style="display:none;margin-top:10px;">
-              <label style="font-size:10px;">🖼️ Ajustar enquadramento da foto (o que aparece dentro do quadro)</label>
-              <div style="display:flex;gap:12px;align-items:center;margin-top:4px;">
-                <span style="font-size:10px;color:var(--muted);width:60px;">Horizontal</span>
-                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()" style="flex:1;"/>
+            <div id="item-photo-pos-wrap" class="photo-toolbar" style="display:none;">
+              <div class="photo-toolbar-row">
+                <button type="button" class="photo-tool-btn" onclick="photoToolCenter()" title="Centralizar enquadramento">🎯 Centralizar</button>
+                <button type="button" class="photo-tool-btn" onclick="photoToolRotate()" title="Girar 90°">🔄 Girar</button>
+                <button type="button" class="photo-tool-btn" onclick="photoToolAutoCrop()" title="Volta ao enquadramento padrão (centralizado, sem zoom, sem giro)">✂ Corte Automático</button>
               </div>
-              <div style="display:flex;gap:12px;align-items:center;margin-top:6px;">
-                <span style="font-size:10px;color:var(--muted);width:60px;">Vertical</span>
-                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()" style="flex:1;"/>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">🔍 Zoom</span>
+                <input type="range" min="100" max="220" id="item-photo-zoom" oninput="updateItemPhotoPos()"/>
               </div>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">↔ Horizontal</span>
+                <input type="range" min="0" max="100" id="item-photo-posx" oninput="updateItemPhotoPos()"/>
+              </div>
+              <div class="photo-toolbar-slider">
+                <span class="photo-toolbar-label">↕ Vertical</span>
+                <input type="range" min="0" max="100" id="item-photo-posy" oninput="updateItemPhotoPos()"/>
+              </div>
+              <input type="hidden" id="item-photo-rotate" value="0"/>
             </div>
           </div>
           <div class="field"><label>Nome do Prato *</label><input id="item-name" placeholder="Nome do prato" oninput="updateWizardPreview()"/></div>
-          <div class="field"><label>Descrição</label><textarea id="item-desc" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview()"></textarea></div>
+          <div class="field">
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Descrição</span>
+              <span id="item-desc-counter" style="font-size:10px;color:var(--muted);text-transform:none;font-weight:400;">0/300</span>
+            </label>
+            <textarea id="item-desc" maxlength="300" placeholder="Ingredientes, modo de preparo..." oninput="updateWizardPreview();document.getElementById('item-desc-counter').textContent=this.value.length+'/300';"></textarea>
+          </div>
           <div class="field-row">
-            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" id="item-price" placeholder="0.00" oninput="updateWizardPreview()"/></div>
-            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="updateWizardPreview()"/></div>
+            <div class="field"><label>Preço de Venda R$ *</label><input type="number" step="0.01" min="0" id="item-price" placeholder="0.00" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/></div>
+            <div class="field"><label>Preço Promocional R$ <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label><input type="number" step="0.01" min="0" id="item-promo-price" placeholder="deixe em branco = sem promoção" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/></div>
+          </div>
+          <div class="price-card" id="price-card-info">
+            <div class="price-card-row">
+              <span>Preço de Venda</span><b id="pc-preco-venda">R$ 0,00</b>
+            </div>
+            <div class="price-card-row" id="pc-economia-row" style="display:none;">
+              <span>Economia (preço promo. vs. venda)</span><b id="pc-economia" style="color:#4ade80;"></b>
+            </div>
+            <div class="price-card-row">
+              <span>Ficha técnica vinculada <span style="font-weight:400;color:var(--muted);">(novo — pra calcular o lucro)</span></span>
+              <select id="item-ficha-vinculada" onchange="updateWizardPreview()" style="max-width:200px;"><option value="">— nenhuma —</option></select>
+            </div>
+            <div class="price-card-row" id="pc-lucro-row" style="display:none;">
+              <span>Lucro (interno — só o admin vê)</span><b id="pc-lucro"></b>
+            </div>
           </div>
           <div class="field-row">
             <div class="field"><label>Porção</label><input id="item-qty" placeholder="ex: 8 peças" oninput="updateWizardPreview()"/></div>
@@ -2447,7 +2578,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Tamanho</span>
-              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','tamanho')">+ Novo Tamanho</button>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','tamanho')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','tamanho')">+ Novo Tamanho</button>
+              </span>
             </label>
             <div id="item-variants-list-tamanho" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
           </div>
@@ -2461,10 +2595,14 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             grupo de <b>Múltipla escolha</b> com quantidade total — o cliente vê um contador
             +/- por sabor até bater no total configurado aqui.
           </div>
+          <div id="montagem-total-pecas" style="font-size:11px;color:var(--gold);margin-bottom:10px;font-weight:600;"></div>
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Montagem</span>
-              <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','montagem')">+ Novo Grupo de Montagem</button>
+              <span style="display:flex;gap:6px;">
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','montagem')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','montagem')">+ Novo Grupo de Montagem</button>
+              </span>
             </label>
             <div id="item-variants-list-montagem" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
           </div>
@@ -2480,9 +2618,10 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
           <div class="field" style="margin-top:6px;">
             <label style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;">
               <span>Grupos de Variações</span>
-              <span style="display:flex;gap:6px;">
-                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar grupo existente</button>
-                <button type="button" class="btn secondary sm" onclick="addVariantGroup('item','variacao')">+ Grupo novo</button>
+              <span style="display:flex;gap:6px;flex-wrap:wrap;">
+                <button type="button" class="btn secondary sm" onclick="openUseLibraryGroupPicker()">📚 Usar da Biblioteca</button>
+                <button type="button" class="btn secondary sm" onclick="openCopyGroupFromProductModal('item','variacao')">🧩 Copiar de outro produto</button>
+                <button type="button" class="btn secondary sm" onclick="openNewGroupPresets('item','variacao')">+ Grupo novo</button>
               </span>
             </label>
             <div id="item-variants-list-variacao" style="display:flex;flex-direction:column;gap:10px;margin-top:8px;"></div>
@@ -2493,16 +2632,15 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         <div class="wizard-step-panel" data-step="aparencia">
           <div class="wizard-step-section-title">5. Aparência — Badges e Etiquetas</div>
           <div class="field">
-            <label>Badge (destaque no cardápio)</label>
+            <label style="display:flex;justify-content:space-between;align-items:center;">
+              <span>Badge (destaque no cardápio)</span>
+              <button type="button" class="btn secondary sm" onclick="openBadgeLibrary()" style="text-transform:none;font-weight:400;">🏷 Biblioteca de Badges</button>
+            </label>
             <input id="item-badge" placeholder="ex: 🔥 Destaque  ou  👑 Premium" oninput="updateWizardPreview()"/>
           </div>
           <div class="field" style="margin-top:-4px;">
-            <label style="font-size:10px;">🏷 Badge deste item <span style="font-weight:400;color:var(--muted);">(configurado em Cardápio → 🏷 Badge Global)</span></label>
-            <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;margin-top:4px;">
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="global" id="item-badgemode-global" onchange="updateWizardPreview()"/> Herdar Badge Global</label>
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="manual" id="item-badgemode-manual" onchange="updateWizardPreview()"/> Personalizar (usa o texto acima)</label>
-              <label style="display:flex;align-items:center;gap:5px;"><input type="radio" name="item-badgemode" value="off" id="item-badgemode-off" onchange="updateWizardPreview()"/> Sem badge</label>
-            </div>
+            <label style="font-size:10px;">🏷 Preview do badge deste item <span style="font-weight:400;color:var(--muted);">(vazio = sem badge; use a Biblioteca de Badges acima ou digite o seu)</span></label>
+            <div id="item-badge-mini-preview" style="margin-top:6px;"></div>
           </div>
           <div class="field-row">
             <div class="field"><label>Cor do Badge <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
@@ -2538,19 +2676,26 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         <!-- ETAPA 6 — DISPONIBILIDADE -->
         <div class="wizard-step-panel" data-step="disponibilidade">
           <div class="wizard-step-section-title">6. Disponibilidade</div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
-            <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
-          </label>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;">
+              <input type="checkbox" id="item-available-check" checked onchange="onWizardAvailabilityToggle()"/> Disponível para venda no cardápio
+            </label>
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;background:var(--card);padding:12px 14px;border-radius:8px;border:1px solid var(--border);width:fit-content;" title="Some do cardápio do cliente sem apagar o item — continua aqui no painel pra reativar quando quiser">
+              <input type="checkbox" id="item-hidden-check" onchange="onWizardHiddenToggle()"/> 🙈 Ocultar do cardápio (some pro cliente, sem excluir)
+            </label>
+          </div>
           <div class="field" style="margin-top:14px;max-width:260px;">
             <label>Estoque (unidades) <span style="font-weight:400;color:var(--muted);text-transform:none;">(novo)</span></label>
-            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="updateWizardPreview()"/>
+            <input type="number" min="0" id="item-stock" placeholder="deixe em branco = ilimitado" oninput="if(this.value<0)this.value=0;updateWizardPreview()"/>
           </div>
           <div style="font-size:11px;color:var(--muted);margin-top:10px;">
-            Desmarcado = aparece como "esgotado" pro cliente (mesmo toggle rápido ✅/🚫 que já
-            existe na listagem do cardápio — aqui é só outro jeito de mexer na mesma opção).
-            Horário e pausa programada por dia da semana ainda não existem neste sistema — não
-            criei essa parte agora pra não inventar um recurso novo de meio caminho; me avisa se
-            quiser que eu desenvolva isso numa próxima rodada.
+            "Disponível" desmarcado = aparece como "esgotado" pro cliente (continua visível no
+            cardápio, só não dá pra pedir). "Ocultar do cardápio" = some inteiro da vitrine do
+            cliente, mas continua aqui no painel pra reativar quando quiser — são coisas
+            diferentes, dá pra combinar as duas. Horário e pausa programada por dia da semana
+            ainda não existem neste sistema — não criei essa parte agora pra não inventar um
+            recurso novo de meio caminho; me avisa se quiser que eu desenvolva isso numa próxima
+            rodada.
           </div>
         </div>
 
@@ -2617,6 +2762,94 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
      todas as vias configuradas (que tiverem itens desse pedido), sem esse passo extra. -->
 
 
+<!-- MODAL (novo v107e) 🏷 BIBLIOTECA DE BADGES — presets prontos + personalizados salvos -->
+<div class="modal-overlay" id="badge-library-modal">
+  <div class="modal" style="max-width:460px;">
+    <div class="modal-header">
+      <span class="modal-title">🏷 Biblioteca de Badges</span>
+      <button class="modal-close" onclick="closeModal('badge-library-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Prontas</div>
+      <div id="badge-lib-presets" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px;"></div>
+      <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px;">Suas personalizadas</div>
+      <div id="badge-lib-custom" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;"></div>
+      <div style="display:flex;gap:8px;align-items:flex-end;flex-wrap:wrap;border-top:1px solid var(--border);padding-top:12px;">
+        <div class="field" style="flex:1;min-width:120px;margin:0;"><label>Texto</label><input type="text" id="badge-lib-new-text" placeholder="ex: 🎉 Promoção"/></div>
+        <div class="field" style="margin:0;"><label>Cor</label><input type="color" id="badge-lib-new-color" value="#D9383A" style="width:44px;height:36px;padding:2px;"/></div>
+        <button type="button" class="btn secondary sm" onclick="addCustomBadgeToLibrary()">+ Salvar na Biblioteca</button>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('badge-library-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (novo v107d) "+ ADICIONAR OPÇÃO" — mini-janela dentro do grupo, salva sem fechar a etapa -->
+<div class="modal-overlay" id="add-option-modal">
+  <div class="modal" style="max-width:400px;">
+    <div class="modal-header">
+      <span class="modal-title">➕ Adicionar Opção</span>
+      <button class="modal-close" onclick="closeModal('add-option-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="aom-which"/><input type="hidden" id="aom-gi"/>
+      <div class="field"><label>Nome</label><input type="text" id="aom-name" placeholder="ex: Salmão, Grande, Molho shoyu"/></div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;margin:6px 0 10px;">
+        <input type="checkbox" id="aom-free" onchange="onAomFreeToggle()"/> Gratuito (sem cobrar nada)
+      </label>
+      <div class="field"><label>Valor R$</label><input type="number" step="0.01" min="0" id="aom-price" placeholder="0,00" oninput="if(this.value<0)this.value=0;"/></div>
+      <div class="field-row">
+        <div class="field"><label>Qtd. mínima</label><input type="number" min="0" id="aom-minqty" placeholder="—" oninput="if(this.value<0)this.value=0;"/></div>
+        <div class="field"><label>Qtd. máxima</label><input type="number" min="1" id="aom-maxqty" value="1" oninput="if(this.value<1)this.value=1;"/></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('add-option-modal')">Cancelar</button>
+      <button class="btn success" onclick="submitAddOptionModal()">💾 Salvar Opção</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (novo v107d) "+ NOVO GRUPO" — atalhos prontos (Sabores/Molhos/Bebidas/Extras/Tamanho/Complementos) -->
+<div class="modal-overlay" id="new-group-preset-modal">
+  <div class="modal" style="max-width:420px;">
+    <div class="modal-header">
+      <span class="modal-title">✨ Novo Grupo de Opções</span>
+      <button class="modal-close" onclick="closeModal('new-group-preset-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="ngp-which"/><input type="hidden" id="ngp-kind"/>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:10px;">Escolha um atalho pra já criar com nome e tipo comuns, ou comece em branco.</div>
+      <div id="ngp-presets" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('new-group-preset-modal')">Cancelar</button>
+      <button class="btn primary" onclick="createBlankGroupFromModal()">+ Grupo em branco</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL (novo v107d) 🧩 COPIAR GRUPO DE OUTRO PRODUTO -->
+<div class="modal-overlay" id="copy-group-product-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">🧩 Copiar Grupo de Outro Produto</span>
+      <button class="modal-close" onclick="closeModal('copy-group-product-modal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="cgp-which"/><input type="hidden" id="cgp-kind"/>
+      <div class="field"><label>Buscar produto</label><input type="text" id="cgp-search" placeholder="Digite o nome do prato..." oninput="cgpSearch(this.value)"/></div>
+      <div id="cgp-results" style="display:flex;flex-direction:column;gap:4px;max-height:180px;overflow-y:auto;margin-bottom:10px;"></div>
+      <div id="cgp-groups"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn secondary" onclick="closeModal('copy-group-product-modal')">Fechar</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL "USAR GRUPO EXISTENTE" (v107a) — escolher um grupo da Biblioteca pra copiar pro item -->
 <div class="modal-overlay" id="use-libgroup-modal">
   <div class="modal" style="max-width:460px;">
@@ -2682,8 +2915,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
         <button type="button" class="btn secondary sm" onclick="removeAdminChatBg()">🗑 Remover</button>
       </div>
       <div id="admin-chatbg-status" style="font-size:11px;min-height:16px;margin-bottom:8px;"></div>
-      <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Ou escolha uma foto pronta:</div>
-      <div id="admin-chatbg-gallery" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;"></div>
     </div>
   </div>
 </div>
@@ -3411,11 +3642,31 @@ async function apiDelete(path){
   return { ok:r.ok, status:r.status, data: await r.json().catch(()=>({})) };
 }
 
+// v108: login com usuário fixo e clicável — clicar em Admin/Master já preenche o campo
+// escondido de usuário, mostra a senha e foca nela direto (menos toque, menos digitação).
+function selectLoginUser(user){
+  document.getElementById('login-user').value = user;
+  document.querySelectorAll('.login-user-btn').forEach(b=>b.classList.toggle('selected', b.dataset.user===user));
+  document.getElementById('login-pass').style.display='block';
+  document.getElementById('login-btn').style.display='block';
+  document.getElementById('login-pass').focus();
+}
+function showLoginOtherUser(){
+  document.getElementById('login-user-picker').style.display='none';
+  document.getElementById('login-other-user-link').style.display='none';
+  const userInput = document.getElementById('login-user');
+  userInput.style.display='block';
+  userInput.value='';
+  document.getElementById('login-pass').style.display='block';
+  document.getElementById('login-btn').style.display='block';
+  userInput.focus();
+}
 async function doLogin(){
   const user = document.getElementById('login-user').value.trim();
   const pass = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
   err.style.display='none';
+  if(!user){ err.textContent='Escolha um usuário.'; err.style.display='block'; return; }
   try{
     const r = await fetch('/api/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:user, password:pass})});
     const data = await r.json();
@@ -3449,11 +3700,8 @@ function doLogout(){
 // BOOT
 // ═══════════════════════════════════════════
 async function boot(){
-  // v107: cada etapa crítica isolada com try/catch — antes, se UMA etapa falhasse (ex: rede
-  // instável), TODAS as etapas seguintes (navegação, SSE, impressão) ficavam sem rodar, sem
-  // nenhum aviso. Agora um erro numa etapa é registrado no console e a inicialização continua.
-  try { await loadConfigAndMenu(); } catch(e){ console.error('⚠️ Falha ao carregar configurações:', e); }
-  await loadOrders(); // já trata o próprio erro internamente (ver função acima)
+  await loadConfigAndMenu();
+  await loadOrders();
   updateNewBadge();
   applyRoleUI();
   goPage(firstAllowedPage() || 'pedidos');
@@ -3463,7 +3711,7 @@ async function boot(){
   startPrintStationHeartbeat();
   if(isPrintTestMode()) startPrintTestModeStatusPolling();
   updatePrintStationIndicator();
-  try { await loadReservations(); } catch(e){ console.error('⚠️ Falha ao carregar reservas:', e); }
+  loadReservations();
   setInterval(loadReservations, 30000);
   setupCardControls();
   initSettingsAccordions();
@@ -3845,12 +4093,12 @@ function applyRoleUI(){
     if(!hasPerm(key)) el.style.display='none';
   });
   const badge=document.getElementById('sidebar-user-badge');
-  if(badge) badge.textContent = `${userName||'admin'} · ${({master:'Master',admin:'Admin',vendas:'Caixa'})[userRole]||userRole}`;
+  if(badge) badge.textContent = `${userName||'admin'} · ${({master:'Master',admin:'Admin',vendas:'Vendas'})[userRole]||userRole}`;
 }
 // v107: primeira página visível pro usuário atual — usado no boot pra não abrir sozinho uma
 // página que ele não tem permissão de ver (em vez de sempre cair em "pedidos" de propósito).
 function firstAllowedPage(){
-  const order = ['pedidos','reservas','mensagens','motoboys','cardapio','custos','ia','relatorios','avaliacoes','configuracoes','impressao','usuarios'];
+  const order = ['pedidos','reservas','mensagens','motoboys','cardapio','custos','ia','qrlinks','relatorios','avaliacoes','configuracoes','impressao','usuarios'];
   for(const id of order){
     if(PAGE_MIN_ROLE[id] && !hasRole(PAGE_MIN_ROLE[id])) continue;
     if(!hasPerm(id)) continue;
@@ -3872,38 +4120,9 @@ async function loadConfigAndMenu(){
   document.getElementById('auto-accept-toggle').checked = Boolean(Number(cfg.autoAcceptOrders));
   document.getElementById('auto-accept-status-sub').textContent = Number(cfg.autoAcceptOrders) ? 'ligado — aceita sozinho' : 'desligado';
   applyAdminChatBackground();
-  applyBranding(cfg);
   // v78: mesmos interruptores, agora também como card em Configurações → 🏪 Restaurante
   syncAutomationToggles();
 }
-// v108 — NOME E LOGO DINÂMICOS: antes "SHOGATSU" ficava gravado fixo direto no HTML da tela de
-// login e do topo do menu lateral — agora os dois lêem de cfg.name/cfg.logoUrl (os mesmos campos
-// que "Configurações → Nome do Restaurante" e "Logo" já usavam pra recibos/relatórios/cardápio
-// público havia tempo — só a barra lateral do painel é que ainda não seguia isso). Sem nome
-// configurado, cai no padrão "Food". Sem logo enviada, mantém o emoji como um placeholder
-// elegante (mesma lógica de fallback que renderLogoPreview() já usa há tempo em Configurações).
-function applyBranding(cfg){
-  const name = (cfg && cfg.name ? String(cfg.name).trim() : '') || 'Food';
-  const logo = cfg && cfg.logoUrl ? String(cfg.logoUrl).trim() : '';
-  document.title = name + ' — Painel de Controle';
-  const loginTitle = document.getElementById('login-title');
-  if (loginTitle) loginTitle.textContent = name.toUpperCase();
-  const sidebarName = document.getElementById('sidebar-brand-name');
-  if (sidebarName) sidebarName.textContent = name;
-  [document.getElementById('login-icon'), document.getElementById('sidebar-brand-icon')].forEach(el=>{
-    if (!el) return;
-    if (logo) el.innerHTML = `<img src="${logo}" alt="${esc(name)}" style="width:100%;height:100%;object-fit:contain;border-radius:8px;">`;
-    else el.textContent = '🍣'; // placeholder elegante — mesmo padrão já usado em renderLogoPreview()
-  });
-}
-// v108: preenche nome/logo na tela de LOGIN antes de qualquer autenticação — /api/config é
-// público (nunca devolve senha nenhuma, ver GET /api/config no server.js) e já era usado assim
-// pelo cardápio público, então não é uma exposição nova. Se a rede estiver lenta/offline nesse
-// instante, o login-screen simplesmente continua mostrando "Food" (o padrão já escrito no HTML)
-// até o usuário logar de verdade — nunca trava o login por causa disso.
-(function preloadLoginBranding(){
-  fetch('/api/config').then(r=>r.json()).then(data=>{ if (data && data.cfg) applyBranding(data.cfg); }).catch(()=>{});
-})();
 // v78: os interruptores de automação existem em dois lugares (rodapé do menu + card em
 // Configurações) — essa função mantém os dois sempre iguais, não importa qual foi clicado.
 function syncAutomationToggles(){
@@ -3922,20 +4141,7 @@ function syncAutomationToggles(){
 }
 
 async function loadOrders(){
-  // v107 — BUG CORRIGIDO (erro silencioso em cascata): antes, se essa chamada falhasse (rede
-  // instável bem no momento do login, servidor reiniciando, etc.), a exceção subia sem
-  // nenhum catch e travava boot() na metade — o resto da inicialização (goPage, SSE, etc.)
-  // nunca rodava, e o admin via o painel pela metade sem nenhuma explicação do porquê. Agora
-  // registra o erro no console (pra diagnóstico) e cai num array vazio, deixando o resto do
-  // boot continuar normalmente — o painel some com pedidos temporariamente em vez de travar
-  // inteiro, e volta ao normal sozinho no próximo evento SSE ou refresh manual.
-  try {
-    orders = await apiGet('/api/orders');
-  } catch (e) {
-    console.error('⚠️ Não consegui carregar os pedidos:', e);
-    orders = orders || [];
-    showToast('⚠️ Falha ao carregar pedidos', 'Verifique sua conexão. Tentando de novo automaticamente.', 5000);
-  }
+  orders = await apiGet('/api/orders');
 }
 
 function setConnStatus(state){
@@ -4111,8 +4317,8 @@ setInterval(tick,1000);tick();
 // ═══════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════
-const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio','item-editor':'Editar Item',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
-const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
+const pageTitles={pedidos:'Gerenciar Pedidos',reservas:'Reserva de Mesas',mensagens:'Mensagens',motoboys:'Motoboys',cardapio:'Editar Cardápio','item-editor':'Editar Item',custos:'Custos & Ficha Técnica',ia:'🤖 IA do Cardápio',qrlinks:'QR Code & Links',relatorios:'Relatórios',configuracoes:'Configurações',usuarios:'Usuários',avaliacoes:'Avaliações',impressao:'Central de Impressão'};
+const PAGE_MIN_ROLE = { cardapio:'admin', custos:'admin', ia:'admin', qrlinks:'admin', relatorios:'admin', configuracoes:'admin', usuarios:'master', avaliacoes:'admin', motoboys:'admin', impressao:'admin' };
 // v107: confere a permissão por usuário (Prompt 1) — só entra em ação se o master tiver
 // desligado explicitamente algum módulo pra esse usuário; sem isso (userPermissions === null),
 // o acesso continua sendo decidido só pelo cargo (role), exatamente como sempre foi.
@@ -4136,9 +4342,10 @@ function goPage(id, silent){
   document.getElementById('topbar-title').textContent=pageTitles[id]||id;
   if(id==='pedidos')setPedidosView(pedidosView);
   if(id==='reservas')renderReservationsList();
-  if(id==='cardapio'){renderMenuEditor();renderRpEditor();}
+  if(id==='cardapio')renderMenuEditor();
   if(id==='custos')renderCustosPage();
   if(id==='ia')renderIaPage();
+  if(id==='qrlinks'){renderQrLinksPage();renderRpEditor();}
   if(id==='relatorios')renderReports();
   if(id==='configuracoes' && !silent)loadSettings();
   if(id==='impressao')loadPrinterCentral();
@@ -4621,7 +4828,58 @@ function copyLinkField(id){
 }
 
 // ═══════════════════════════════════════════
-// v44: EDITAR CARDÁPIO POPULAR (agora mora na página "Cardápio" — ver v108 acima)
+// QR CODE & LINKS — ferramenta central com uma aba por página pública
+// (o Cardápio do Rodízio tem a sua própria aba, separada das demais).
+// ═══════════════════════════════════════════
+const QR_LINKS = [
+  { key:'pedir',    icon:'📲', label:'Delivery / Pedir Agora', path:'/pedir-agora.html',              desc:'Link único pra bio do Instagram/Facebook ou status do WhatsApp — abre direto o cardápio de delivery.' },
+  { key:'cardapio',  icon:'🍽️', label:'Cardápio',              path:'/cardapio-rodizio.html',          desc:'QR Code pra colar nas mesas do salão — o cliente escaneia e vê o cardápio do rodízio na hora, sem precisar de app.' },
+  { key:'popular',  icon:'📖', label:'Cardápio Rodízio Popular', path:'/cardapio-rodizio-popular.html', desc:'Cardápio completo do rodízio (preços por grupo de dias, destaques do dia) — pode ir num QR separado se quiser um cardápio mais completo na mesa.' },
+  { key:'divulgacao', icon:'📣', label:'Divulgação',            path:'/divulgacao-rodizio.html',        desc:'Página-vitrine do rodízio, pronta pra colar na bio do Instagram/Facebook ou mandar direto pro cliente.' },
+  { key:'avaliar',  icon:'⭐', label:'Avaliação Rodízio',        path:'/avaliar-rodizio.html',           desc:'Link pra pedir avaliação de quem veio no rodízio presencial — pode imprimir o QR e deixar na mesa ou na conta.' },
+  { key:'entregador', icon:'🛵', label:'Motoboys',   path:'/entregador.html',                desc:'Acesso rápido do motoboy pra ver e atualizar as entregas — manda o link direto pro celular dele.' },
+];
+let qrlActiveTab = 'pedir';
+function renderQrLinksPage(){
+  const tabsEl = document.getElementById('qrl-tabs');
+  tabsEl.innerHTML = QR_LINKS.map(l=>`
+    <button class="topbar-btn${qrlActiveTab===l.key?' active':''}" id="qrltab-${l.key}" onclick="qrlSelectTab('${l.key}')" style="${qrlActiveTab===l.key?'border-color:var(--red);color:var(--red-lt)':''}">${l.icon} ${l.label}</button>
+  `).join('');
+  qrlRenderContent();
+}
+function qrlSelectTab(key){
+  qrlActiveTab = key;
+  document.querySelectorAll('#qrl-tabs .topbar-btn').forEach(b=>{ b.classList.remove('active'); b.style.borderColor=''; b.style.color=''; });
+  const active = document.getElementById('qrltab-'+key);
+  if(active){ active.classList.add('active'); active.style.borderColor='var(--red)'; active.style.color='var(--red-lt)'; }
+  qrlRenderContent();
+}
+function qrlRenderContent(){
+  const l = QR_LINKS.find(x=>x.key===qrlActiveTab) || QR_LINKS[0];
+  const url = location.origin + l.path;
+  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(url);
+  document.getElementById('qrl-content').innerHTML = `
+    <div class="panel-title" style="margin-bottom:6px;">${l.icon} ${l.label}</div>
+    <div style="font-size:11px;color:var(--muted);margin-bottom:14px;">${l.desc}</div>
+    <div class="field" style="margin-bottom:14px;">
+      <label>Link</label>
+      <div style="display:flex;gap:8px;">
+        <input id="qrl-link-input" readonly onclick="this.select()" value="${url}" style="flex:1;font-size:11px;"/>
+        <button class="btn secondary sm" onclick="copyLinkField('qrl-link-input')">📋 Copiar</button>
+      </div>
+    </div>
+    <div style="text-align:center;">
+      <img id="qrl-img" src="${qrSrc}" style="width:220px;height:220px;border-radius:10px;background:#fff;padding:8px;" alt="QR Code — ${l.label}"/>
+      <div style="margin-top:10px;display:flex;gap:8px;justify-content:center;">
+        <a class="btn secondary sm" href="${qrSrc}" download="qr-${l.key}.png" target="_blank">⬇️ Baixar QR</a>
+        <button class="btn secondary sm" onclick="printQrImage('qrl-img','${esc(l.label)}')">🖨 Imprimir QR</button>
+        <button class="btn secondary sm" onclick="window.open('${url}','_blank')">🔗 Abrir</button>
+      </div>
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+// v44: EDITAR CARDÁPIO POPULAR (aba dentro de QR Code & Links)
 // Edita cfg.rodizioPopular, consumido pela página pública cardapio-rodizio-popular.html.
 // ═══════════════════════════════════════════
 let rpDraft = null; // cópia de trabalho de cfg.rodizioPopular enquanto o admin edita
@@ -5005,7 +5263,6 @@ async function uploadLogo(input){
     const res = await apiPost('/api/config', { cfg: { logoUrl: cfg.logoUrl }, menu });
     if(!res.ok){ statusEl.innerHTML = '<span style="color:var(--red-lt);">'+(res.data.error||'Erro ao salvar.')+'</span>'; return; }
     renderLogoPreview();
-    applyBranding(cfg); // v108: atualiza logo na tela de login e na barra lateral na hora, sem precisar recarregar
     statusEl.innerHTML = '<span style="color:var(--green);">✅ Logo atualizada!</span>';
     setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
   };
@@ -5084,18 +5341,6 @@ async function removeChatAvatar(){
 // então cada ação (upload, escolher da galeria, ativar/desativar, ajustar escurecido, remover)
 // já salva sozinha na hora, sem precisar de botão "Salvar" separado.
 // ═══════════════════════════════════════════
-const CHATBG_GALLERY = [
-  { name: 'Sushi Premium',        url: '/images/chat-backgrounds/sushi-premium.svg' },
-  { name: 'Restaurante Japonês',  url: '/images/chat-backgrounds/restaurante-japones.svg' },
-  { name: 'Bambu',                url: '/images/chat-backgrounds/bambu.svg' },
-  { name: 'Madeira Escura',       url: '/images/chat-backgrounds/madeira-escura.svg' },
-  { name: 'Dragão Japonês',       url: '/images/chat-backgrounds/dragao-japones.svg' },
-  { name: 'Monte Fuji',           url: '/images/chat-backgrounds/monte-fuji.svg' },
-  { name: 'Flores de Cerejeira',  url: '/images/chat-backgrounds/flores-cerejeira.svg' },
-  { name: 'Onda Japonesa',        url: '/images/chat-backgrounds/onda-japonesa.svg' },
-  { name: 'Preto Texturizado',    url: '/images/chat-backgrounds/preto-texturizado.svg' },
-  { name: 'Minimalista Escuro',   url: '/images/chat-backgrounds/minimalista-escuro.svg' }
-];
 function renderChatBgEditor(){
   if(!document.getElementById('chatbg-enabled')) return;
   const cb = cfg.chatBackground || { enabled:false, url:'', name:'', size:0, width:0, height:0, overlay:0.45 };
@@ -5104,7 +5349,6 @@ function renderChatBgEditor(){
   document.getElementById('chatbg-overlay-val').textContent = Math.round(((typeof cb.overlay==='number')?cb.overlay:0.45)*100)+'%';
   renderChatBgPreview();
   renderChatBgInfo();
-  renderChatBgGallery();
 }
 function renderChatBgPreview(){
   const cb = cfg.chatBackground || {};
@@ -5124,40 +5368,6 @@ function renderChatBgInfo(){
   const dim = (cb.width && cb.height) ? `${cb.width}×${cb.height}px` : '';
   el.textContent = [cb.name, dim, kb].filter(Boolean).join(' · ');
 }
-function renderChatBgGallery(){
-  const cb = cfg.chatBackground || {};
-  const el = document.getElementById('chatbg-gallery');
-  if(!el) return;
-  el.innerHTML = CHATBG_GALLERY.map((g,gi) => {
-    const active = cb.url === g.url;
-    const safeName = g.name.replace(/'/g,"\\'");
-    return `<button type="button" onclick="selectChatBgPreset('${g.url}','${safeName}')"
-      style="padding:0;border-radius:10px;overflow:hidden;border:2px solid ${active?'#D32F2F':'var(--border)'};height:74px;position:relative;cursor:pointer;background:#0b0d11;">
-      <img id="chatbg-gallery-img-${gi}" src="${g.url}" alt="${g.name}" loading="lazy" data-retries="0" style="width:100%;height:100%;object-fit:cover;display:block;"
-        onerror="chatBgGalleryImgRetry(this)">
-      <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:9px;color:var(--muted);text-align:center;padding:4px;">Falha ao carregar</span>
-      <span style="position:absolute;left:0;right:0;bottom:0;background:rgba(0,0,0,.55);color:#fff;font-size:9px;padding:3px 4px;text-align:center;line-height:1.2;">${g.name}</span>
-    </button>`;
-  }).join('');
-}
-// v75: BUG CORRIGIDO — a galeria de fundos prontos às vezes mostrava "Falha ao carregar" mesmo
-// com o arquivo existindo certinho no servidor. Causa: numa falha passageira (ex: servidor
-// "acordando" de um deploy gratuito que hiberna, ou um soluço de rede bem no instante em que o
-// painel abre), o navegador desistia na primeira tentativa e nunca tentava de novo. Agora tenta
-// automaticamente mais 2 vezes (com um pequeno intervalo crescente) antes de mostrar a mensagem
-// de falha — cobre exatamente esse tipo de falha passageira.
-function chatBgGalleryImgRetry(img){
-  const tries = parseInt(img.dataset.retries || '0', 10);
-  if(tries < 2){
-    img.dataset.retries = String(tries + 1);
-    const baseUrl = img.src.split('?')[0];
-    setTimeout(()=>{ img.src = baseUrl + '?retry=' + (tries + 1) + '&t=' + Date.now(); }, 400 * (tries + 1));
-    return;
-  }
-  img.style.display = 'none';
-  const fallback = img.nextElementSibling;
-  if(fallback) fallback.style.display = 'flex';
-}
 async function uploadChatBgPhoto(input){
   const file = input.files && input.files[0];
   if(!file) return;
@@ -5175,16 +5385,6 @@ async function uploadChatBgPhoto(input){
     setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
   };
   reader.readAsDataURL(file);
-}
-async function selectChatBgPreset(url, name){
-  const statusEl = document.getElementById('chatbg-status');
-  statusEl.textContent = 'Aplicando...';
-  const res = await apiPost('/api/chat/background', { presetUrl: url, presetName: name });
-  if(!res.ok){ statusEl.innerHTML = '<span style="color:var(--red-lt);">'+(res.data.error||'Erro ao aplicar.')+'</span>'; return; }
-  cfg.chatBackground = res.data.chatBackground;
-  renderChatBgEditor();
-  statusEl.innerHTML = '<span style="color:var(--green);">✅ Fundo "'+name+'" aplicado!</span>';
-  setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
 }
 async function toggleChatBgEnabled(checked){
   const statusEl = document.getElementById('chatbg-status');
@@ -5223,8 +5423,7 @@ async function removeChatBg(){
 // ═══════════════════════════════════════════
 // v78: 🎨 FUNDO DO CHAT DO PAINEL (admin) — mesma ideia do fundo do Chat Express que o cliente
 // vê, só que pro chat interno (Mensagens → Conversas), guardado separado em
-// cfg.adminChatBackground. Reaproveita a mesma galeria de fotos prontas (CHATBG_GALLERY) e o
-// mesmo endpoint /api/chat/background, só que com target:'admin'.
+// cfg.adminChatBackground. Mesmo endpoint /api/chat/background, só que com target:'admin'.
 // ═══════════════════════════════════════════
 function openAdminChatBgPicker(){
   openModal('admin-chatbg-modal');
@@ -5235,22 +5434,7 @@ function renderAdminChatBgEditor(){
   document.getElementById('admin-chatbg-enabled').checked = !!cb.enabled;
   document.getElementById('admin-chatbg-overlay').value = (typeof cb.overlay==='number') ? cb.overlay : 0.45;
   document.getElementById('admin-chatbg-overlay-val').textContent = Math.round(((typeof cb.overlay==='number')?cb.overlay:0.45)*100)+'%';
-  renderAdminChatBgGallery();
   applyAdminChatBackground();
-}
-function renderAdminChatBgGallery(){
-  const cb = cfg.adminChatBackground || {};
-  const el = document.getElementById('admin-chatbg-gallery');
-  if(!el) return;
-  el.innerHTML = CHATBG_GALLERY.map(g => {
-    const active = cb.url === g.url;
-    const safeName = g.name.replace(/'/g,"\\'");
-    return `<button type="button" onclick="selectAdminChatBgPreset('${g.url}','${safeName}')"
-      style="padding:0;border-radius:10px;overflow:hidden;border:2px solid ${active?'#D32F2F':'var(--border)'};height:60px;position:relative;cursor:pointer;background:#0b0d11;">
-      <img src="${g.url}" alt="${g.name}" loading="lazy" data-retries="0" style="width:100%;height:100%;object-fit:cover;display:block;" onerror="chatBgGalleryImgRetry(this)">
-      <span style="display:none;width:100%;height:100%;align-items:center;justify-content:center;font-size:8px;color:var(--muted);">Falha</span>
-    </button>`;
-  }).join('');
 }
 async function uploadAdminChatBgPhoto(input){
   const file = input.files && input.files[0];
@@ -5269,16 +5453,6 @@ async function uploadAdminChatBgPhoto(input){
     setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
   };
   reader.readAsDataURL(file);
-}
-async function selectAdminChatBgPreset(url, name){
-  const statusEl = document.getElementById('admin-chatbg-status');
-  statusEl.textContent = 'Aplicando...';
-  const res = await apiPost('/api/chat/background', { presetUrl: url, presetName: name, target:'admin' });
-  if(!res.ok){ statusEl.innerHTML = '<span style="color:var(--red-lt);">'+(res.data.error||'Erro ao aplicar.')+'</span>'; return; }
-  cfg.adminChatBackground = res.data.chatBackground;
-  renderAdminChatBgEditor();
-  statusEl.innerHTML = '<span style="color:var(--green);">✅ Fundo aplicado!</span>';
-  setTimeout(()=>{ statusEl.innerHTML=''; }, 4000);
 }
 async function toggleAdminChatBgEnabled(checked){
   const statusEl = document.getElementById('admin-chatbg-status');
@@ -5328,6 +5502,34 @@ function applyAdminChatBackground(){
   } else {
     el.style.backgroundImage = '';
   }
+}
+
+function generateCustomQr(){
+  const val = document.getElementById('qrl-custom-input').value.trim();
+  if(!val){ showToast('Digite um link ou texto', 'Preencha o campo antes de gerar o QR.'); return; }
+  const qrSrc = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=' + encodeURIComponent(val);
+  document.getElementById('qrl-custom-img').src = qrSrc;
+  const dl = document.getElementById('qrl-custom-download');
+  dl.href = qrSrc;
+  document.getElementById('qrl-custom-result').style.display = 'block';
+}
+// Abre uma janela simples só com a imagem do QR pra imprimir (útil pra colar na mesa/conta).
+function printQrImage(imgId, label){
+  const src = document.getElementById(imgId).src;
+  const w = window.open('', '_blank', 'width=400,height=500');
+  if(!w){ showToast('⚠️ Pop-up bloqueado', 'Permita pop-ups pra esse site pra imprimir o QR Code.', 5000); return; }
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>QR Code</title>
+  <style>body{font-family:sans-serif;text-align:center;padding:30px;} img{width:280px;height:280px;} h2{font-size:15px;margin-top:14px;}</style>
+  </head><body>
+    <img src="${src}"/>
+    ${label?`<h2>${label}</h2>`:''}
+    <script>
+      window.onload = function(){ window.print(); };
+      window.onafterprint = function(){ try{ window.close(); }catch(e){} };
+      setTimeout(function(){ try{ window.close(); }catch(e){} }, 45000);
+    <\/script>
+  </body></html>`);
+  w.document.close();
 }
 
 // ── Seletor de motoboy (v32) — mostra os motoboys pré-cadastrados como chips,
@@ -5745,7 +5947,7 @@ function buildPlainTicketLines(order, station, deliveryWindow){
   const money = v => 'R$ '+Number(v||0).toFixed(2).replace('.',',');
   const HR = '--------------------------------', HR2='================================';
   const L = [];
-  L.push({text:(cfg.name||'FOOD').toUpperCase(), size:12, bold:true, center:true});
+  L.push({text:(cfg.name||'FOOD JÁ').toUpperCase(), size:12, bold:true, center:true});
   L.push({text:(cfg.tagline||'CULINARIA ORIENTAL').toUpperCase()});
   L.push(HR2);
   if(isCaixa){
@@ -5826,7 +6028,7 @@ function openBrowserReservationTicket(reservation){
     .t-row{font-size:${Math.round(12*scale)}px;margin:3px 0;}
   </style></head><body>
     <div class="t-center">
-      <div class="t-title">${(cfg.name||'FOOD').toUpperCase()}</div>
+      <div class="t-title">${(cfg.name||'FOOD JÁ').toUpperCase()}</div>
       <div class="t-sub">${esc(cfg.tagline||'CULINÁRIA ORIENTAL')}</div>
     </div>
     <div class="t-hr-solid"></div>
@@ -5912,7 +6114,7 @@ function openBrowserTicket(order, station, deliveryWindow, existingWin){
     .t-obs-line{border-bottom:1px solid ${pc};height:${Math.round(16*scale)}px;margin:6px 4px;}
   </style></head><body>
     <div class="t-center">
-      <div class="t-title">${(cfg.name||'FOOD').toUpperCase()}</div>
+      <div class="t-title">${(cfg.name||'FOOD JÁ').toUpperCase()}</div>
       <div class="t-sub">${esc(cfg.tagline||'CULINÁRIA ORIENTAL')}</div>
     </div>
     <div class="t-hr-solid"></div>
@@ -6118,7 +6320,7 @@ async function createOrder(){
 
 async function simulateOrder(){
   const names=['Ana Clara','Bruno Mendes','Carla Souza','Diego Lima','Fernanda Costa','Gabriel Oliveira','Helena Rocha'];
-  const itemPool=[{name:'Sashimi Extra',price:59.80},{name:'Hot Volcano',price:32.90},{name:'Sashimi Shogatsu',price:99.70},{name:'Yakisoba de Camarão',price:42.90},{name:'Teppan de Salmão',price:52.90},{name:'Sushi Extra',price:53.50}];
+  const itemPool=[{name:'Sashimi Extra',price:59.80},{name:'Hot Volcano',price:32.90},{name:'Sashimi da Casa',price:99.70},{name:'Yakisoba de Camarão',price:42.90},{name:'Teppan de Salmão',price:52.90},{name:'Sushi Extra',price:53.50}];
   const pays=['PIX','Crédito','Débito','Dinheiro'];
   const modes=['delivery','delivery','delivery','retirada'];
   const name=names[Math.floor(Math.random()*names.length)];
@@ -6338,11 +6540,7 @@ function renderOrdersList(){
 let reservations = [];
 let reservationFilter = 'todos';
 async function loadReservations(){
-  // v107: catch registrava o erro em silêncio total — agora loga no console pra dar pra
-  // diagnosticar (ex: Supabase/servidor fora do ar), mas continua sem incomodar o admin com um
-  // alerta a cada 30s (esse polling já tenta de novo sozinho) — só reservations.length fica
-  // parado no valor antigo até a próxima tentativa funcionar.
-  try{ const d = await apiGet('/api/reservations'); reservations = d.reservations||[]; }catch(e){ console.error('⚠️ Falha ao carregar reservas:', e); }
+  try{ const d = await apiGet('/api/reservations'); reservations = d.reservations||[]; }catch(e){}
   const pending = reservations.filter(r=>r.status==='pendente').length;
   const nb = document.getElementById('nb-reservas');
   if(nb){ nb.style.display = pending?'inline-block':'none'; nb.textContent = pending; }
@@ -6988,28 +7186,35 @@ function menuFilterPass(item, si, ii){
 }
 function renderMenuEditor(){
   if(activeCatIdx>=menu.length) activeCatIdx=Math.max(0,menu.length-1);
-  document.getElementById('menu-cats-list').innerHTML = menu.length===0
-    ? '<div style="text-align:center;padding:30px 12px;color:var(--muted);font-size:12px;">Nenhuma categoria ainda.<br>Clique em + Categoria.</div>'
-    : menu.map((s,i)=>`
-    <div class="menu-cat-item ${i===activeCatIdx?'active':''}" draggable="true" data-cat-idx="${i}" onclick="selectCat(${i})">
+  const totalItems = menu.reduce((s,sec)=>s+sec.items.length,0);
+  // v107h: sidebar virou barra horizontal — "🍽️ Todos" (novo) fica sempre primeiro, fixo, sem
+  // drag/editar/excluir (não é uma categoria de verdade, é só um jeito de ver o cardápio inteiro
+  // junto). O restante continua exatamente as mesmas categorias/funções de sempre.
+  const todosCard = `
+    <div class="menu-cat-item ${activeCatIdx===-1?'active':''}" onclick="selectCat(-1)">
       <div class="menu-cat-item-top">
-        <span style="cursor:grab;" title="Arraste pra reordenar">⠿</span>
-        <span>${s.icon||'🍽️'}</span>
+        <span class="menu-cat-icon">🍽️</span>
+        <span class="menu-cat-name">Todos</span>
+      </div>
+      <div class="menu-cat-count">${totalItems} produtos</div>
+    </div>`;
+  document.getElementById('menu-cats-list').innerHTML = todosCard + (menu.length===0
+    ? '<div style="padding:10px 12px;color:var(--muted);font-size:12px;white-space:nowrap;">Nenhuma categoria ainda. Clique em + Categoria.</div>'
+    : menu.map((s,i)=>`
+    <div class="menu-cat-item ${i===activeCatIdx?'active':''}" draggable="true" data-cat-idx="${i}" onclick="selectCat(${i})" title="Arraste pra reordenar">
+      <div class="menu-cat-item-top">
+        <span class="menu-cat-icon">${s.icon||'🍽️'}</span>
         <span class="menu-cat-name" title="${s.title}">${s.title}</span>
-        <span class="menu-cat-count">${s.items.length}</span>
       </div>
       <div class="menu-cat-item-bottom">
-        <span class="cat-reorder">
-          <button onclick="event.stopPropagation();moveCategory(${i},-1)" ${i===0?'disabled':''} title="Mover para cima">▲</button>
-          <button onclick="event.stopPropagation();moveCategory(${i},1)" ${i===menu.length-1?'disabled':''} title="Mover para baixo">▼</button>
-        </span>
+        <span class="menu-cat-count">${s.items.length} produtos</span>
         <span class="cat-actions">
           <button class="edit" onclick="event.stopPropagation();openEditCategory(${i})" title="Editar categoria">✏️</button>
           <button class="edit" onclick="event.stopPropagation();openCopyCategoryPicker(${i})" title="Copiar todos os itens dessa categoria pra outra">📋</button>
           <button class="del" onclick="event.stopPropagation();deleteCategory(${i})" title="Excluir categoria">🗑</button>
         </span>
       </div>
-    </div>`).join('');
+    </div>`).join(''));
   setupCatDragDrop();
   renderMenuItems();
 }
@@ -7047,148 +7252,6 @@ function setupCatDragDrop(){
   });
 }
 
-// ═══════════════════════════════════════════
-// v73: 🏷 BADGE GLOBAL — selo global aplicado a todo o cardápio
-// v84 — FERRAMENTA REMOVIDA ("Foto Provisória Global"): essa aba tinha DUAS ferramentas —
-// Foto Provisória Global e Badge Global. A foto provisória era uma ferramenta DUPLICADA: cada
-// prato já tem seu próprio upload de foto individual (campo "Foto do Prato" na aba Edição, ver
-// modal de item), então ter uma segunda ferramenta de upload de imagem só pra cobrir os pratos
-// sem foto confundia o admin sobre qual usar. Removida por completo (aqui, no editor do
-// cardápio, e também a aplicação dela no cardápio do cliente em index.html) — restou só o
-// Badge Global, que é uma ferramenta diferente (selo/etiqueta, não é upload de imagem) e não
-// tem equivalente duplicado em nenhum outro lugar do sistema.
-// ═══════════════════════════════════════════
-function switchMenuMainTab(tab){
-  document.getElementById('menu-tabbtn-itens').className = 'btn sm' + (tab==='itens'?'':' secondary');
-  document.getElementById('menu-tabbtn-photos').className = 'btn sm' + (tab==='photos'?'':' secondary');
-  document.getElementById('menu-tab-content-itens').style.display = tab==='itens' ? '' : 'none';
-  document.getElementById('menu-tab-content-photos').style.display = tab==='photos' ? '' : 'none';
-  if(tab==='photos') renderPlaceholderBadgePanel();
-}
-
-let phBadgeState = null;
-function initPhBadgeState(){
-  phBadgeState = {
-    badge: Object.assign({ enabled:false, text:'Mais vendido', icon:'🔥', bgColor:'#c0392b', textColor:'#ffffff', fontSize:11, fontWeight:700, opacity:100, borderEnabled:false, borderColor:'#ffffff', borderRadius:6, padding:6, shadow:true, position:'canto-superior-esquerdo' }, JSON.parse(JSON.stringify(cfg.globalBadge||{})))
-  };
-}
-
-function renderPlaceholderBadgePanel(){
-  if(!phBadgeState) initPhBadgeState();
-  const el = document.getElementById('menu-tab-content-photos');
-  const b = phBadgeState.badge;
-  el.innerHTML = `
-    <div style="padding:16px;display:flex;flex-direction:column;gap:18px;max-width:900px;">
-      <div style="font-size:11px;color:var(--muted);">
-        Ferramenta global que vale pro cardápio inteiro — sem mexer item por item. A aba de edição normal continua exatamente igual.
-      </div>
-
-      <div class="settings-card">
-        <div class="settings-card-title">🏷 Badge Global</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">
-          Selo exibido automaticamente nos produtos (ex: 🔥 Mais vendido, ⭐ Novidade, 💎 Premium). Em cada item, escolha "Herdar Badge Global" ou "Personalizar" (na edição do item).
-        </div>
-        <label style="display:flex;align-items:center;gap:8px;font-size:12px;margin-bottom:12px;">
-          <input type="checkbox" ${b.enabled?'checked':''} onchange="phUpdateField('badge','enabled',this.checked)"/> Badge Global ativo
-        </label>
-        <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;">
-          <div class="field"><label style="font-size:10px;">Ícone</label><input value="${esc(b.icon)}" maxlength="4" oninput="phUpdateField('badge','icon',this.value)"/></div>
-          <div class="field" style="grid-column:span 2;"><label style="font-size:10px;">Texto</label><input value="${esc(b.text)}" maxlength="30" oninput="phUpdateField('badge','text',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Cor do fundo</label><input type="color" value="${b.bgColor}" oninput="phUpdateField('badge','bgColor',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Cor da fonte</label><input type="color" value="${b.textColor}" oninput="phUpdateField('badge','textColor',this.value)"/></div>
-          <div class="field"><label style="font-size:10px;">Tamanho da fonte (px)</label><input type="number" min="8" max="24" value="${b.fontSize}" oninput="phUpdateField('badge','fontSize',parseInt(this.value)||11)"/></div>
-          <div class="field"><label style="font-size:10px;">Peso da fonte</label>
-            <select onchange="phUpdateField('badge','fontWeight',parseInt(this.value))">
-              <option value="400" ${b.fontWeight==400?'selected':''}>Normal</option>
-              <option value="600" ${b.fontWeight==600?'selected':''}>Semi-negrito</option>
-              <option value="700" ${b.fontWeight==700?'selected':''}>Negrito</option>
-              <option value="900" ${b.fontWeight==900?'selected':''}>Extra-negrito</option>
-            </select>
-          </div>
-          <div class="field"><label style="font-size:10px;">Transparência (%)</label><input type="range" min="30" max="100" value="${b.opacity}" oninput="phUpdateField('badge','opacity',parseInt(this.value))"/></div>
-          <div class="field"><label style="font-size:10px;">Raio da borda (px)</label><input type="number" min="0" max="30" value="${b.borderRadius}" oninput="phUpdateField('badge','borderRadius',parseInt(this.value)||0)"/></div>
-          <div class="field"><label style="font-size:10px;">Espaçamento interno (px)</label><input type="number" min="0" max="20" value="${b.padding}" oninput="phUpdateField('badge','padding',parseInt(this.value)||0)"/></div>
-          <div class="field">
-            <label style="display:flex;align-items:center;gap:6px;font-size:10px;"><input type="checkbox" ${b.borderEnabled?'checked':''} onchange="phUpdateField('badge','borderEnabled',this.checked)"/> Borda</label>
-            <input type="color" value="${b.borderColor}" oninput="phUpdateField('badge','borderColor',this.value)" style="margin-top:4px;"/>
-          </div>
-          <div class="field"><label style="display:flex;align-items:center;gap:6px;font-size:10px;margin-top:18px;"><input type="checkbox" ${b.shadow?'checked':''} onchange="phUpdateField('badge','shadow',this.checked)"/> Sombra</label></div>
-          <div class="field" style="grid-column:span 2;"><label style="font-size:10px;">Posição do badge</label>
-            <select onchange="phUpdateField('badge','position',this.value)">
-              <option value="acima-foto" ${b.position==='acima-foto'?'selected':''}>Acima da foto</option>
-              <option value="abaixo-foto" ${b.position==='abaixo-foto'?'selected':''}>Abaixo da foto</option>
-              <option value="sobre-foto" ${b.position==='sobre-foto'?'selected':''}>Sobre a foto</option>
-              <option value="acima-nome" ${b.position==='acima-nome'?'selected':''}>Acima do nome</option>
-              <option value="abaixo-nome" ${b.position==='abaixo-nome'?'selected':''}>Abaixo do nome</option>
-              <option value="canto-superior-esquerdo" ${b.position==='canto-superior-esquerdo'?'selected':''}>Canto superior esquerdo</option>
-              <option value="canto-superior-direito" ${b.position==='canto-superior-direito'?'selected':''}>Canto superior direito</option>
-            </select>
-          </div>
-        </div>
-      </div>
-
-      <div class="settings-card">
-        <div class="settings-card-title">👁 Pré-visualização</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px;">Atualiza instantaneamente conforme você muda qualquer opção acima.</div>
-        <div id="ph-preview-wrap" style="display:flex;justify-content:center;padding:10px;"></div>
-      </div>
-
-      <div>
-        <button class="btn primary" onclick="savePlaceholderBadgeSettings()">💾 Salvar Badge Global</button>
-      </div>
-    </div>`;
-  updatePhPreview();
-}
-
-function phUpdateField(group, field, value){
-  phBadgeState[group][field] = value;
-  updatePhPreview();
-}
-
-function phBadgeHTML(b){
-  if(!b.enabled) return '';
-  const style = `display:inline-flex;align-items:center;gap:4px;background:${b.bgColor};color:${b.textColor};font-size:${b.fontSize}px;font-weight:${b.fontWeight};opacity:${(b.opacity==null?100:b.opacity)/100};border-radius:${b.borderRadius}px;padding:${b.padding}px ${Number(b.padding)+4}px;white-space:nowrap;${b.borderEnabled?`border:1px solid ${b.borderColor};`:''}${b.shadow?'box-shadow:0 2px 6px rgba(0,0,0,.35);':''}`;
-  return `<span style="${style}">${b.icon?esc(b.icon)+' ':''}${esc(b.text)}</span>`;
-}
-
-function updatePhPreview(){
-  const wrap = document.getElementById('ph-preview-wrap');
-  if(!wrap) return;
-  const b = phBadgeState.badge;
-  // v84: sem mais Foto Provisória — a caixa de foto na pré-visualização agora é sempre o
-  // placeholder genérico (mesmo estilo do cardápio real quando um prato ainda não tem foto).
-  const photoBox = `<div style="width:90px;height:90px;flex:0 0 auto;border-radius:12px;background:#1c1c1c;display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--muted);">🍽️</div>`;
-
-  const aboveBadge = b.position==='acima-foto' ? `<div style="margin-bottom:6px;">${phBadgeHTML(b)}</div>` : '';
-  const belowBadge = b.position==='abaixo-foto' ? `<div style="margin-top:6px;">${phBadgeHTML(b)}</div>` : '';
-  const overBadge = b.position==='sobre-foto' ? `<div style="position:absolute;top:4px;left:4px;">${phBadgeHTML(b)}</div>` : '';
-  const cornerBadge = (b.position==='canto-superior-esquerdo'||b.position==='canto-superior-direito')
-    ? `<div style="position:absolute;top:8px;${b.position==='canto-superior-esquerdo'?'left':'right'}:8px;z-index:2;">${phBadgeHTML(b)}</div>` : '';
-
-  const photoBlock = `<div style="position:relative;">${photoBox}${overBadge}</div>`;
-
-  const nameBlock = `
-    ${b.position==='acima-nome'?`<div style="margin-bottom:4px;">${phBadgeHTML(b)}</div>`:''}
-    <div style="font-weight:700;font-size:14px;color:var(--white);">Rodízio Master</div>
-    ${b.position==='abaixo-nome'?`<div style="margin-top:4px;">${phBadgeHTML(b)}</div>`:''}
-    <div style="font-size:11px;color:var(--muted);margin-top:2px;">10 sashimis de salmão, 5 sashimis haddock, 5 sashimis peixe branco...</div>
-    <div style="font-weight:700;color:var(--green-lt);margin-top:6px;">R$ 159,90</div>`;
-
-  const inner = `<div style="display:flex;gap:12px;align-items:flex-start;">
-      <div>${aboveBadge}${photoBlock}${belowBadge}</div>
-      <div style="flex:1;">${nameBlock}</div>
-    </div>`;
-
-  wrap.innerHTML = `<div style="position:relative;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px;width:100%;max-width:360px;">${cornerBadge}${inner}</div>`;
-}
-
-async function savePlaceholderBadgeSettings(){
-  cfg.globalBadge = { ...phBadgeState.badge };
-  const res = await apiPost('/api/config', { cfg, menu });
-  if(!res.ok){ alert(res.data.error||'Erro ao salvar.'); return; }
-  showToast('✅ Salvo!', 'Badge global atualizado — já vale pro cardápio.');
-}
-
 function selectCat(i){activeCatIdx=i;document.getElementById('menu-search').value='';menuSearchQuery='';renderMenuEditor();}
 function moveCategory(i,dir){
   const j=i+dir;
@@ -7213,15 +7276,45 @@ function itemMatches(item,q){
   if(!q)return true;
   return (item.name||'').toLowerCase().includes(q) || (item.desc||'').toLowerCase().includes(q);
 }
+let menuSortBy='padrao'; // v107h: "Ordenação" pedida na barra de ferramentas
+function setMenuSort(v){ menuSortBy=v; renderMenuItems(); }
+function sortMenuEntries(list){
+  // `list` é sempre array de {sec,si,item,ii} — não muda o array original (sec.items), só a
+  // ordem em que aparece na tela; por isso desliga os botões ▲▼ de reordenar quando um critério
+  // diferente de "Padrão" está ativo (mover pra cima/baixo não faria sentido nessa visão).
+  if(menuSortBy==='padrao') return list;
+  const arr = list.slice();
+  if(menuSortBy==='nome') arr.sort((a,b)=>a.item.name.localeCompare(b.item.name,'pt-BR'));
+  else if(menuSortBy==='preco-asc') arr.sort((a,b)=>(a.item.price||0)-(b.item.price||0));
+  else if(menuSortBy==='preco-desc') arr.sort((a,b)=>(b.item.price||0)-(a.item.price||0));
+  return arr;
+}
 function renderMenuItems(){
+  const sortActive = menuSortBy!=='padrao';
   // Modo busca: procura em TODAS as categorias, não só na selecionada
   if(menuSearchQuery){
-    const results=[];
+    let results=[];
     menu.forEach((sec,si)=>sec.items.forEach((item,ii)=>{ if(itemMatches(item,menuSearchQuery) && menuFilterPass(item,si,ii)) results.push({sec,si,item,ii}); }));
+    results = sortMenuEntries(results);
     document.getElementById('menu-active-cat-title').textContent=`🔎 Resultados para "${menuSearchQuery}" (${results.length})`;
     document.getElementById('menu-items-body').innerHTML=results.length===0
       ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum prato encontrado.</div>'
       :results.map(({sec,si,item,ii})=>menuItemCardHTML(sec,si,item,ii,false)).join('');
+    return;
+  }
+  // v107h — "🍽️ Todos": mostra o cardápio inteiro junto, todas as categorias, em vez de ter que
+  // clicar categoria por categoria. Não mexe em nada dos dados — só junta pra exibir.
+  if(activeCatIdx===-1){
+    let all=[];
+    menu.forEach((sec,si)=>sec.items.forEach((item,ii)=>{ if(menuFilterPass(item,si,ii)) all.push({sec,si,item,ii}); }));
+    const totalItems = menu.reduce((s,sec)=>s+sec.items.length,0);
+    all = sortMenuEntries(all);
+    document.getElementById('menu-active-cat-title').textContent=`🍽️ Todos os itens (${totalItems})`;
+    document.getElementById('menu-items-body').innerHTML = totalItems===0
+      ? '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Crie uma categoria pra começar a montar o cardápio.</div>'
+      : (all.length===0
+        ? '<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item nesse filtro.</div>'
+        : all.map(({sec,si,item,ii})=>menuItemCardHTML(sec,si,item,ii,false)).join(''));
     return;
   }
   const sec=menu[activeCatIdx];
@@ -7231,12 +7324,13 @@ function renderMenuItems(){
     return;
   }
   document.getElementById('menu-active-cat-title').textContent=sec.icon+' '+sec.title;
-  const visibleItems = sec.items.map((item,ii)=>({item,ii})).filter(({item,ii})=>menuFilterPass(item,activeCatIdx,ii));
+  let visibleItems = sec.items.map((item,ii)=>({sec,si:activeCatIdx,item,ii})).filter(({item,ii})=>menuFilterPass(item,activeCatIdx,ii));
+  visibleItems = sortMenuEntries(visibleItems);
   document.getElementById('menu-items-body').innerHTML=sec.items.length===0
     ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item. Clique em + Novo Item.</div>'
     :(visibleItems.length===0
       ?'<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--muted)">Nenhum item nesse filtro.</div>'
-      :visibleItems.map(({item,ii})=>menuItemCardHTML(sec,activeCatIdx,item,ii,true)).join(''));
+      :visibleItems.map(({item,ii})=>menuItemCardHTML(sec,activeCatIdx,item,ii,!sortActive)).join(''));
   setupItemDragDrop();
 }
 // v73: rótulo do badge na listagem do painel, respeitando herdar-global/personalizar/sem-badge
@@ -7267,7 +7361,7 @@ function menuItemCardHTML(sec,si,item,ii,allowReorder){
       <div class="mi-card" draggable="${allowReorder?'true':'false'}" data-item-idx="${allowReorder?ii:''}">
         <div class="mi-card-media ${unavailable?'unavailable':''}">
           ${photoUrl
-            ? `<img src="${photoUrl}" alt="${esc(item.name)}" style="object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;"/>`
+            ? `<img src="${photoUrl}" alt="${esc(item.name)}" style="object-position:${(item.imagePos&&item.imagePos.x)||50}% ${(item.imagePos&&item.imagePos.y)||50}%;transform:scale(${((item.imagePos&&item.imagePos.zoom)||100)/100}) rotate(${(item.imagePos&&item.imagePos.rotate)||0}deg);"/>`
             : `<div class="mi-thumb-empty">🍽️</div>`}
           ${allowReorder?`<button class="mi-card-drag-handle" title="Arraste pra reordenar">⠿</button>`:''}
           <div class="mi-card-badges">
@@ -7380,11 +7474,13 @@ function resetItemPhotoPreview(url, pos){
   const posWrap=document.getElementById('item-photo-pos-wrap');
   document.getElementById('item-image').value=url||'';
   document.getElementById('item-photo-status').textContent='';
-  const p = pos || {x:50,y:50};
-  document.getElementById('item-image-pos').value = p.x+','+p.y;
+  const p = pos || {x:50,y:50,zoom:100,rotate:0};
+  document.getElementById('item-image-pos').value = [p.x,p.y,p.zoom||100,p.rotate||0].join(',');
   document.getElementById('item-photo-posx').value = p.x;
   document.getElementById('item-photo-posy').value = p.y;
-  img.style.objectPosition = p.x+'% '+p.y+'%';
+  document.getElementById('item-photo-zoom').value = p.zoom||100;
+  document.getElementById('item-photo-rotate').value = p.rotate||0;
+  applyItemPhotoTransform(img, p);
   if(url){
     img.src=url;
     img.style.display='block';
@@ -7399,6 +7495,12 @@ function resetItemPhotoPreview(url, pos){
     placeholder.style.display='flex';
   }
   if(typeof updateWizardPreview==='function') updateWizardPreview(); // v107b: mantém a prévia da foto em dia
+}
+// (novo v107e) aplica x/y (enquadramento) + zoom + rotação no <img> — mesma fórmula usada no
+// cardápio do cliente e na miniatura da lista (ver public/index.html e renderMenuEditor).
+function applyItemPhotoTransform(img, pos){
+  img.style.objectPosition = pos.x+'% '+pos.y+'%';
+  img.style.transform = `scale(${(pos.zoom||100)/100}) rotate(${pos.rotate||0}deg)`;
 }
 // BUG CORRIGIDO (v42 — "caixa de fotos bugada"): antes a foto ia pro servidor do
 // jeito que saía da câmera do celular (muitas vezes 3–8MB), o que passava perto ou
@@ -7465,13 +7567,38 @@ function removeItemPhoto(){ resetItemPhotoPreview(''); }
 function updateItemPhotoPos(){
   const x = document.getElementById('item-photo-posx').value;
   const y = document.getElementById('item-photo-posy').value;
-  document.getElementById('item-image-pos').value = x+','+y;
-  document.getElementById('item-photo-preview').style.objectPosition = x+'% '+y+'%';
+  const zoom = document.getElementById('item-photo-zoom').value;
+  const rotate = document.getElementById('item-photo-rotate').value;
+  document.getElementById('item-image-pos').value = [x,y,zoom,rotate].join(',');
+  applyItemPhotoTransform(document.getElementById('item-photo-preview'), {x,y,zoom,rotate});
+}
+// (novo v107e) 🎯 Centralizar — volta x/y pro meio, mantém zoom e rotação como estavam
+function photoToolCenter(){
+  document.getElementById('item-photo-posx').value = 50;
+  document.getElementById('item-photo-posy').value = 50;
+  updateItemPhotoPos();
+}
+// (novo v107e) 🔄 Girar — soma 90° a cada clique (0→90→180→270→0...)
+function photoToolRotate(){
+  const el = document.getElementById('item-photo-rotate');
+  el.value = ((parseInt(el.value)||0) + 90) % 360;
+  updateItemPhotoPos();
+}
+// (novo v107e) ✂ Corte Automático — volta ao enquadramento padrão (centralizado, sem zoom, sem
+// giro). Não é recorte "inteligente" por IA — é um reset rápido pro ponto de partida mais
+// neutro, deixado assim de propósito pra não prometer um recurso que a foto sozinha não faz.
+function photoToolAutoCrop(){
+  document.getElementById('item-photo-posx').value = 50;
+  document.getElementById('item-photo-posy').value = 50;
+  document.getElementById('item-photo-zoom').value = 100;
+  document.getElementById('item-photo-rotate').value = 0;
+  updateItemPhotoPos();
 }
 
 let editingVariants=[];
 let editingLibraryGroups=[]; // v107a — biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚)
 function openAddItem(){
+  if(activeCatIdx===-1){ alert('Escolha uma categoria específica pra adicionar o item (em "🍽️ Todos" não dá pra saber em qual categoria ele deve entrar).'); return; }
   if(!menu[activeCatIdx]){ alert('Crie uma categoria antes de adicionar itens.'); return; }
   document.getElementById('item-modal-title').textContent='Novo Item';
   document.getElementById('item-editor-meta-line').textContent='Novo item — ainda não salvo';
@@ -7482,12 +7609,15 @@ function openAddItem(){
   document.getElementById('item-promo-price').value='';
   document.getElementById('item-stock').value='';
   document.getElementById('item-badge-color').value='#D9383A';
-  document.getElementById('item-badgemode-global').checked=true;
   document.getElementById('item-available-check').checked=true;
   document.getElementById('item-available').value='true';
+  document.getElementById('item-hidden-check').checked=false;
+  document.getElementById('item-hidden').value='false';
   document.getElementById('item-featured-check').checked=false;
   document.getElementById('item-featured').value='false';
   document.getElementById('item-accepts-coupon').checked=true;
+  _pendingFichaId = '';
+  if(document.getElementById('item-ficha-vinculada')) document.getElementById('item-ficha-vinculada').value='';
   ['item-nutri-calories','item-nutri-protein','item-nutri-carbs','item-nutri-fat'].forEach(id=>document.getElementById(id).value='');
   renderAllergenChecks([]);
   resetItemPhotoPreview('', {x:50,y:50});
@@ -7499,7 +7629,7 @@ function openAddItem(){
 function openEditItem(si,ii){
   const item=menu[si].items[ii];
   document.getElementById('item-modal-title').textContent='Editar Item';
-  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')):null].filter(Boolean);
+  const metaBits = [item.id?('ID: #'+item.id.slice(-6).toUpperCase()):null, 'Categoria: '+(menu[si]&&menu[si].title||''), item.updatedAt?('Última edição: '+new Date(item.updatedAt).toLocaleString('pt-BR')+(item.updatedBy?' por '+item.updatedBy:'')):null].filter(Boolean);
   document.getElementById('item-editor-meta-line').textContent = metaBits.join(' · ');
   document.getElementById('item-edit-si').value=si;
   document.getElementById('item-edit-ii').value=ii;
@@ -7507,16 +7637,27 @@ function openEditItem(si,ii){
   document.getElementById('item-desc').value=item.desc||'';
   document.getElementById('item-price').value=item.price;
   document.getElementById('item-promo-price').value=item.promoPrice||'';
+  _pendingFichaId = item.fichaTecnicaId || '';
   document.getElementById('item-qty').value=item.qty||'';
   document.getElementById('item-sku').value=item.sku||'';
   document.getElementById('item-ean').value=item.ean||'';
   document.getElementById('item-tags').value=(item.tags||[]).join(', ');
   document.getElementById('item-stock').value=(item.stock===null||item.stock===undefined)?'':item.stock;
-  document.getElementById('item-badge').value=item.badge||'';
-  document.getElementById('item-badge-color').value=item.badgeColor||'#D9383A';
-  document.getElementById('item-badgemode-'+(item.badgeMode||'global')).checked=true;
+  // v107e: "Herdar Badge Global" saiu (a tela que configurava isso foi removida). Item antigo que
+  // ainda estava em badgeMode:'global' e dependia só do texto/cor configurados lá: traz esse
+  // valor pro campo manual agora (senão o badge visível desaparecia sem aviso ao reabrir).
+  let badgeValue = item.badge||'';
+  let badgeColorValue = item.badgeColor||'#D9383A';
+  if(!badgeValue && (item.badgeMode||'global')==='global' && cfg.globalBadge && cfg.globalBadge.enabled){
+    badgeValue = `${cfg.globalBadge.icon||''} ${cfg.globalBadge.text||''}`.trim();
+    badgeColorValue = cfg.globalBadge.bgColor || badgeColorValue;
+  }
+  document.getElementById('item-badge').value=badgeValue;
+  document.getElementById('item-badge-color').value=badgeColorValue;
   document.getElementById('item-available-check').checked = item.available!==false;
   document.getElementById('item-available').value = item.available!==false ? 'true' : 'false';
+  document.getElementById('item-hidden-check').checked = item.hidden===true;
+  document.getElementById('item-hidden').value = item.hidden===true ? 'true' : 'false';
   document.getElementById('item-featured-check').checked = !!item.featured;
   document.getElementById('item-featured').value = item.featured ? 'true' : 'false';
   document.getElementById('item-accepts-coupon').checked = item.acceptsCoupon!==false;
@@ -7566,6 +7707,8 @@ function initWizard(isEdit){
   document.getElementById('wizard-btn-delete').style.display = isEdit ? '' : 'none';
   document.getElementById('wizard-btn-duplicate').style.display = isEdit ? '' : 'none';
   goToWizardStep('info');
+  populateFichaSelect();
+  ensureFichasLoaded();
   updateWizardPreview();
 }
 function goToWizardStep(id){
@@ -7591,6 +7734,16 @@ function toggleWizardAvailability(){
   const cb=document.getElementById('item-available-check');
   cb.checked=!cb.checked;
   onWizardAvailabilityToggle();
+}
+// v107g — status de 3 estados no cabeçalho (Disponível / Indisponível / Oculto), como pedido.
+// "Oculto" (some do cardápio do cliente) é independente de "Disponível" (aparece mas esgotado) —
+// dá pra combinar os dois. O selo do cabeçalho só mostra o resultado; quem liga/desliga cada um
+// é o checkbox correspondente na etapa Disponibilidade (clicar no selo continua alternando só
+// "Disponível", que é o ajuste mais comum do dia a dia).
+function onWizardHiddenToggle(){
+  const checked = document.getElementById('item-hidden-check').checked;
+  document.getElementById('item-hidden').value = checked ? 'true' : 'false';
+  updateWizardPreview();
 }
 function onWizardFeaturedToggle(){
   const checked = document.getElementById('item-featured-check').checked;
@@ -7630,13 +7783,53 @@ function computeWizardProgress(){
   if(editingVariants.length>0) score+=10;
   return Math.min(100,score);
 }
+let _pendingFichaId = ''; // guarda o vínculo salvo até a lista de fichas técnicas terminar de carregar
+async function ensureFichasLoaded(){
+  if(custosFichas.length===0){
+    try{ custosFichas = await apiGet('/api/custos/fichas') || []; }catch(e){ custosFichas = custosFichas||[]; }
+  }
+  populateFichaSelect();
+  updateWizardPreview();
+}
+function populateFichaSelect(){
+  const sel = document.getElementById('item-ficha-vinculada');
+  if(!sel) return;
+  const cur = sel.value || _pendingFichaId;
+  sel.innerHTML = '<option value="">— nenhuma —</option>' + custosFichas.map(f=>`<option value="${f.id}">${esc(f.nome)} (custo R$ ${Number(f.custoTotal||0).toFixed(2).replace('.',',')})</option>`).join('');
+  if(cur && custosFichas.some(f=>f.id===cur)){ sel.value = cur; _pendingFichaId=''; }
+}
 function updateWizardPreview(){
   const name = document.getElementById('item-name').value.trim() || 'Nome do prato';
   const desc = document.getElementById('item-desc').value.trim();
+  document.getElementById('item-desc-counter').textContent = document.getElementById('item-desc').value.length+'/300';
   const price = parseFloat(document.getElementById('item-price').value)||0;
   const promoPrice = parseFloat(document.getElementById('item-promo-price').value)||0;
+  // (novo) Card de Preço — Economia calculada sozinha a partir do promo; Lucro só aparece se
+  // o item estiver vinculado a uma Ficha Técnica (senão não tem custo pra comparar).
+  document.getElementById('pc-preco-venda').textContent = 'R$ '+price.toFixed(2).replace('.',',');
+  const economiaRow = document.getElementById('pc-economia-row');
+  if(promoPrice>0 && promoPrice<price && price>0){
+    const pct = ((price-promoPrice)/price*100);
+    document.getElementById('pc-economia').textContent = `- R$ ${(price-promoPrice).toFixed(2).replace('.',',')} (${pct.toFixed(0)}%)`;
+    economiaRow.style.display='';
+  } else { economiaRow.style.display='none'; }
+  const fichaSel = document.getElementById('item-ficha-vinculada');
+  const fichaId = fichaSel ? fichaSel.value : '';
+  const ficha = fichaId ? custosFichas.find(f=>f.id===fichaId) : null;
+  const lucroRow = document.getElementById('pc-lucro-row');
+  if(ficha){
+    const precoCobrado = (promoPrice>0 && promoPrice<price) ? promoPrice : price;
+    const custo = Number(ficha.custoTotal)||0;
+    const lucro = precoCobrado - custo;
+    const margem = precoCobrado>0 ? (lucro/precoCobrado*100) : 0;
+    const lucroEl = document.getElementById('pc-lucro');
+    lucroEl.textContent = `R$ ${lucro.toFixed(2).replace('.',',')} (${margem.toFixed(0)}% de margem)`;
+    lucroEl.style.color = lucro>=0 ? '#4ade80' : '#f87171';
+    lucroRow.style.display='';
+  } else { lucroRow.style.display='none'; }
   const image = document.getElementById('item-image').value.trim();
-  const badgeMode = (document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global';
+  // v107e: badgeMode não vem mais de radio (a tela "Badge Global" foi removida) — é só
+  // "tem texto = mostra" / "vazio = não mostra", com a cor escolhida na Biblioteca de Badges.
   const badgeText = document.getElementById('item-badge').value.trim();
   const badgeColor = document.getElementById('item-badge-color').value||'#D9383A';
   const available = document.getElementById('item-available-check').checked;
@@ -7652,19 +7845,37 @@ function updateWizardPreview(){
   const photoEl = document.getElementById('wizard-preview-photo');
   if(image){ photoEl.style.backgroundImage = `url(${JSON.stringify(image).slice(1,-1)})`; photoEl.textContent=''; }
   else { photoEl.style.backgroundImage=''; photoEl.textContent='🍽️'; }
-  document.getElementById('wizard-preview-badge-wrap').innerHTML = (badgeMode==='manual'&&badgeText) ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : (badgeMode==='global' ? `<span class="wizard-preview-badge" style="opacity:.6;">🏷 badge global</span>` : '');
+  const badgeHTML = badgeText ? `<span class="wizard-preview-badge" style="background:${badgeColor};">${badgeText}</span>` : '';
+  document.getElementById('wizard-preview-badge-wrap').innerHTML = badgeHTML;
+  const miniPreviewEl = document.getElementById('item-badge-mini-preview');
+  if(miniPreviewEl) miniPreviewEl.innerHTML = badgeHTML || '<span style="font-size:11px;color:var(--muted);">Sem badge</span>';
+  const hidden = document.getElementById('item-hidden-check').checked;
   const pill = document.getElementById('wizard-status-pill');
-  pill.className = 'wizard-status-pill '+(available?'available':'unavailable');
-  pill.textContent = available ? '✅ Disponível' : '🚫 Esgotado';
+  // v107g: status de 3 estados — Oculto tem prioridade visual (some do cardápio inteiro, é o
+  // estado "mais forte"); senão mostra Disponível/Indisponível como sempre.
+  if(hidden){ pill.className = 'wizard-status-pill hidden-state'; pill.textContent = '🙈 Oculto'; }
+  else { pill.className = 'wizard-status-pill '+(available?'available':'unavailable'); pill.textContent = available ? '✅ Disponível' : '🚫 Indisponível'; }
   const fpill = document.getElementById('wizard-featured-pill');
   fpill.className = 'wizard-status-pill '+(featured?'featured-on':'');
   fpill.textContent = featured ? '⭐ Destaque' : '☆ Destaque';
   const pct = computeWizardProgress();
   document.getElementById('wizard-progress-fill').style.width = pct+'%';
   document.getElementById('wizard-progress-pct').textContent = pct+'% completo';
+  // (novo) resumo lateral mais completo — grupos, opções, obrigatórios, extras pagos e total de
+  // peças configurado nos grupos de Montagem (soma de Máx.total, ou # inclusas quando não tem máx).
+  const totalOptions = editingVariants.reduce((s,g)=>s+g.options.length,0);
+  const requiredGroups = editingVariants.filter(g=>g.required || Number(g.min)>0).length;
+  const paidExtras = editingVariants.reduce((s,g)=>s+g.options.filter(o=>!o.hidden && o.priceMode!=='incluido' && Number(o.priceDelta)>0).length,0);
+  const montagemGroups = editingVariants.filter(g=>(g.kind||'variacao')==='montagem');
+  const totalPecasCombo = montagemGroups.reduce((s,g)=>s+(Number(g.max)||Number(g.includedQty)||0),0);
   document.getElementById('wizard-preview-summary').innerHTML = `
-    <div>🍱 ${editingVariants.length} grupo(s) de opções</div>
-    <div>${document.getElementById('item-qty').value.trim() ? '🍣 '+document.getElementById('item-qty').value.trim() : ''}</div>`;
+    <div>🍱 ${editingVariants.length} grupo(s) de opções · ${totalOptions} opção(ões)</div>
+    <div>⚠️ ${requiredGroups} grupo(s) obrigatório(s)</div>
+    <div>💰 ${paidExtras} extra(s) pago(s)</div>
+    ${totalPecasCombo>0?`<div>🍣 ${totalPecasCombo} peça(s) no total do combo</div>`:''}
+    <div>${document.getElementById('item-qty').value.trim() ? '🍽️ '+document.getElementById('item-qty').value.trim() : ''}</div>`;
+  const montagemTotalEl = document.getElementById('montagem-total-pecas');
+  if(montagemTotalEl) montagemTotalEl.textContent = montagemGroups.length ? `🍣 Total configurado: ${totalPecasCombo} peça(s) somando ${montagemGroups.length} grupo(s) de montagem` : '';
   const nutriCal = document.getElementById('item-nutri-calories').value.trim();
   const nutriProt = document.getElementById('item-nutri-protein').value.trim();
   const nutriCarb = document.getElementById('item-nutri-carbs').value.trim();
@@ -7842,6 +8053,224 @@ async function saveLibraryGroups(silent){
   if(!res.ok){ alert(res.data.error||'Erro ao salvar biblioteca de grupos.'); return; }
   if(!silent){ closeModal('libgroups-modal'); showToast('✅ Biblioteca salva!', `${clean.length} grupo(s) reutilizável(is).`); }
 }
+// v107d — reordenar opção arrastando (☰). Mantém tudo dentro do MESMO grupo/lista de sempre,
+// só troca a posição no array `options` (não duplica, não perde dado — se soltar fora ou no
+// grupo errado, a função simplesmente não faz nada).
+let _optionDragData = null;
+function optionDragStart(e,which,gi,oi){
+  _optionDragData = {which,gi,oi};
+  e.dataTransfer.effectAllowed='move';
+  try{ e.dataTransfer.setData('text/plain', JSON.stringify(_optionDragData)); }catch(err){}
+  e.currentTarget.style.opacity='.4';
+}
+function optionDragOver(e){ e.preventDefault(); e.currentTarget.classList.add('drag-over'); }
+function optionDragEnd(e){ e.currentTarget.style.opacity=''; document.querySelectorAll('.vopt-row2.drag-over').forEach(el=>el.classList.remove('drag-over')); }
+function optionDrop(e,which,gi,targetOi){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const data = _optionDragData;
+  _optionDragData = null;
+  if(!data || data.which!==which || data.gi!==gi || data.oi===targetOi) return;
+  const opts = groupsList(which)[gi].options;
+  const [moved] = opts.splice(data.oi,1);
+  opts.splice(targetOi,0,moved);
+  refreshGroupsUI(which);
+}
+// (novo) 👁 Ocultar opção — some do cardápio do cliente (ver public/index.html), mas continua
+// salva aqui no editor pra reativar quando quiser. Diferente de excluir (que apaga de vez).
+function toggleOptionHidden(which,gi,oi){
+  const o = groupsList(which)[gi].options[oi];
+  o.hidden = !o.hidden;
+  refreshGroupsUI(which);
+}
+// (novo) 📋 Duplicar opção
+function duplicateVariantOption(which,gi,oi){
+  const opts = groupsList(which)[gi].options;
+  const clone = JSON.parse(JSON.stringify(opts[oi]));
+  clone.name = clone.name ? clone.name+' (cópia)' : '';
+  opts.splice(oi+1,0,clone);
+  refreshGroupsUI(which);
+}
+// (novo) "+ Adicionar Opção" — mini-modal dentro da própria etapa (não fecha o grupo, só essa
+// janelinha). Salva direto no grupo indicado por (which,gi), guardados em campos escondidos.
+function openAddOptionModal(which,gi){
+  document.getElementById('aom-which').value = which;
+  document.getElementById('aom-gi').value = gi;
+  document.getElementById('aom-name').value = '';
+  document.getElementById('aom-price').value = '';
+  document.getElementById('aom-free').checked = false;
+  document.getElementById('aom-price').disabled = false;
+  document.getElementById('aom-minqty').value = '';
+  document.getElementById('aom-maxqty').value = '1';
+  openModal('add-option-modal');
+  setTimeout(()=>document.getElementById('aom-name').focus(),50);
+}
+function onAomFreeToggle(){
+  const free = document.getElementById('aom-free').checked;
+  document.getElementById('aom-price').disabled = free;
+  if(free) document.getElementById('aom-price').value='';
+}
+function submitAddOptionModal(){
+  const which = document.getElementById('aom-which').value;
+  const gi = parseInt(document.getElementById('aom-gi').value);
+  const name = document.getElementById('aom-name').value.trim();
+  if(!name){ alert('Digite o nome da opção.'); return; }
+  const free = document.getElementById('aom-free').checked;
+  const option = {
+    name,
+    priceMode: free ? 'incluido' : 'adicional',
+    priceDelta: free ? 0 : (parseFloat(document.getElementById('aom-price').value)||0),
+    maxQty: parseInt(document.getElementById('aom-maxqty').value)||1,
+    minQty: parseInt(document.getElementById('aom-minqty').value)||0, // (novo, opcional — reservado pra regra futura de mínimo por opção)
+  };
+  groupsList(which)[gi].options.push(option);
+  closeModal('add-option-modal');
+  refreshGroupsUI(which);
+  showToast('✅ Opção adicionada', `"${name}" adicionada ao grupo.`);
+}
+// (novo) "+ Novo Grupo" com atalhos prontos — cria o grupo já com nome/tipo comuns preenchidos,
+// pra não digitar do zero toda vez. "Grupo em branco" continua disponível igual sempre foi.
+// (novo v107e) 🏷 Biblioteca de Badges — prontas (fixas) + personalizadas (salvas em
+// cfg.badgeLibrary, persistidas junto com o resto da configuração — mesmo /api/config de sempre).
+const BADGE_PRESETS = [
+  {label:'🔥 Mais Vendido', color:'#D4A373'},   // dourado (cor de destaque)
+  {label:'🌱 Vegano', color:'#2f9e44'},          // verde
+  {label:'⭐ Chef Recomenda', color:'#eab308'},  // amarelo
+  {label:'🆕 Novidade', color:'#3b82f6'},        // azul
+  {label:'🌶 Picante', color:'#D9383A'},         // vermelho (cor principal)
+  {label:'🎁 Promoção', color:'#f97316'},        // laranja
+  {label:'❤️ Favorito', color:'#ec4899'},        // rosa
+];
+function openBadgeLibrary(){
+  document.getElementById('badge-lib-presets').innerHTML = BADGE_PRESETS.map((b,i)=>`
+    <button type="button" class="badge-lib-preset-btn" style="background:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>`).join('');
+  renderCustomBadgeLibrary();
+  openModal('badge-library-modal');
+}
+function renderCustomBadgeLibrary(){
+  const list = cfg.badgeLibrary || [];
+  const el = document.getElementById('badge-lib-custom');
+  el.innerHTML = list.length ? list.map((b,i)=>`
+    <span style="display:inline-flex;align-items:center;gap:4px;">
+      <button type="button" class="badge-lib-preset-btn" style="background:${b.color};" onclick="applyBadgeFromLibrary('${b.label.replace(/'/g,"\\'")}','${b.color}')">${b.label}</button>
+      <button type="button" class="vopt-icon-btn" onclick="removeCustomBadgeFromLibrary(${i})" title="Remover da biblioteca">🗑</button>
+    </span>`).join('') : '<div style="font-size:11px;color:var(--muted);">Nenhuma badge personalizada salva ainda.</div>';
+}
+function applyBadgeFromLibrary(label,color){
+  document.getElementById('item-badge').value = label;
+  document.getElementById('item-badge-color').value = color;
+  closeModal('badge-library-modal');
+  updateWizardPreview();
+}
+async function addCustomBadgeToLibrary(){
+  const text = document.getElementById('badge-lib-new-text').value.trim();
+  if(!text){ alert('Digite o texto da badge.'); return; }
+  const color = document.getElementById('badge-lib-new-color').value||'#D9383A';
+  cfg.badgeLibrary = cfg.badgeLibrary || [];
+  cfg.badgeLibrary.push({label:text,color});
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ cfg.badgeLibrary.pop(); alert(res.data.error||'Erro ao salvar badge.'); return; }
+  document.getElementById('badge-lib-new-text').value='';
+  renderCustomBadgeLibrary();
+  showToast('✅ Badge salva', `"${text}" adicionada à Biblioteca.`);
+}
+async function removeCustomBadgeFromLibrary(i){
+  if(!confirm('Remover essa badge da Biblioteca? (não afeta itens que já usam esse texto, só some da lista de atalhos)'))return;
+  const removed = cfg.badgeLibrary.splice(i,1);
+  const res = await apiPost('/api/config', { cfg, menu });
+  if(!res.ok){ cfg.badgeLibrary.splice(i,0,removed[0]); alert(res.data.error||'Erro ao remover badge.'); return; }
+  renderCustomBadgeLibrary();
+}
+const GROUP_PRESETS = [
+  {label:'🍣 Sabores', name:'Sabores', type:'single'},
+  {label:'🥫 Molhos', name:'Molhos', type:'multiple'},
+  {label:'🥤 Bebidas', name:'Bebidas', type:'single'},
+  {label:'➕ Extras', name:'Extras', type:'multiple'},
+  {label:'📏 Tamanho', name:'Tamanho', type:'single'},
+  {label:'🧩 Complementos', name:'Complementos', type:'multiple'},
+];
+function openNewGroupPresets(which,kind){
+  document.getElementById('ngp-which').value = which;
+  document.getElementById('ngp-kind').value = kind||'';
+  document.getElementById('ngp-presets').innerHTML = GROUP_PRESETS.map((p,pi)=>`
+    <button type="button" class="btn secondary sm" onclick="createGroupFromPreset(${pi})" style="text-align:left;">${p.label}</button>`).join('');
+  openModal('new-group-preset-modal');
+}
+function createGroupFromPreset(pi){
+  const which = document.getElementById('ngp-which').value;
+  const kind = document.getElementById('ngp-kind').value || 'variacao';
+  const p = GROUP_PRESETS[pi];
+  const list = groupsList(which);
+  addVariantGroup(which,kind);
+  const g = list[list.length-1];
+  g.name = p.name; g.type = p.type;
+  closeModal('new-group-preset-modal');
+  refreshGroupsUI(which);
+}
+function createBlankGroupFromModal(){
+  const which = document.getElementById('ngp-which').value;
+  const kind = document.getElementById('ngp-kind').value || 'variacao';
+  addVariantGroup(which,kind);
+  closeModal('new-group-preset-modal');
+}
+// (novo) 🧩 Copiar Grupo de Outro Produto — busca qualquer prato do cardápio que já tenha
+// grupos de opções, e copia SEM referenciar o original (clone com id novo — se o produto de
+// origem mudar depois, o que já foi copiado pra cá não muda sozinho).
+function openCopyGroupFromProductModal(which,kind){
+  document.getElementById('cgp-which').value = which;
+  document.getElementById('cgp-kind').value = kind||'';
+  document.getElementById('cgp-search').value = '';
+  document.getElementById('cgp-results').innerHTML = '<div style="font-size:11px;color:var(--muted);">Digite ao menos 2 letras pra buscar.</div>';
+  document.getElementById('cgp-groups').innerHTML = '';
+  openModal('copy-group-product-modal');
+}
+function cgpSearch(q){
+  q = (q||'').trim().toLowerCase();
+  const resultsEl = document.getElementById('cgp-results');
+  document.getElementById('cgp-groups').innerHTML = '';
+  if(q.length<2){ resultsEl.innerHTML = '<div style="font-size:11px;color:var(--muted);">Digite ao menos 2 letras pra buscar.</div>'; return; }
+  const results = [];
+  menu.forEach((sec,si)=>{
+    (sec.items||[]).forEach((it,ii)=>{
+      if((it.variants||[]).length && it.name.toLowerCase().includes(q)) results.push({si,ii,name:it.name,cat:sec.title||''});
+    });
+  });
+  resultsEl.innerHTML = results.length ? results.slice(0,20).map(r=>`
+    <button type="button" class="btn secondary sm" style="display:block;width:100%;text-align:left;margin-bottom:4px;" onclick="cgpPickProduct(${r.si},${r.ii})">
+      ${esc(r.name)} <span style="color:var(--muted);font-size:10px;">· ${esc(r.cat)}</span>
+    </button>`).join('') : '<div style="font-size:11px;color:var(--muted);">Nenhum prato com grupos de opções encontrado com esse nome.</div>';
+}
+function cgpPickProduct(si,ii){
+  const it = menu[si].items[ii];
+  document.getElementById('cgp-groups').innerHTML = `<div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Grupos de "${esc(it.name)}":</div>` + (it.variants||[]).map((g,gi)=>`
+    <div class="vgroup" style="padding:10px;margin-bottom:8px;">
+      <div style="font-weight:600;font-size:12.5px;margin-bottom:6px;">${esc(g.name||'(sem nome)')} <span style="font-size:10px;color:var(--muted);font-weight:400;">· ${g.options.length} opção(ões)</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'full')" title="Copia o grupo inteiro (nome, regras e opções)">Grupo inteiro</button>
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'options')" title="Copia só a lista de opções, pra um grupo novo">Apenas opções</button>
+        <button type="button" class="btn secondary sm" onclick="cgpApply(${si},${ii},${gi},'prices')" title="Copia só a estrutura de preços (você preenche os nomes)">Apenas preços</button>
+      </div>
+    </div>`).join('');
+}
+function cgpApply(si,ii,gi,mode){
+  const which = document.getElementById('cgp-which').value;
+  const kind = document.getElementById('cgp-kind').value || 'variacao';
+  const src = menu[si].items[ii].variants[gi];
+  let clone;
+  if(mode==='full'){
+    clone = JSON.parse(JSON.stringify(src));
+    clone.id = 'g'+Date.now().toString(36);
+  } else if(mode==='options'){
+    clone = {id:'g'+Date.now().toString(36),name:'Opções copiadas',type:src.type,required:false,min:'',max:'',includedQty:'',overagePrice:'',options:JSON.parse(JSON.stringify(src.options))};
+  } else {
+    clone = {id:'g'+Date.now().toString(36),name:'',type:src.type,required:false,min:'',max:'',includedQty:'',overagePrice:'',options:src.options.map(o=>({name:'',priceDelta:o.priceDelta,priceMode:o.priceMode,maxQty:o.maxQty}))};
+  }
+  if(which==='item') clone.kind = kind;
+  groupsList(which).push(clone);
+  closeModal('copy-group-product-modal');
+  refreshGroupsUI(which);
+  showToast('✅ Grupo copiado', mode==='full'?'Grupo inteiro copiado.':mode==='options'?'Opções copiadas pra um grupo novo.':'Estrutura de preços copiada pra um grupo novo.');
+}
 function renderVariantGroups(which, kindFilter){
   which = which || 'item';
   const list = groupsList(which);
@@ -7881,26 +8310,33 @@ function renderVariantGroups(which, kindFilter){
         ${isMultiple?`
         <div style="display:flex;flex-wrap:wrap;gap:10px;margin:2px 0 10px;padding:10px;background:var(--bg2,rgba(0,0,0,.15));border-radius:8px;">
           <div style="font-size:10px;color:var(--muted);width:100%;">Quantidade total no grupo (opcional — deixe em branco pra não limitar por quantidade, ex: molhos onde cada um só liga/desliga)</div>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
-          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Mín. total <input type="number" min="0" style="width:64px;" value="${g.min||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'min',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">Máx. total <input type="number" min="0" style="width:64px;" value="${g.max||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'max',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;" title="Ex: 4 peças inclusas no combo, a partir da 5ª cobra o valor por unidade abaixo"># inclusas <input type="number" min="0" style="width:64px;" value="${g.includedQty||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'includedQty',this.value)"/></label>
+          <label style="font-size:11px;display:flex;align-items:center;gap:4px;">+R$/excedente <input type="number" step="0.01" min="0" style="width:70px;" value="${g.overagePrice||''}" placeholder="—" oninput="if(this.value<0)this.value=0;updateVariantGroupField('${which}',${gi},'overagePrice',this.value)"/></label>
         </div>`:''}
         ${g.options.map((o,oi)=>`
-          <div class="vopt-row" style="flex-wrap:wrap;">
-            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},-1)" ${oi===0?'disabled':''} title="Mover opção pra cima" style="font-size:10px;padding:0 4px;">▲</button>
-            <button type="button" onclick="moveVariantOption('${which}',${gi},${oi},1)" ${oi===g.options.length-1?'disabled':''} title="Mover opção pra baixo" style="font-size:10px;padding:0 4px;">▼</button>
-            <input type="text" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)" style="flex:1;min-width:110px;"/>
-            <select style="width:110px;" onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)">
-              <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
-              <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>Adicional</option>
-              <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>Preço fixo</option>
-            </select>
-            ${o.priceMode!=='incluido'?`<input type="number" step="0.01" placeholder="${o.priceMode==='fixo'?'R$':'+R$'}" value="${o.priceDelta||0}" style="width:78px;" oninput="updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
-            ${isMultiple?`<label style="font-size:10px;color:var(--muted);display:flex;align-items:center;gap:3px;white-space:nowrap;" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Máx.un <input type="number" min="1" style="width:52px;" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></label>`:''}
-            <button type="button" onclick="removeVariantOption('${which}',${gi},${oi})" title="Remover opção">✕</button>
+          <div class="vopt-row2 ${o.hidden?'hidden-opt':''}" draggable="true"
+               ondragstart="optionDragStart(event,'${which}',${gi},${oi})"
+               ondragover="optionDragOver(event)"
+               ondrop="optionDrop(event,'${which}',${gi},${oi})"
+               ondragend="optionDragEnd(event)">
+            <span class="vopt-drag" title="Arrastar pra reordenar">☰</span>
+            <input type="text" class="vopt-name-input" placeholder="Opção (ex: Grande, Salmão)" value="${(o.name||'').replace(/"/g,'&quot;')}" oninput="updateVariantOptionField('${which}',${gi},${oi},'name',this.value)"/>
+            <span class="vopt-price-cell">
+              <select onchange="updateVariantOptionField('${which}',${gi},${oi},'priceMode',this.value)" title="Como esta opção é cobrada">
+                <option value="incluido" ${o.priceMode==='incluido'?'selected':''}>Incluído</option>
+                <option value="adicional" ${(!o.priceMode||o.priceMode==='adicional')?'selected':''}>+ R$</option>
+                <option value="fixo" ${o.priceMode==='fixo'?'selected':''}>R$ fixo</option>
+              </select>
+              ${o.priceMode!=='incluido'?`<input type="number" step="0.01" min="0" placeholder="0,00" value="${o.priceDelta||0}" oninput="if(this.value<0)this.value=0;updateVariantOptionField('${which}',${gi},${oi},'priceDelta',this.value)"/>`:''}
+            </span>
+            ${isMultiple?`<span class="vopt-maxqty-cell" title="Máximo de unidades dessa opção (1 = liga/desliga; >1 vira um contador +/- pro cliente)">Qtd. máx <input type="number" min="1" value="${o.maxQty||1}" oninput="updateVariantOptionField('${which}',${gi},${oi},'maxQty',this.value)"/></span>`:''}
+            <button type="button" class="vopt-icon-btn" onclick="toggleOptionHidden('${which}',${gi},${oi})" title="${o.hidden?'Reexibir opção no cardápio':'Ocultar opção do cardápio (some da loja, continua salva aqui)'}">${o.hidden?'🙈':'👁'}</button>
+            <button type="button" class="vopt-icon-btn" onclick="duplicateVariantOption('${which}',${gi},${oi})" title="Duplicar opção">📋</button>
+            <button type="button" class="vopt-icon-btn" onclick="removeVariantOption('${which}',${gi},${oi})" title="Excluir opção">🗑</button>
           </div>`).join('')}
-        <button type="button" class="btn secondary sm" style="margin-top:4px;" onclick="addVariantOption('${which}',${gi})">+ Opção</button>
+        <button type="button" class="btn success btn-add-option-big" onclick="openAddOptionModal('${which}',${gi})">+ Adicionar Opção</button>
       </div>`;
     }).join('');
 }
@@ -7909,10 +8345,25 @@ async function saveItem(andNew){
   const ii=parseInt(document.getElementById('item-edit-ii').value);
   const name=document.getElementById('item-name').value.trim();
   if(!name){alert('Digite o nome do prato.');goToWizardStep('info');return;}
+  // BUG CORRIGIDO — validação de valores negativos: min="0" no HTML só bloqueia as setinhas do
+  // campo, não impede digitar ou colar um número negativo direto. Math.max(0,...) aqui garante
+  // que nada negativo chega a ser salvo, mesmo se passar batido pela validação da tela.
   const cleanVariants = editingVariants
-    .map(g=>({...g, name:g.name.trim()||'Opções', options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Number(o.priceDelta)||0,priceMode:o.priceMode||'adicional',maxQty:Number(o.maxQty)||1})).filter(o=>o.name)}))
+    .map(g=>({
+      ...g,
+      name:g.name.trim()||'Opções',
+      // BUG CORRIGIDO — mesma validação de "sem negativo" aplicada aos campos de quantidade/preço
+      // do grupo (Mín./Máx. total, # inclusas, +R$/excedente): min="0" no HTML não segura colar
+      // um valor negativo, então trava aqui também antes de salvar.
+      min: g.min===''||g.min==null ? '' : Math.max(0,Number(g.min)||0),
+      max: g.max===''||g.max==null ? '' : Math.max(0,Number(g.max)||0),
+      includedQty: g.includedQty===''||g.includedQty==null ? '' : Math.max(0,Number(g.includedQty)||0),
+      overagePrice: g.overagePrice===''||g.overagePrice==null ? '' : Math.max(0,Number(g.overagePrice)||0),
+      options:g.options.map(o=>({name:(o.name||'').trim(),priceDelta:Math.max(0,Number(o.priceDelta)||0),priceMode:o.priceMode||'adicional',maxQty:Math.max(1,Number(o.maxQty)||1)})).filter(o=>o.name)
+    }))
     .filter(g=>g.options.length>0);
-  const [posX, posY] = document.getElementById('item-image-pos').value.split(',').map(n=>parseInt(n)||50);
+  const _posParts = document.getElementById('item-image-pos').value.split(',');
+  const posX = parseInt(_posParts[0])||50, posY = parseInt(_posParts[1])||50, posZoom = parseInt(_posParts[2])||100, posRotate = parseInt(_posParts[3])||0;
   const nowIso = new Date().toISOString();
   const existing = ii>-1 ? menu[si].items[ii] : null;
   const promoPriceRaw = parseFloat(document.getElementById('item-promo-price').value);
@@ -7923,21 +8374,25 @@ async function saveItem(andNew){
   const item={
     id: (existing && existing.id) || ('item'+Date.now().toString(36)),
     name,desc:document.getElementById('item-desc').value.trim(),
-    price:parseFloat(document.getElementById('item-price').value)||0,
+    price:Math.max(0,parseFloat(document.getElementById('item-price').value)||0),
     qty:document.getElementById('item-qty').value.trim(),
     badge:document.getElementById('item-badge').value.trim(),
-    badgeMode:(document.querySelector('input[name="item-badgemode"]:checked')||{}).value||'global',
+    // v107e: "Herdar Badge Global" saiu junto com a tela que configurava isso — agora é só "tem
+    // texto = manual" / "vazio = sem badge".
+    badgeMode: document.getElementById('item-badge').value.trim() ? 'manual' : 'off',
     badgeColor: document.getElementById('item-badge-color').value||'#D9383A', // (novo)
     image:document.getElementById('item-image').value.trim(),
-    imagePos:{x:posX,y:posY},
+    imagePos:{x:posX,y:posY,zoom:posZoom,rotate:posRotate},
     variants:cleanVariants,
     available:document.getElementById('item-available-check').checked, // v107b: etapa "Disponibilidade" do wizard
+    hidden:document.getElementById('item-hidden-check').checked, // v107g: "Ocultar do cardápio" agora editável direto no wizard (campo já existia desde v87, usado pelo toggle rápido da listagem)
     featured: document.getElementById('item-featured-check').checked, // (novo)
     sku: document.getElementById('item-sku').value.trim(), // (novo)
     ean: document.getElementById('item-ean').value.trim(), // (novo)
     tags: tagsRaw ? tagsRaw.split(',').map(t=>t.trim()).filter(Boolean) : [], // (novo)
     promoPrice: (promoPriceRaw>0) ? promoPriceRaw : null, // (novo) — ainda não conectado à vitrine/checkout, ver aviso na etapa 8
-    stock: stockRaw ? (parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
+    fichaTecnicaId: document.getElementById('item-ficha-vinculada') ? (document.getElementById('item-ficha-vinculada').value||null) : null, // (novo) — usado só pro cálculo de Lucro interno no painel
+    stock: stockRaw ? Math.max(0,parseInt(stockRaw)||0) : null, // (novo) — null = ilimitado
     acceptsCoupon: document.getElementById('item-accepts-coupon').checked, // (novo) — informativo por enquanto
     allergens: getSelectedAllergens(), // (novo)
     nutrition: { // (novo) — por porção
@@ -7948,6 +8403,7 @@ async function saveItem(andNew){
     },
     createdAt: (existing && existing.createdAt) || nowIso, // (novo)
     updatedAt: nowIso, // (novo)
+    updatedBy: userName||'', // (novo) — quem salvou por último, pra mostrar em "Última atualização"
   };
   if(ii===-1){ menu[si].items.push(item); }
   else menu[si].items[ii]={...menu[si].items[ii], ...item}; // mantém stations e days que já estavam, não reseta ao editar
@@ -8465,7 +8921,7 @@ function renderCourierReportBody(){
   }
 }
 
-// ── IMPRIMIR RELATÓRIO — layout profissional: SHOGATSU RESTAURANTE, Data, Responsável,
+// ── IMPRIMIR RELATÓRIO — layout profissional: FOOD JÁ, Data, Responsável,
 // tabela Pedido|Cliente|Bairro|Taxa|Motoboy, totais e assinaturas (responsável + motoboy) ──
 function printCourierReport(){
   if(!lastCourierReport){ showToast('Nada pra imprimir', 'Filtre o relatório primeiro.'); return; }
@@ -8486,7 +8942,7 @@ function printCourierReport(){
     </tr>`).join('') || '<tr><td colspan="5">Nenhuma entrega no período.</td></tr>';
 
   const win = window.open('', '_blank');
-  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Entregas — ${esc(cfg.name||'Food')}</title>
+  win.document.write(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>Relatório de Entregas — Food Já</title>
     <style>
       body{font-family:Arial,Helvetica,sans-serif;color:#111;padding:24px;}
       .p-header{text-align:center;margin-bottom:18px;}
@@ -8506,7 +8962,7 @@ function printCourierReport(){
       @media print{ button{display:none;} }
     </style></head><body>
     <div class="p-header">
-      <h1>${esc((cfg.name||'FOOD').toUpperCase())} — RELATÓRIO DE ENTREGAS</h1>
+      <h1>FOOD JÁ</h1>
       <h2>Relatório de Entregas</h2>
     </div>
     <div class="p-meta">
@@ -8541,7 +8997,7 @@ function exportCSV(){
   const csv=rows.map(r=>r.map(c=>'"'+String(c).replace(/"/g,'""')+'"').join(',')).join('\n');
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,\uFEFF'+encodeURIComponent(csv);
-  a.download='shogatsu-pedidos-'+new Date().toISOString().slice(0,10)+'.csv';
+  a.download='foodja-pedidos-'+new Date().toISOString().slice(0,10)+'.csv';
   a.click();
 }
 
@@ -8762,7 +9218,7 @@ function loadSettings(){
   const trEl=document.getElementById('cfg-timeretirada'); if(trEl) trEl.value=cfg.timeRetirada||'';
   document.getElementById('cfg-addr').value=cfg.addr||'';
   document.getElementById('cfg-hours').value=cfg.hours||'';
-  document.getElementById('cfg-name').value=cfg.name||'Food';
+  document.getElementById('cfg-name').value=cfg.name||'Food Já';
   document.getElementById('cfg-days').value=cfg.days||'Ter–Dom';
   renderWeekScheduleEditor();
   renderLogoEditor();
@@ -10066,7 +10522,7 @@ async function loadUsersPage(){
 }
 let allPanelUsers = [];
 function renderUsersList(users){
-  const roleLabel={master:'👑 Master',admin:'🛠 Admin',vendas:'🛒 Caixa'};
+  const roleLabel={master:'👑 Master',admin:'🛠 Admin',vendas:'🛒 Vendas'};
   document.getElementById('users-list').innerHTML = users.map(u=>{
     const permCount = u.permissions ? Object.values(u.permissions).filter(v=>v===false).length : 0;
     const permBadge = u.role==='master' ? '' : (permCount>0 ? `<span style="font-size:10px;color:var(--gold);">🔐 ${permCount} módulo(s) restrito(s)</span>` : `<span style="font-size:10px;color:var(--muted);">🔐 acesso total</span>`);
@@ -10130,7 +10586,9 @@ const PERM_GROUPS = [
     { key:'motoboys', label:'🛵 Motoboys' },
     { key:'cardapio', label:'🍱 Cardápio' },
     { key:'custos', label:'💰 Custos & Ficha Técnica' },
+    { key:'notafiscal', label:'📷 Ler Nota Fiscal' },
     { key:'ia', label:'🤖 IA do Cardápio' },
+    { key:'qrlinks', label:'🔗 QR Code & Links' },
     { key:'relatorios', label:'📈 Relatórios' },
     { key:'avaliacoes', label:'⭐ Avaliações' },
   ]},
@@ -10366,7 +10824,6 @@ async function saveAllSettings(){
   if(statusEl) statusEl.textContent='Salvando...';
   const res = await apiPost('/api/config', { cfg, menu });
   if(!res.ok){ if(statusEl) statusEl.textContent=''; alert(res.data.error||'Erro ao salvar configurações.'); return; }
-  applyBranding(cfg); // v108: nome do sistema pode ter mudado — atualiza login/barra lateral na hora
   if(statusEl){ statusEl.textContent='✅ Salvo às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); setTimeout(()=>{statusEl.textContent='';},4000); }
   showToast('✅ Tudo salvo!','Todas as configurações foram atualizadas com sucesso.');
 }
