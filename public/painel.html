@@ -2,7 +2,16 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<!-- (novo v108: BUG CORRIGIDO — "foto e editor somem no zoom") Ao dar zoom pelo navegador
+     (pinça no celular ou Ctrl+scroll no desktop), o WebKit/Chrome às vezes falha em repintar
+     elementos que combinam overflow:hidden + transform (é exatamente o caso da caixinha de foto
+     do item e da barra de ferramentas de zoom/giro logo abaixo) — a foto e a barra ficavam
+     invisíveis até rolar a página ou trocar de aba. As outras páginas do sistema (index.html,
+     pedir-agora.html etc.) já bloqueiam esse zoom nativo do navegador por esse mesmo motivo; o
+     painel era a única tela que ainda não tinha essa trava. O app já tem seu próprio controle de
+     zoom da foto (slider "🔍 Zoom" dentro do editor de item), então bloquear o zoom do navegador
+     aqui não tira nenhuma função — só evita esse bug. -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="theme-color" content="#c0392b">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -557,7 +566,14 @@ table{max-width:100%;}
 .field textarea{resize:vertical;min-height:70px;}
 .field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
 .photo-upload{display:flex;align-items:center;gap:14px;}
-.photo-preview-wrap{position:relative;width:74px;height:74px;border-radius:14px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);overflow:hidden;}
+/* (novo v108) transform:translateZ(0) força esta caixa a ter sua própria camada de composição
+   no navegador — é a mesma técnica usada pra evitar o bug clássico do WebKit/Chrome onde um
+   elemento com overflow:hidden + filho com transform (o <img> de baixo usa scale/rotate pro
+   zoom da foto) simplesmente não é repintado depois de um zoom da página, ficando invisível até
+   a página rolar. touch-action:pan-x/pan-y impede o gesto de pinça-pra-zoom especificamente
+   sobre a foto, funcionando como segunda camada de proteção mesmo em navegadores/versões que
+   ignorem o user-scalable=no do <meta viewport> lá em cima. */
+.photo-preview-wrap{position:relative;width:74px;height:74px;border-radius:14px;flex-shrink:0;background:var(--panel);border:1px solid var(--border);overflow:hidden;-webkit-transform:translateZ(0);transform:translateZ(0);touch-action:pan-x pan-y;}
 /* v53: BUG CORRIGIDO ("ícones se misturando" na caixa de fotos) — o <img> da prévia não tinha
    display:none por padrão no CSS; ele só ficava escondido depois que o JS rodava
    (resetItemPhotoPreview). Num primeiro carregamento mais lento, ou em qualquer caso onde o JS
@@ -568,7 +584,10 @@ table{max-width:100%;}
 .photo-preview{width:100%;height:100%;object-fit:cover;display:none;}
 /* (novo v107e) barra de ferramentas de foto — zoom/girar/centralizar/corte automático, borda
    dourada fina, no lugar dos dois sliders soltos de antes. */
-.photo-toolbar{margin-top:10px;padding:12px;border:1px solid rgba(212,163,115,.35);border-radius:10px;background:var(--panel);}
+/* (novo v108) mesma trava/compositing da .photo-preview-wrap acima, aplicada aqui na barra de
+   zoom/giro/centralizar — ela também some junto com a foto no mesmo bug, já que fica dentro do
+   mesmo bloco reposicionado pelo JS (resetItemPhotoPreview). */
+.photo-toolbar{margin-top:10px;padding:12px;border:1px solid rgba(212,163,115,.35);border-radius:10px;background:var(--panel);-webkit-transform:translateZ(0);transform:translateZ(0);touch-action:pan-x pan-y;}
 .photo-toolbar-row{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px;}
 .photo-tool-btn{border:1px solid var(--border);background:var(--card);color:var(--white);border-radius:7px;padding:6px 10px;font-size:11px;cursor:pointer;}
 .photo-tool-btn:hover{border-color:var(--gold);color:var(--gold);}
@@ -7560,6 +7579,37 @@ async function uploadItemPhoto(input){
     input.value='';
   }
 }
+// (novo v108) BUG CORRIGIDO — "foto e editor somem no zoom": a trava do <meta viewport>
+// (maximum-scale/user-scalable) só evita o gesto de PINÇA no celular; ela não impede o zoom
+// nativo do navegador no desktop (Ctrl +/- ou Ctrl+scroll), que também disparava o mesmo bug de
+// repaint do WebKit/Chrome na caixa de foto. Como rede de segurança pra cobrir esse caso (e
+// qualquer navegador que ignore a trava do viewport), a cada mudança de zoom/tamanho de janela a
+// gente força um reflow rapidinho da foto e da barra de ferramentas — só quando elas estão
+// visíveis — reaplicando a mesma transformação que já estava valendo. Isso não muda nada visível
+// pro usuário quando não há bug, só "acorda" o navegador pra repintar quando há.
+let _photoRepaintTimer=null;
+function forcePhotoEditorRepaint(){
+  const wrap=document.getElementById('item-photo-wrap');
+  const posWrap=document.getElementById('item-photo-pos-wrap');
+  if(!wrap || wrap.offsetParent===null) return; // editor de item não está aberto/visível agora
+  [wrap, posWrap].forEach(el=>{
+    if(!el) return;
+    el.style.display='none';
+    // eslint-disable-next-line no-unused-expressions
+    el.offsetHeight; // força o navegador a processar o reflow antes de mostrar de novo
+    el.style.display = el===posWrap ? (document.getElementById('item-image').value ? 'block' : 'none') : '';
+  });
+  const img=document.getElementById('item-photo-preview');
+  if(img){
+    const parts=(document.getElementById('item-image-pos').value||'50,50,100,0').split(',');
+    applyItemPhotoTransform(img, {x:parts[0],y:parts[1],zoom:parts[2],rotate:parts[3]});
+  }
+}
+window.addEventListener('resize', ()=>{
+  clearTimeout(_photoRepaintTimer);
+  _photoRepaintTimer=setTimeout(forcePhotoEditorRepaint, 120);
+});
+
 function removeItemPhoto(){ resetItemPhotoPreview(''); }
 function updateItemPhotoPos(){
   const x = document.getElementById('item-photo-posx').value;
