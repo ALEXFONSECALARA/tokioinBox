@@ -1,4 +1,89 @@
-# v107b — CADASTRO DE PRATOS VIROU UM EDITOR EM ETAPAS (wizard), com prévia ao vivo
+# v107h — "Editar Cardápio" modernizado: sidebar de categorias virou barra horizontal
+
+Só reorganização visual — nenhuma função, dado, categoria ou produto foi tocado. Mesmas
+`selectCat`/`moveCategory`/`openEditCategory`/`openCopyCategoryPicker`/`deleteCategory`/
+`setupCatDragDrop` de sempre; só o HTML mudou de coluna lateral fixa pra fileira horizontal.
+
+**Sidebar lateral de categorias removida.** Virou uma barra horizontal de cards compactos
+(ícone + nome + "X produtos") logo abaixo do cabeçalho "Editar Cardápio", com rolagem própria —
+funciona igual em celular e desktop, sem quebrar layout. Categoria selecionada fica destacada em
+vermelho Shogatsu. Reordenar categoria continua funcionando por arrastar-e-soltar (já existia);
+tirei os botões ▲▼ pra deixar o card mais compacto, já que arrastar já fazia a mesma coisa.
+
+**Botão "🍽️ Todos" (novo).** Mostra o cardápio inteiro junto, todas as categorias misturadas,
+sem precisar clicar categoria por categoria — só reorganiza a exibição, não mexe nos dados.
+
+**Ordenação (novo).** Um seletor "↕ Ordem padrão / 🔤 Nome A-Z / 💲 Preço menor/maior primeiro"
+na barra de ferramentas, do lado do filtro de busca — só muda a ordem de exibição na tela, a
+ordem "de verdade" salva no cardápio não muda (por isso os botões de mover item ▲▼ somem
+enquanto uma ordenação diferente da padrão está ativa: mover não faria sentido nessa visão).
+
+**Grid de produtos ajustado pros tamanhos pedidos**: ~4 por linha em desktop largo, 2-3 em
+tablet, 1-2 em celular (responsivo automático, sem breakpoint fixo cortando produto no meio).
+
+**O que NÃO adicionei nesta rodada**: um botão "Filtros" separado dos chips de filtro rápido que
+já existem (Todos/Disponível/Indisponível/Promoção/Destaque) — os chips já cobrem exatamente
+esses filtros, um botão a mais só duplicaria a mesma coisa e poluiria a tela.
+
+
+
+Build usada como base: `shogatsu-v107f` (badges + remoção do Badge Global). Esta rodada foi uma
+**auditoria de bugs** (conferir duplicações, validação, valores negativos, foto quebrada) mais
+dois ajustes de UX pedidos.
+
+**Auditoria (sem bugs achados nos pontos abaixo, já estavam OK):**
+- Duplicação de funções/IDs: rodei uma varredura em `server.js`, `public/painel.html` e
+  `public/index.html` procurando função ou `id=""` duplicado — nenhum encontrado.
+- Foto quebrada: já existia fallback (volta pro ícone de prato quando a imagem não carrega).
+- Impressão e cardápio do cliente: não tocados, como sempre.
+
+**Bugs corrigidos:**
+- **Valores negativos não eram bloqueados de verdade.** O atributo `min="0"` do HTML só trava as
+  setinhas do campo — dava pra digitar ou colar um número negativo direto (preço, preço
+  promocional, estoque, valor de opção de variação, quantidades de grupo). Agora trava na hora
+  que você digita E de novo (com `Math.max(0,...)`) na hora de salvar, pra garantir que nada
+  negativo chega a ir pro Supabase mesmo que passe pela tela.
+
+**Novo, como pedido:**
+- **Cabeçalho fixo durante toda a edição.** Como o editor de item virou página cheia (não é mais
+  modal, desde uma versão anterior), o cabeçalho — com status, progresso e todos os botões de
+  ação (Cancelar/Visualizar/Duplicar/Excluir/Salvar) — agora fica grudado no topo enquanto você
+  rola a página pra baixo, em vez de rolar junto e sumir.
+- **Status de 3 estados**: Disponível / Indisponível / 🙈 Oculto. "Oculto do cardápio" (um campo
+  que já existia desde a v87 — usado no botão rápido "👁️ Ocultar Produto" da listagem) agora
+  também é editável dentro do próprio editor, na etapa Disponibilidade, com selo próprio no
+  cabeçalho.
+- **"Última atualização"** no cabeçalho agora mostra data **e quem editou** (usuário do painel
+  logado), reaproveitando o sistema de usuários/permissões já existente — sem criar nada novo pra
+  isso.
+
+
+
+# v107f — 🏷 Badge Global removido de vez + Biblioteca de Badges com as 7 cores pedidas
+
+Build usada como base: `shogatsu-v107e-completo.zip` (enviada pelo usuário — já trazia, prontos
+e funcionando, os itens 3/4/5 do prompt de evolução: "+ Adicionar Opção" com mini-janela própria,
+"+ Novo Grupo" com atalhos prontos [Sabores/Molhos/Bebidas/Extras/Tamanho/Complementos], e
+"🧩 Copiar de outro produto" com os 3 modos — grupo inteiro / apenas opções / apenas preços).
+Faltava só isto:
+
+**🏷 Badge Global removido por completo (de novo, agora nesta base).** A aba "Cardápio → 🏷 Badge
+Global" ainda existia aqui (tela, botão `switchMenuMainTab`, funções `phUpdateField`/
+`phBadgeHTML`/`savePlaceholderBadgeSettings`) — tudo excluído. As 3 opções de rádio "Herdar Badge
+Global / Personalizar / Sem badge" no editor de item também saíram — agora é só "tem texto no
+campo = mostra o badge" / "vazio = não mostra", que é o que a Biblioteca de Badges já preenche.
+Item que dependia só do Badge Global (sem texto próprio) migra automaticamente o texto e a cor ao
+ser reaberto no editor, pra não sumir do cardápio do cliente sem aviso.
+
+**Biblioteca de Badges com as 7 badges e cores exatas pedidas**, substituindo a lista genérica que
+estava ali antes: 🔥 Mais Vendido (dourado), 🌱 Vegano (verde), ⭐ Chef Recomenda (amarelo),
+🆕 Novidade (azul), 🌶 Picante (vermelho), 🎁 Promoção (laranja), ❤️ Favorito (rosa). Os botões da
+biblioteca agora mostram a cor de verdade preenchida (não só a borda), e a prévia ao vivo — tanto
+no card lateral do wizard quanto um mini-preview novo logo abaixo do campo de badge no formulário
+— atualiza na hora que você clica num badge pronto ou muda a cor manualmente. Continua dando pra
+salvar badges personalizadas (texto + cor) na Biblioteca pra reusar depois, como já existia.
+
+
 
 Reorganização visual do MESMO modal de Editar/Novo Item — mesmos campos, mesmas funções de
 salvar, foto e grupos de opções (v107a) — em **5 etapas com barra lateral, prévia do cliente ao

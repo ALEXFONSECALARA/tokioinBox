@@ -114,7 +114,7 @@ const APP_VERSION = PKG_VERSION + '-' + BUILD_COMMIT;
 // existem. "usuarios" fica de fora de propósito: só master acessa mesmo (data-min-role="master"),
 // então nunca é atribuível a outro usuário. Ausência do campo "permissions" num usuário = acesso
 // total (comportamento de sempre, ninguém perde acesso que já tinha antes desta versão).
-const PERMISSION_MODULES = ['pedidos', 'reservas', 'mensagens', 'motoboys', 'cardapio', 'custos', 'ia', 'relatorios', 'avaliacoes', 'configuracoes', 'impressao'];
+const PERMISSION_MODULES = ['pedidos', 'reservas', 'mensagens', 'motoboys', 'cardapio', 'custos', 'notafiscal', 'ia', 'qrlinks', 'relatorios', 'avaliacoes', 'configuracoes', 'impressao'];
 function normalizePermissions(perms) {
   if (!perms || typeof perms !== 'object') return null;
   const out = {};
@@ -122,28 +122,9 @@ function normalizePermissions(perms) {
   return out;
 }
 
-// v107 — SEGURANÇA: antes as senhas de admin/master vinham FIXAS gravadas direto no código-fonte
-// ('shogatsu2026'/'shogatsuMaster2026') — qualquer pessoa com acesso ao código (repositório,
-// zip, ou até este histórico de conversa) conhecia essas senhas. Isso só importa pra uma
-// instalação NOVA — quem já tem senha própria salva no arquivo de configuração não é afetado em
-// nada (a senha salva sempre tem prioridade sobre este valor, ver o merge em readConfig() mais
-// abaixo). Agora, numa instalação nova, cada senha é gerada aleatoriamente a cada vez que o
-// servidor sobe sem encontrar um config.json ainda, e mostrada UMA VEZ no console pra o dono
-// copiar — nunca fica um valor adivinhável, igual pra todo mundo, gravado no código-fonte.
-function gerarSenhaInicial() {
-  return crypto.randomBytes(9).toString('base64').replace(/[^a-zA-Z0-9]/g, '').slice(0, 12);
-}
-const SENHA_ADMIN_GERADA = gerarSenhaInicial();
-const SENHA_MASTER_GERADA = gerarSenhaInicial();
-
 const DEFAULT_CFG = {
   whats: '552227641333', storePhone: '(22) 2764-1333', fee: 8, min: 60,
-  // v108: nome inicial passou a ser "Food" (genérico) em vez de "Shogatsu Culinária Oriental" —
-  // só afeta uma instalação NOVA, sem nenhum data/config.json salvo ainda. Quem já tem o
-  // restaurante configurado (como este) não é afetado: readConfig() sempre usa o arquivo salvo
-  // quando ele existe, nunca sobrescreve com este valor padrão. O nome continua 100% editável
-  // pelo usuário Master em Configurações → Nome do Restaurante, a qualquer momento.
-  name: 'Food', days: 'Ter–Dom',
+  name: 'Shogatsu Culinária Oriental', days: 'Ter–Dom',
   time: '40–60 min', timeRetirada: '20–30 min', addr: 'Av. Gov. Roberto Silveira, 109 · Costazul · Rio das Ostras · CEP 22896-155',
   hours: '18h30–23h', open: 1,
   // ── Auto-abertura/fechamento por horário (se ativado, cfg.open passa a ser calculado sozinho) ──
@@ -162,16 +143,16 @@ const DEFAULT_CFG = {
     { open: true, openTime: '18:00', closeTime: '23:00' },  // sexta
     { open: true, openTime: '18:00', closeTime: '23:00' }   // sábado
   ],
-  adminPass: SENHA_ADMIN_GERADA,
-  masterPass: SENHA_MASTER_GERADA,
+  // v108: sem senha hardcoded em texto puro no código — a senha original continua a mesma de
+  // sempre (não muda pra ninguém), só passa a ser salva em HASH em vez de texto puro. Ver
+  // bloco de bootstrap logo abaixo e migratePasswordIfNeeded() pra instalações já em produção.
+  adminPass: null,
+  masterPass: null,
   // ── Usuários do painel (login por usuário + senha, com nível de acesso) ──
   // master: acesso total, inclusive gerenciar outros usuários.
   // admin: acesso total ao painel, exceto gerenciar usuários.
   // vendas: só Dashboard, Pedidos e Kanban — pra quem só precisa bater pedido no balcão.
-  users: [
-    { username: 'master', password: 'shogatsuMaster2026', role: 'master' },
-    { username: 'admin', password: 'shogatsu2026', role: 'admin' }
-  ],
+  users: [],
   // v107a — Biblioteca de Grupos de Opções Reutilizáveis (Cardápio → 📚), pra montar um grupo
   // (tamanho, sabores, molhos...) uma vez e reaproveitar em vários pratos. Cada item continua
   // guardando sua PRÓPRIA cópia em variants — este array é só o "catálogo" pra copiar depois.
@@ -373,8 +354,7 @@ const DEFAULT_CFG = {
   adminChatBackground: { enabled: false, url: '', name: '', size: 0, width: 0, height: 0, date: '', overlay: 0.45 },
   // ── Cardápio do Rodízio Popular (página pública cardapio-rodizio-popular.html) — v39:
   // antes esses dados ficavam fixos dentro do próprio HTML; agora vêm daqui, editáveis pela
-  // seção "✏️ Editar Cardápio Popular" dentro da página Cardápio do painel (v108), sem
-  // precisar mexer em nenhum arquivo.
+  // aba "🔗 QR Code & Links" do painel, sem precisar mexer em nenhum arquivo.
   rodizioPopular: {
     phrases: [
       'Sushi à vontade. Sabor sem limites.',
@@ -424,11 +404,19 @@ const DEFAULT_MENU = require('./default-menu.json');
 if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
 if (!fs.existsSync(UPLOADS_DIR)) fs.mkdirSync(UPLOADS_DIR, { recursive: true });
 if (!fs.existsSync(CONFIG_FILE)) {
-  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: DEFAULT_CFG, menu: DEFAULT_MENU }, null, 2));
-  console.log('\n🔐 Instalação nova — nenhum config.json encontrado, senhas geradas automaticamente:');
-  console.log(`   Admin:  ${SENHA_ADMIN_GERADA}`);
-  console.log(`   Master: ${SENHA_MASTER_GERADA}`);
-  console.log('   Troque as duas assim que entrar, em Configurações → Usuários. Esse aviso não aparece de novo.\n');
+  // v108: a senha padrão continua sendo a mesma de sempre (shogatsu2026 / shogatsuMaster2026)
+  // — só passa a ser salva já em HASH no config.json em vez de texto puro. Não força troca
+  // nem gera senha aleatória: quem já usa o sistema continua entrando com a senha de sempre.
+  const bootCfg = {
+    ...DEFAULT_CFG,
+    adminPass: hashPassword('shogatsu2026'),
+    masterPass: hashPassword('shogatsuMaster2026'),
+    users: [
+      { username: 'master', password: hashPassword('shogatsuMaster2026'), role: 'master' },
+      { username: 'admin', password: hashPassword('shogatsu2026'), role: 'admin' }
+    ]
+  };
+  fs.writeFileSync(CONFIG_FILE, JSON.stringify({ cfg: bootCfg, menu: DEFAULT_MENU }, null, 2));
 }
 if (!fs.existsSync(ORDERS_FILE)) fs.writeFileSync(ORDERS_FILE, '[]');
 if (!fs.existsSync(CUSTOMERS_FILE)) fs.writeFileSync(CUSTOMERS_FILE, '[]');
@@ -484,14 +472,7 @@ function writeJSON(file, data) {
 const SUPABASE_URL = (process.env.SUPABASE_URL || '').replace(/\/$/, '');
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_KEY || '';
 const SUPABASE_TABLE = process.env.SUPABASE_TABLE || 'shogatsu_kv';
-// v107 — BUG DE PERSISTÊNCIA CORRIGIDO: atendimento.json (histórico de conversas da tela de
-// Mensagens) e contatos-importados.json (contatos importados de CSV/vCard) usavam writeJSON()
-// normalmente, mas tinham ficado FORA dessa lista — ou seja, nunca tinham backup no Supabase e
-// sumiam a cada deploy que apaga o disco do Render, sem nenhum aviso. Adicionados aqui, sem
-// mudar formato nenhum (mesmo dado, só passa a ser salvo também). print-log/ia-cache/ia-log
-// continuam de fora de propósito — são log/cache, não dado de negócio, e cache pode crescer
-// bastante à toa se fosse sincronizado.
-const FILE_TO_KEY = { [ORDERS_FILE]: 'orders', [CONFIG_FILE]: 'config', [CUSTOMERS_FILE]: 'customers', [RESERVATIONS_FILE]: 'reservations', [PUSH_SUBS_FILE]: 'push_subs', [ADMIN_PUSH_SUBS_FILE]: 'admin_push_subs', [SCHEDULED_PUSH_FILE]: 'scheduled_push', [COURIERS_FILE]: 'couriers', [DELETE_LOG_FILE]: 'delete_log', [INGREDIENTES_FILE]: 'ingredientes', [FICHAS_TECNICAS_FILE]: 'fichas_tecnicas', [CUSTOS_CONFIG_FILE]: 'custos_config', [SESSIONS_FILE]: 'sessions', [APROVACOES_IA_FILE]: 'aprovacoes_ia', [ATENDIMENTO_FILE]: 'atendimento', [CONTATOS_IMPORTADOS_FILE]: 'contatos_importados' };
+const FILE_TO_KEY = { [ORDERS_FILE]: 'orders', [CONFIG_FILE]: 'config', [CUSTOMERS_FILE]: 'customers', [RESERVATIONS_FILE]: 'reservations', [PUSH_SUBS_FILE]: 'push_subs', [ADMIN_PUSH_SUBS_FILE]: 'admin_push_subs', [SCHEDULED_PUSH_FILE]: 'scheduled_push', [COURIERS_FILE]: 'couriers', [DELETE_LOG_FILE]: 'delete_log', [INGREDIENTES_FILE]: 'ingredientes', [FICHAS_TECNICAS_FILE]: 'fichas_tecnicas', [CUSTOS_CONFIG_FILE]: 'custos_config', [SESSIONS_FILE]: 'sessions', [APROVACOES_IA_FILE]: 'aprovacoes_ia' };
 
 function supabaseRequest(method, subpath, body) {
   return new Promise((resolve, reject) => {
@@ -524,18 +505,10 @@ function supabaseRequest(method, subpath, body) {
   });
 }
 
-// v107 — REDUÇÃO DE BANDWIDTH: antes, TODO writeJSON reenviava o arquivo inteiro pro Supabase,
-// mesmo quando o conteúdo era idêntico ao que já tinha sido mandado. Agora guardamos em memória
-// o último payload enviado com sucesso por chave e pulamos o envio se for exatamente igual — sem
-// nenhum atraso e sem mudar o que o disco local grava (isso continua instantâneo, igual antes).
-const lastSyncedPayload = new Map(); // key -> JSON string do último envio bem-sucedido
 function syncToSupabase(file, data) {
   const key = FILE_TO_KEY[file];
   if (!key || !SUPABASE_URL || !SUPABASE_KEY) return;
-  const payloadStr = JSON.stringify(data);
-  if (lastSyncedPayload.get(key) === payloadStr) return; // idêntico ao último enviado — nada novo pra sincronizar
   supabaseRequest('POST', `${SUPABASE_TABLE}?on_conflict=key`, { key, value: data, updated_at: new Date().toISOString() })
-    .then(() => { lastSyncedPayload.set(key, payloadStr); })
     .catch(err => console.error(`⚠️  Falha ao sincronizar "${key}" com o Supabase:`, err.message));
 }
 
@@ -577,26 +550,13 @@ function syncUploadToSupabase(filename, buffer, ext) {
 async function restoreUploadsFromSupabase() {
   if (!SUPABASE_URL || !SUPABASE_KEY) return;
   try {
-    // v107 — CAUSA RAIZ DE BANDWIDTH ALTO: antes baixava o CONTEÚDO (base64) de TODAS as fotos
-    // de uma vez, mesmo das que já existiam certinho em UPLOADS_DIR — e roda em TODO restart
-    // do processo (todo deploy, todo crash-restart). Agora primeiro pede só os NOMES
-    // (select=key, sem o base64 pesado), compara com o que já existe em disco, e só baixa o
-    // conteúdo de quem realmente falta. Resultado final idêntico (disco realmente apagado ainda
-    // restaura TUDO), só que sem re-baixar o que já está lá.
-    const rows = await supabaseRequest('GET', `${SUPABASE_TABLE}?key=ilike.upload_*&select=key`);
-    const faltando = (rows || [])
-      .map(r => String(r.key || '').replace(/^upload_/, ''))
-      .filter(filename => filename && !fs.existsSync(path.join(UPLOADS_DIR, filename)));
+    const rows = await supabaseRequest('GET', `${SUPABASE_TABLE}?key=ilike.upload_*&select=key,value`);
     let restauradas = 0;
-    for (const filename of faltando) {
-      try {
-        const linhas = await supabaseRequest('GET', `${SUPABASE_TABLE}?key=eq.${encodeURIComponent('upload_' + filename)}&select=value`);
-        const row = linhas && linhas[0];
-        const dest = path.join(UPLOADS_DIR, filename);
-        if (!row || !row.value || !row.value.b64 || fs.existsSync(dest)) continue;
-        fs.writeFileSync(dest, Buffer.from(row.value.b64, 'base64'));
-        restauradas++;
-      } catch (e) { /* ignora essa foto e segue restaurando as outras */ }
+    for (const row of (rows || [])) {
+      const filename = String(row.key || '').replace(/^upload_/, '');
+      const dest = path.join(UPLOADS_DIR, filename);
+      if (!filename || fs.existsSync(dest) || !row.value || !row.value.b64) continue; // já existe local — não sobrescreve
+      try { fs.writeFileSync(dest, Buffer.from(row.value.b64, 'base64')); restauradas++; } catch (e) { /* ignora essa e segue as outras */ }
     }
     if (restauradas) console.log(`   ✓ ${restauradas} foto(s) restaurada(s) do Supabase pra uploads/`);
   } catch (err) { console.error('   ⚠️  Não consegui restaurar fotos do Supabase:', err.message); }
@@ -753,6 +713,16 @@ function getSession(token) {
   return s;
 }
 function checkAuth(token) { return !!getSession(token); }
+// v108: invalida todas as sessões de um usuário (exceto a que acabou de trocar a senha, se
+// informada) — assim quem trocou a senha continua logado, mas qualquer outra sessão antiga
+// com a senha velha (ex: outro computador, ou um token vazado) para de funcionar na hora.
+function invalidateSessionsForUser(username, keepToken) {
+  const uname = String(username || '').toLowerCase();
+  for (const [tok, s] of sessions) {
+    if (tok !== keepToken && String(s.username || '').toLowerCase() === uname) sessions.delete(tok);
+  }
+  persistSessions();
+}
 // master > admin > vendas — checa se a sessão tem o nível mínimo pedido
 const ROLE_RANK = { vendas: 1, admin: 2, master: 3 };
 function requireRole(token, minRole) {
@@ -767,6 +737,35 @@ function normalizePhone(phone) { return String(phone || '').replace(/\D/g, ''); 
 
 function hashPin(phone, pin) {
   return crypto.createHash('sha256').update(normalizePhone(phone) + ':' + String(pin) + ':shogatsu-salt').digest('hex');
+}
+
+// ─── Hash de senhas do painel (admin/master/usuários) ───
+// v108: antes as senhas ficavam em texto puro no config.json (e algumas hardcoded no código-fonte).
+// Formato novo: "scrypt:<salt-hex>:<hash-hex>". isPasswordHashed() reconhece esse formato;
+// qualquer valor que não bata com ele é tratado como senha ANTIGA em texto puro — assim o login
+// de instalações já em produção continua funcionando sem precisar redigitar nada. Ver
+// migratePasswordIfNeeded(), chamada só no exato momento em que uma senha em texto puro é usada
+// com sucesso: nesse instante ela é re-salva já em hash, sem exigir nenhuma ação do restaurante.
+function hashPassword(plain) {
+  const salt = crypto.randomBytes(16).toString('hex');
+  const hash = crypto.scryptSync(String(plain), salt, 64).toString('hex');
+  return `scrypt:${salt}:${hash}`;
+}
+function isPasswordHashed(stored) {
+  return typeof stored === 'string' && stored.startsWith('scrypt:') && stored.split(':').length === 3;
+}
+function verifyPassword(plain, stored) {
+  if (!stored || plain == null) return false;
+  if (isPasswordHashed(stored)) {
+    const [, salt, hashHex] = stored.split(':');
+    try {
+      const check = crypto.scryptSync(String(plain), salt, 64);
+      const stored64 = Buffer.from(hashHex, 'hex');
+      return stored64.length === check.length && crypto.timingSafeEqual(stored64, check);
+    } catch (e) { return false; }
+  }
+  // Legado: senha antiga salva em texto puro.
+  return String(plain) === String(stored);
 }
 
 function findCustomer(customers, phone) {
@@ -818,7 +817,7 @@ function broadcast(event, data) {
 // quando os arquivos do sistema são atualizados; precisa de REINICIAR-AGENTE.bat. Atualizar esse
 // valor sempre que print-agent.js mudar de verdade (não precisa mudar em toda alteração de
 // server.js — só quando o AGENT_BUILD de lá também mudar).
-const CURRENT_AGENT_BUILD = 'v107'; // v107: removido polling morto de stationStatus (isAuthorizedToPrint() não tinha mais nenhuma chamada desde a v106) — atualizado junto com print-agent/print-agent.js.
+const CURRENT_AGENT_BUILD = 'v95';
 const printAgents = new Map(); // agentId -> { label, stations, printers, build, lastSeen }
 const PRINT_AGENT_TTL_MS = 90 * 1000; // sem novo aviso em 90s, considera o agente offline
 function getOnlinePrintAgents() {
@@ -1542,6 +1541,38 @@ function lerImagemIA(base64, mediaType, tipo, iaCfg) {
     return resultado;
   });
 }
+// v98 — leitura ESTRUTURADA de nota fiscal (cabeçalho + itens), formato mais completo que
+// lerImagemIA(tipo='nota') — que continua existindo do jeito de sempre pra não quebrar quem já
+// usa. Esta função é aditiva: nova rota /api/custos/ler-nota-fiscal (ver mais abaixo), sem mudar
+// o contrato de /api/custos/ler-imagem. Nunca inventa dado: campo ilegível vem null.
+// v99 — ampliada pra ferramenta isolada "📷 Ler Nota Fiscal" (public/nota-fiscal.html): agora
+// também extrai chave de acesso, série, IE, endereço do emitente, destinatário+CNPJ, e por
+// produto NCM/CST/CFOP, além de base ICMS, valor ICMS, desconto e frete da nota. Nenhuma outra
+// tela/função do sistema chama esta função — ampliar o schema aqui não afeta nada existente.
+function lerNotaFiscalEstruturadaIA(base64, mediaType, iaCfg) {
+  const hash = hashImagemIA(base64) + ':nota-estruturada-v99';
+  const doCache = cacheImagemIA_ler(hash);
+  if (doCache) return Promise.resolve(doCache.resultado);
+  const instrucao = 'Leia esta imagem de uma Nota Fiscal Eletrônica (NF-e/DANFE). Extraia SOMENTE o que estiver ' +
+    'visível e legível na nota — número da NF-e, série, chave de acesso, data de emissão, dados do emitente/' +
+    'fornecedor (nome, CNPJ, inscrição estadual, endereço), dados do destinatário (nome, CNPJ), e cada produto ' +
+    '(código, descrição, NCM, CST, CFOP, unidade, quantidade, valor unitário, valor total), e os totais da nota ' +
+    '(base de cálculo do ICMS, valor do ICMS, desconto, frete, valor total da nota). ' +
+    'Responda APENAS com um JSON (sem markdown, sem texto antes/depois) no formato exato: ' +
+    '{"numero_nota":"","serie":"","chave_acesso":"","data_emissao":"",' +
+    '"emitente":{"nome":"","cnpj":"","inscricao_estadual":"","endereco":""},' +
+    '"destinatario":{"nome":"","cnpj":""},' +
+    '"produtos":[{"codigo":"","descricao":"","ncm":"","cst":"","cfop":"","unidade":"","quantidade":0,"valor_unitario":0,"valor_total":0}],' +
+    '"totais":{"base_icms":0,"valor_icms":0,"desconto":0,"frete":0,"valor_total_nota":0}}. ' +
+    'Se algum campo não estiver legível ou não existir na nota, use null nesse campo específico — nunca invente um valor.';
+  const content = [{ type: 'text', text: instrucao }, { type: 'image', mediaType: mediaType || 'image/jpeg', data: base64 }];
+  return chamarIA([{ role: 'user', content }], iaCfg, 2200).then(texto => {
+    const resultado = extrairJSONdaIA(texto);
+    cacheImagemIA_salvar(hash, resultado);
+    return resultado;
+  });
+}
+
 // v93 — "IA do Cardápio deve fazer a ficha técnica dos pratos JÁ EXISTENTES no cardápio". Mesma
 // ressalva de sempre: essa IA não pesquisa internet de verdade, então a ficha gerada aqui é
 // sempre uma ESTIMATIVA (nunca vira "oficial" sozinha) até alguém da cozinha conferir.
@@ -1978,15 +2009,25 @@ async function handleRequest(req, res) {
 
   // ── POST /api/change-password — troca senha do painel (admin) ou senha master ──
   if (pathname === '/api/change-password' && req.method === 'POST') {
-    if (!checkAuth(getToken(req, query))) return sendJSON(res, 401, { error: 'unauthorized' });
+    const authToken = getToken(req, query);
+    if (!checkAuth(authToken)) return sendJSON(res, 401, { error: 'unauthorized' });
     try {
       const { which, current: curPass, next } = await readBody(req);
       const field = which === 'master' ? 'masterPass' : 'adminPass';
       const data = readConfig();
-      if (curPass !== data.cfg[field]) return sendJSON(res, 403, { error: 'senha atual incorreta' });
-      if (!next || next.length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
-      data.cfg[field] = next;
+      if (!verifyPassword(curPass, data.cfg[field])) return sendJSON(res, 403, { error: 'senha atual incorreta' });
+      if (!next || String(next).length < 4) return sendJSON(res, 400, { error: 'nova senha muito curta (mín. 4 caracteres)' });
+      data.cfg[field] = hashPassword(next);
+      // Também atualiza a mesma senha na lista de usuários, se essa role tiver um usuário
+      // correspondente por convenção (username 'admin'/'master') — mantém os dois lugares
+      // (login por usuário e login "só senha") sincronizados, sem inventar campo novo.
+      const roleUsername = which === 'master' ? 'master' : 'admin';
+      (data.cfg.users || []).forEach(u => {
+        if (String(u.username || '').toLowerCase() === roleUsername) u.password = data.cfg[field];
+      });
       writeJSON(CONFIG_FILE, data);
+      // Derruba qualquer outra sessão logada com a senha antiga (mantém a sessão atual ativa).
+      invalidateSessionsForUser(roleUsername, authToken);
       return sendJSON(res, 200, { ok: true });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -2151,6 +2192,19 @@ async function handleRequest(req, res) {
       return sendJSON(res, 200, { itens });
     } catch (e) { return sendJSON(res, 400, { error: e.message || 'Não consegui ler essa imagem.' }); }
   }
+  // v98 — POST /api/custos/ler-nota-fiscal — leitura ESTRUTURADA (fornecedor/CNPJ/número/série/
+  // data/produtos com código-quantidade-unidade-preço) — aditivo, não substitui /ler-imagem acima.
+  if (pathname === '/api/custos/ler-nota-fiscal' && req.method === 'POST') {
+    if (!checkAuth(getToken(req, query))) return sendJSON(res, 401, { error: 'unauthorized' });
+    try {
+      const { imagemBase64, mediaType } = await readBody(req, 15e6);
+      if (!imagemBase64) return sendJSON(res, 400, { error: 'Nenhuma imagem recebida.' });
+      const { cfg } = readConfig();
+      const nota = await lerNotaFiscalEstruturadaIA(imagemBase64, mediaType, cfg.ia);
+      return sendJSON(res, 200, { nota });
+    } catch (e) { return sendJSON(res, 400, { error: e.message || 'Não consegui ler essa nota fiscal.' }); }
+  }
+
   // ── Atendimento — conversas (v57) ── janela de chat do cliente, estilo WhatsApp: começa com a
   // IA (se configurada) e o cliente pode pedir "falar com atendente" a qualquer momento, o que
   // marca a conversa pra aparecer no painel (Configurações → Atendimento) pro caixa responder na
@@ -2440,10 +2494,10 @@ async function handleRequest(req, res) {
       const existing = data.cfg.users.find(u => String(u.username || '').toLowerCase() === uname);
       if (existing) {
         existing.role = role;
-        if (password) existing.password = password; // só troca a senha se veio uma nova
+        if (password) existing.password = hashPassword(password); // só troca a senha se veio uma nova
       } else {
         if (!password || password.length < 4) return sendJSON(res, 400, { error: 'Senha precisa ter pelo menos 4 caracteres.' });
-        data.cfg.users.push({ username: uname, password, role });
+        data.cfg.users.push({ username: uname, password: hashPassword(password), role });
       }
       writeJSON(CONFIG_FILE, data);
       return sendJSON(res, 200, { ok: true, users: data.cfg.users.map(u => ({ username: u.username, role: u.role, permissions: u.role === 'master' ? null : normalizePermissions(u.permissions) })) });
@@ -2676,7 +2730,7 @@ async function handleRequest(req, res) {
     try {
       const { masterPass, beforeDate } = await readBody(req);
       const data = readConfig();
-      if (masterPass !== data.cfg.masterPass) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
+      if (!verifyPassword(masterPass, data.cfg.masterPass)) return sendJSON(res, 403, { error: 'Senha master incorreta.' });
       if (!beforeDate) return sendJSON(res, 400, { error: 'Informe a data limite.' });
       const cutoff = new Date(beforeDate).getTime();
       let orders = readJSON(ORDERS_FILE);
@@ -2834,7 +2888,18 @@ async function handleRequest(req, res) {
 
       if (uname) {
         const user = (cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
-        if (user && password === user.password) {
+        if (user && verifyPassword(password, user.password)) {
+          // v108: se a senha desse usuário ainda estava em texto puro (instalação antiga),
+          // re-salva já em hash agora que confirmamos que ela está correta — migração
+          // automática, sem exigir nada do restaurante nem derrubar a sessão em andamento.
+          if (!isPasswordHashed(user.password)) {
+            const fresh = readConfig();
+            const fu = (fresh.cfg.users || []).find(u => String(u.username || '').toLowerCase() === uname);
+            if (fu) {
+              fu.password = hashPassword(password);
+              writeJSON(CONFIG_FILE, { cfg: fresh.cfg, menu: fresh.menu });
+            }
+          }
           // v107: permissões por usuário vão junto no login pro Painel aplicar a UI na hora —
           // master sempre null (acesso total), independente do que estiver salvo.
           const permissions = user.role === 'master' ? null : normalizePermissions(user.permissions);
@@ -2844,8 +2909,20 @@ async function handleRequest(req, res) {
       }
 
       // Compatibilidade: login sem usuário (só senha) continua funcionando como antes.
-      if (password === cfg.adminPass) return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null });
-      if (password === cfg.masterPass) return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null });
+      if (verifyPassword(password, cfg.adminPass)) {
+        if (!isPasswordHashed(cfg.adminPass)) {
+          const fresh = readConfig();
+          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, adminPass: hashPassword(password) }, menu: fresh.menu });
+        }
+        return sendJSON(res, 200, { token: newSession('admin', 'admin'), role: 'admin', username: 'admin', permissions: null });
+      }
+      if (verifyPassword(password, cfg.masterPass)) {
+        if (!isPasswordHashed(cfg.masterPass)) {
+          const fresh = readConfig();
+          writeJSON(CONFIG_FILE, { cfg: { ...fresh.cfg, masterPass: hashPassword(password) }, menu: fresh.menu });
+        }
+        return sendJSON(res, 200, { token: newSession('master', 'master'), role: 'master', username: 'master', permissions: null });
+      }
       return sendJSON(res, 401, { error: 'senha incorreta' });
     } catch (e) { return sendJSON(res, 400, { error: 'invalid body' }); }
   }
@@ -5141,7 +5218,7 @@ function estimateDeliveryWindow(order, cfg) {
 
       // v33: confere especificamente a SENHA MASTER de novo (reautenticação), não aceita mais
       // senha de admin comum nem de outros usuários.
-      const passOk = !!password && password === cfg.masterPass;
+      const passOk = !!password && verifyPassword(password, cfg.masterPass);
       if (!passOk) {
         return sendJSON(res, 403, { error: '❌ Senha inválida. Pedido não foi removido.' });
       }
@@ -5188,7 +5265,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Cardápio não foi restaurado.' });
       const data = readConfig();
       data.menu = JSON.parse(JSON.stringify(DEFAULT_MENU)); // cópia limpa, sem referenciar o objeto original
       writeJSON(CONFIG_FILE, data);
@@ -5208,7 +5285,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(ORDERS_FILE).length;
       writeJSON(ORDERS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
@@ -5227,7 +5304,7 @@ function estimateDeliveryWindow(order, cfg) {
     try {
       const { password } = await readBody(req);
       const { cfg } = readConfig();
-      if (!password || password !== cfg.masterPass) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
+      if (!password || !verifyPassword(password, cfg.masterPass)) return sendJSON(res, 403, { error: '❌ Senha inválida. Histórico não foi apagado.' });
       const countBefore = readJSON(RESERVATIONS_FILE).length;
       writeJSON(RESERVATIONS_FILE, []);
       const log = readJSON(DELETE_LOG_FILE);
