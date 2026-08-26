@@ -1,7 +1,7 @@
 {
-  "name": "Food Já — Peça Agora",
-  "short_name": "Food Já",
-  "description": "Links rápidos para pedir seu delivery ou retirada Food Já.",
+  "name": "Shogatsu — Peça Agora",
+  "short_name": "Shogatsu",
+  "description": "Links rápidos para pedir seu delivery ou retirada Shogatsu.",
   "start_url": "/pedir-agora.html",
   "display": "standalone",
   "orientation": "portrait",
