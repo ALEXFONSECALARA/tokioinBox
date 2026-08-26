@@ -1147,6 +1147,7 @@ button:active, .btn:active, [role="button"]:active, .pay-opt:active, .cat-tab:ac
         </div>
         <div id="ss-map"></div>
         <button class="btn-received" id="btn-received" style="display:none;margin-top:14px;" onclick="markReceived()">✅ Recebi meu pedido</button>
+        <button class="btn-received" id="btn-novo-pedido" style="display:none;margin-top:14px;background:var(--red);" onclick="newOrder()">🛍️ Fazer novo pedido</button>
       </div>
     </div>
 
@@ -3986,6 +3987,7 @@ function startTracking(id) {
       renderStatus(data.status, data.cancelReason, data.courierName, data.paid);
       renderOrderTrackFloat();
       const receivedBtn = document.getElementById('btn-received');
+      const novoPedidoBtn = document.getElementById('btn-novo-pedido');
       const ratingCard = document.getElementById('ss-rating-card');
       if (receivedBtn) {
         // v48 — BUG CORRIGIDO ("mensagem recebi a entrega deve sumir após confirmado pelo
@@ -3998,6 +4000,11 @@ function startTracking(id) {
         receivedBtn.style.display = canReview ? 'block' : 'none';
         if (ratingCard) ratingCard.style.display = canReview ? 'block' : 'none';
         if (canReview) refreshPendingReviewBadge();
+        // v108: "Fazer novo pedido" só aparece quando o pedido já está mesmo Entregue — antes
+        // disso (recebido/em preparo/saiu pra entrega) não faz sentido oferecer começar outro,
+        // o cliente já está acompanhando este. Chama a mesma newOrder() que zera carrinho e
+        // estado, já existente no código mas até agora sem nenhum botão que a chamasse.
+        if (novoPedidoBtn) novoPedidoBtn.style.display = (data.status === 'entregue') ? 'block' : 'none';
       }
       // Avaliação pode ser aberta pelo cliente (botão "Recebi meu pedido") OU pelo
       // restaurante (quando marca o pedido como Entregue no painel) — o que vier primeiro.
@@ -4260,6 +4267,7 @@ function newOrder() {
     const el = document.getElementById(id); if (el) el.value = '';
   });
   const cs = document.getElementById('coupon-status'); if (cs) cs.textContent = '';
+  clearCheckoutDraftField('f-coupon'); // v108: sem isso, um cupom de uso único ficava salvo no rascunho local e reaparecia sozinho no próximo pedido após recarregar a página
   updateCartUI(); renderMenu();
 }
 

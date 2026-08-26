@@ -2164,31 +2164,33 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             Mostra fotos em tela cheia (pratos, ambiente, promoções) com animação suave por
             alguns segundos antes de abrir o cardápio — estilo iFood/Uber Eats/Airbnb.
           </div>
-          <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px;cursor:pointer;">
-            <input type="checkbox" id="splash-enabled"/> Ativar Splash Screen
-          </label>
-          <div class="field-row">
-            <div class="field">
-              <label>Duração total (2 a 15 segundos)</label>
-              <input type="number" id="splash-duration" min="2" max="15" step="0.5" value="3"/>
-            </div>
-            <div class="field">
-              <label>Efeito de transição</label>
-              <select id="splash-transition">
-                <option value="zoom">Zoom lento (Ken Burns)</option>
-                <option value="parallax">Parallax (zoom + deslocamento)</option>
-                <option value="fade">Fade simples</option>
-              </select>
-            </div>
-          </div>
-          <div class="field" style="margin-top:6px;">
-            <label>Fotos</label>
+          <div class="field">
+            <label>1. Fotos <span style="color:var(--gold);font-weight:400;">(comece por aqui — sem foto, a splash não aparece mesmo com "Ativar" ligado)</span></label>
             <div style="font-size:10px;color:var(--muted);margin-bottom:6px;">Envie fotos do seu dispositivo (📤) ou cole o link de uma foto já publicada. Ordem aqui é a ordem de exibição.</div>
             <div id="splash-photos-list" style="display:flex;flex-direction:column;gap:8px;margin-bottom:8px;"></div>
             <button type="button" class="btn secondary sm" onclick="splashAddPhoto()">+ Foto</button>
           </div>
+          <div class="field" style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px;">
+            <label style="display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:12px;cursor:pointer;">
+              <input type="checkbox" id="splash-enabled"/> 2. Ativar Splash Screen
+            </label>
+            <div class="field-row">
+              <div class="field">
+                <label>Duração total (2 a 15 segundos)</label>
+                <input type="number" id="splash-duration" min="2" max="15" step="0.5" value="3"/>
+              </div>
+              <div class="field">
+                <label>Efeito de transição</label>
+                <select id="splash-transition">
+                  <option value="zoom">Zoom lento (Ken Burns)</option>
+                  <option value="parallax">Parallax (zoom + deslocamento)</option>
+                  <option value="fade">Fade simples</option>
+                </select>
+              </div>
+            </div>
+          </div>
           <button type="button" class="btn primary" style="margin-top:14px;" onclick="saveSplashConfig()">💾 Salvar Splash Screen</button>
-          <div id="splash-save-status" style="font-size:12px;margin-top:8px;"></div>
+          <div id="splash-save-status" style="font-size:13px;font-weight:600;margin-top:10px;min-height:18px;"></div>
         </div>
           </div>
         </div>
@@ -2697,24 +2699,15 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             recurso novo de meio caminho; me avisa se quiser que eu desenvolva isso numa próxima
             rodada.
           </div>
-        </div>
-
-        <!-- ETAPA 7 — IMPRESSÃO -->
-        <div class="wizard-step-panel" data-step="impressao">
-          <div class="wizard-step-section-title">7. Impressão</div>
-          <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;">
-            🖨 A via de impressão (Caixa / Cozinha / SushiBar) é configurada uma vez <b>por
-            categoria</b>, não por item — todo prato desta categoria já herda automaticamente
-            pra onde imprime. Isso evita configurar a mesma coisa prato por prato.
-            <div style="margin-top:10px;">
-              <button type="button" class="btn secondary sm" onclick="goPage('cardapio');openEditCategory(parseInt(document.getElementById('item-edit-si').value))">⚙️ Configurar vias de impressão da categoria</button>
-            </div>
+          <div style="font-size:11px;color:var(--muted);margin-top:14px;padding-top:12px;border-top:1px solid var(--border);">
+            🖨 A via de impressão (Caixa / Cozinha / SushiBar) deste prato é herdada da <b>categoria</b>, não configurada aqui item por item.
+            <button type="button" class="btn secondary sm" style="margin-left:6px;" onclick="goPage('cardapio');openEditCategory(parseInt(document.getElementById('item-edit-si').value))">⚙️ Configurar vias de impressão da categoria</button>
           </div>
         </div>
 
-        <!-- ETAPA 8 — PROMOÇÕES -->
+        <!-- ETAPA 7 — PROMOÇÕES -->
         <div class="wizard-step-panel" data-step="promocoes">
-          <div class="wizard-step-section-title">8. Promoções e Descontos</div>
+          <div class="wizard-step-section-title">7. Promoções e Descontos</div>
           <div style="font-size:12px;color:var(--muted);background:var(--card);border:1px solid var(--border);border-radius:8px;padding:14px;margin-bottom:12px;">
             O <b>Preço Promocional</b> fica na etapa 1 (Informações), junto com o Preço de Venda —
             quando preenchido, ele aparece riscado/promocional aqui no painel e na prévia ao
@@ -5221,7 +5214,11 @@ async function saveSplashConfig(){
   const statusEl = document.getElementById('splash-save-status');
   const enabled = document.getElementById('splash-enabled').checked;
   const photos = splashDraftPhotos.filter(p => (typeof p==='string'?p:p.url||'').trim());
-  if(enabled && !photos.length){ statusEl.innerHTML = '<span style="color:var(--red-lt);">Adicione pelo menos uma foto pra poder ativar.</span>'; return; }
+  if(enabled && !photos.length){
+    statusEl.innerHTML = '<span style="color:var(--red-lt);">⚠️ Adicione pelo menos uma foto (seção 1, acima) antes de ativar.</span>';
+    showToast('⚠️ Falta adicionar foto', 'A Splash Screen precisa de pelo menos uma foto na lista antes de poder ser ativada.');
+    return;
+  }
   const durationSeconds = Math.max(2, Math.min(15, Number(document.getElementById('splash-duration').value)||3));
   const transition = document.getElementById('splash-transition').value;
   const splash = { enabled, durationSeconds, transition, photos };
@@ -7689,7 +7686,6 @@ const WIZARD_STEPS = [
   { id:'variacoes', label:'Variações', sub:'Sabores, adicionais...', icon:'🎛️' },
   { id:'aparencia', label:'Aparência', sub:'Badges e etiquetas', icon:'🎨' },
   { id:'disponibilidade', label:'Disponibilidade', sub:'Horários e estoque', icon:'✅' },
-  { id:'impressao', label:'Impressão', sub:'Estações e impressoras', icon:'🖨' },
   { id:'promocoes', label:'Promoções', sub:'Descontos e ofertas', icon:'🏷️' },
 ];
 let wizardCurrentStep = 'info';
@@ -8139,6 +8135,7 @@ const BADGE_PRESETS = [
   {label:'🆕 Novidade', color:'#3b82f6'},        // azul
   {label:'🌶 Picante', color:'#D9383A'},         // vermelho (cor principal)
   {label:'🎁 Promoção', color:'#f97316'},        // laranja
+  {label:'🏷️ Oferta', color:'#F4B400'},          // dourado premium
   {label:'❤️ Favorito', color:'#ec4899'},        // rosa
 ];
 function openBadgeLibrary(){
