@@ -473,12 +473,23 @@ table{max-width:100%;}
 .menu-filter-chip:hover{border-color:var(--gold);color:var(--white);}
 .menu-filter-chip.active{background:var(--red);border-color:var(--red);color:#fff;}
 .mi-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;padding:2px;}
-.mi-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:default;}
+.mi-card{background:var(--panel);border:1px solid var(--border);border-radius:16px;overflow:hidden;display:flex;flex-direction:column;transition:transform .15s,box-shadow .15s,border-color .15s;cursor:default;-webkit-transform:translateZ(0);transform:translateZ(0);}
 .mi-card:hover{transform:translateY(-3px);box-shadow:0 10px 26px rgba(0,0,0,.35);border-color:var(--border2);}
 .mi-card.dragging{opacity:.4;}
-.mi-card-media{position:relative;width:100%;aspect-ratio:16/11;background:var(--card);overflow:hidden;}
-.mi-card-media img{width:100%;height:100%;object-fit:cover;display:block;}
-.mi-card-media .mi-thumb-empty{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--muted);}
+/* (novo v109 — BUG CORRIGIDO: "foto, preço e botões somem no card do cardápio, só volta com
+   zoom menor no navegador") O `aspect-ratio:16/11` tem um bug conhecido do Chrome/Edge quando
+   usado dentro de um grid `auto-fill`+`minmax()` como o `.mi-grid` logo acima: em certas
+   combinações de largura de janela × nível de zoom, o navegador erra o cálculo da largura da
+   coluna do grid na primeira pintura e a caixa com aspect-ratio soma altura 0 — como o card é
+   flex-column com overflow:hidden, tudo que vinha depois (foto, preço, botões) ficava cortado
+   fora da área visível. Trocar por padding-top em % (a técnica clássica de "aspect ratio box" de
+   antes do aspect-ratio existir) resolve, porque a altura passa a vir só da largura da própria
+   caixa (sempre calculada certo), sem depender do timing do grid. Os filhos (foto e o ícone de
+   placeholder) precisam virar position:absolute pra preencher essa caixa, já que o padding-top
+   não gera "conteúdo" de verdade, só espaço. */
+.mi-card-media{position:relative;width:100%;height:0;padding-top:68.75%;background:var(--card);overflow:hidden;-webkit-transform:translateZ(0);transform:translateZ(0);}
+.mi-card-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;}
+.mi-card-media .mi-thumb-empty{position:absolute;inset:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:32px;color:var(--muted);}
 .mi-card-media.unavailable img{filter:grayscale(.7) brightness(.55);}
 .mi-card-drag-handle{position:absolute;top:8px;left:8px;background:rgba(10,10,10,.55);color:#fff;border:none;border-radius:8px;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:13px;cursor:grab;z-index:2;}
 .mi-card-badges{position:absolute;top:8px;right:8px;display:flex;flex-direction:column;gap:4px;align-items:flex-end;z-index:2;}
