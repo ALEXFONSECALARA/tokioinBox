@@ -23,11 +23,14 @@
     "items": [
       {
         "name": "Combinado Super",
-        "desc": "16 sashimis, 6 sushi, 3 tekamaki, 2 skin roll, 2 california, 2 hot, 2 ebi maki",
-        "price": 89.99,
-        "qty": "",
-        "badge": "",
-        "available": true
+  "desc": "16 sashimis, 6 sushi, 3 tekamaki, 2 skin roll, 2 california, 2 hot, 2 ebi maki",
+  "price": 89.99,
+  "qty": "1",
+  "badge": "Mais Vendido",
+  "badge_position": "top-right",
+  "badge_color": "#FF4757",
+  "available": true
+
       },
       {
         "name": "Combinado Shogatsu",
