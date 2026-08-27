@@ -1,0 +1,7 @@
+{
+  "name": "Delivery Sabor & Brasa",
+  "description": "Sistema completo de Delivery gastronômico com cálculo de taxa de entrega por bairro/CEP, rastreamento de motoboy em tempo real, pedidos via WhatsApp, upselling e painel de despacho da cozinha.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
+
