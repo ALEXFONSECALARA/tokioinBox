@@ -1672,20 +1672,6 @@ button:active, .btn:active, [role="button"]:active { filter: brightness(1.25) sa
             <div style="font-size:10px;color:var(--muted);margin-top:4px;">
               Só o computador com o Painel aberto e conectado pode imprimir de verdade (Agente Local ou modo Navegador). Se abrir o Painel em outro computador, ele assume a impressão automaticamente. Pra travar um Agente Local específico nesta estação, copie este código e cole em "stationId" no config.json dele.
             </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:8px;padding-top:8px;border-top:1px dashed var(--border);">
-              Já colocou um nome escolhido por você (ex.: <code>PC-CAIXA</code>) no config.json do Agente Local, em vez do código acima? Digite o MESMO nome aqui pra esta estação assumir com ele:
-            </div>
-            <div style="margin-top:4px;display:flex;gap:6px;">
-              <input type="text" id="print-station-id-input" placeholder="ex.: PC-CAIXA" style="flex:1;font-size:11px;padding:4px 8px;border-radius:6px;border:1px solid var(--border);background:var(--card);color:var(--fg);"/>
-              <button type="button" class="btn primary sm" style="padding:3px 10px;" onclick="renameStationId()">Salvar e assumir</button>
-            </div>
-            <div style="font-size:10px;color:var(--muted);margin-top:10px;padding-top:8px;border-top:1px dashed var(--border);display:flex;align-items:center;gap:6px;">
-              <input type="checkbox" id="print-test-mode-toggle" onchange="setPrintTestMode(this.checked)" style="width:auto;"/>
-              <label for="print-test-mode-toggle" style="cursor:pointer;">🧪 Modo Teste — este computador NUNCA assume a Estação Ativa (use numa máquina só de teste, ex.: em casa, pra não tirar a impressão de verdade da loja)</label>
-            </div>
-            <div id="print-test-mode-note" style="display:none;font-size:10px;color:#e0a83a;margin-top:4px;">
-              Modo Teste ligado — este computador só está observando o status, não vai imprimir nem disputar a Estação Ativa.
-            </div>
           </div>
           <div class="field" style="margin-top:10px;display:flex;align-items:center;gap:8px;">
             <input type="checkbox" id="cfg-print-terminal" style="width:16px;height:16px;" onchange="localStorage.setItem('shogatsu_print_terminal', this.checked?'1':'0'); updatePrintTerminalHeartbeat();"/>
@@ -2879,56 +2865,6 @@ function updatePrintTerminalHeartbeat(){
 // Local (print-agent.js) desse MESMO computador a imprimir de verdade, e também decide qual
 // Terminal de fato executa a impressão em modo Navegador quando há mais de um marcado. Ver
 // isStationAuthorized()/claimActiveStation() no server.js.
-// v102: "Modo Teste" — quando ligado, ESTE navegador/computador nunca chama
-// registerPrintStation()/heartbeat, ou seja, nunca reivindica nem renova a Estação Ativa. Criado
-// porque abrir o Painel numa máquina de teste (ex.: em casa, via AnyDesk) sempre roubava a
-// Estação Ativa de quem estava rodando de verdade na loja — mesmo mudando o nome da estação, já
-// que "o mais recente a abrir assume" vale pra qualquer nome. Com o Modo Teste ligado, o Painel
-// de teste só CONSULTA o status (pra mostrar o indicador 🟢/🔴), nunca disputa a estação. Fica
-// salvo em localStorage, por navegador — assim uma máquina só de teste pode manter isso sempre
-// ligado, sem afetar o comportamento normal de nenhuma outra estação.
-let printTestModeStatusInterval = null;
-// v103 — BUG CORRIGIDO: com o Modo Teste (v102) ligado, o Painel de teste parava de consultar o
-// servidor por completo (nunca chamava register/heartbeat), então `activeStationInfo` ficava
-// travado no último valor conhecido (às vezes `null`, "ainda não sei"). O disparo de impressão no
-// modo Navegador (ver 'print-order-remote' abaixo) só CANCELA a impressão quando sabe com certeza
-// que este computador não é a Estação Ativa (`activeStationInfo.active === false`) — com o valor
-// travado em `null`/desatualizado, ele deixava passar e imprimia na máquina de teste mesmo assim.
-// Agora, em Modo Teste, o Painel consulta periodicamente o status por GET (só leitura, nunca
-// reivindica — ver /api/print-station/status) pra manter `activeStationInfo` sempre correto.
-function startPrintTestModeStatusPolling(){
-  if(printTestModeStatusInterval || !token) return;
-  const poll = ()=>{
-    apiGet('/api/print-station/status').then(r=>{
-      if(r && r.error) return; // sem permissão/erro — mantém o último valor conhecido
-      activeStationInfo = { active: r.activeStationId === PRINT_STATION_ID, label: r.activeLabel };
-      updatePrintStationIndicator();
-    }).catch(()=>{});
-  };
-  poll();
-  printTestModeStatusInterval = setInterval(poll, 15000);
-}
-function stopPrintTestModeStatusPolling(){
-  if(printTestModeStatusInterval){ clearInterval(printTestModeStatusInterval); printTestModeStatusInterval = null; }
-}
-function isPrintTestMode(){ return localStorage.getItem('shogatsu_print_test_mode') === '1'; }
-function setPrintTestMode(on){
-  localStorage.setItem('shogatsu_print_test_mode', on ? '1' : '0');
-  const chk = document.getElementById('print-test-mode-toggle');
-  if(chk) chk.checked = !!on;
-  const note = document.getElementById('print-test-mode-note');
-  if(note) note.style.display = on ? 'block' : 'none';
-  if(on){
-    if(printStationHeartbeatInterval){ clearInterval(printStationHeartbeatInterval); printStationHeartbeatInterval = null; }
-    activeStationInfo = { active: null, label: null }; // força reconsulta real, não fica com valor antigo
-    startPrintTestModeStatusPolling();
-    showToast('🧪 Modo Teste ativado', 'Este computador nunca vai assumir a Estação Ativa de Impressão — a loja continua livre pra imprimir.', 5000);
-  } else {
-    stopPrintTestModeStatusPolling();
-    registerPrintStation();
-    startPrintStationHeartbeat();
-  }
-}
 function getOrCreateStationId(){
   let id = localStorage.getItem('shogatsu_station_id');
   if(!id){
@@ -2937,41 +2873,8 @@ function getOrCreateStationId(){
   }
   return id;
 }
-// v100 — BUG CORRIGIDO ("PC-CAIXA não é a Estação Ativa de Impressão"): antes só existia o
-// código aleatório gerado por getOrCreateStationId() acima (ex.: "st1a2b3c4d5e6f"), que o
-// usuário precisava COPIAR e colar manualmente no "stationId" do config.json do Agente Local.
-// Se a pessoa digitasse um nome dela mesma no config.json (ex.: "PC-CAIXA") em vez de copiar o
-// código gerado, o Painel continuava reivindicando a Estação Ativa com o código aleatório — que
-// nunca bate com "PC-CAIXA" — e o Agente Local ficava bloqueado pra sempre, mesmo com o Painel
-// aberto e conectado no computador certo. Agora dá pra RENOMEAR a estação deste computador
-// direto no Painel (ver renameStationId() abaixo); o nome escolhido fica salvo no mesmo
-// localStorage (substitui o código aleatório) e o Painel se reregistra na hora com o novo nome.
-let PRINT_STATION_ID = getOrCreateStationId();
+const PRINT_STATION_ID = getOrCreateStationId();
 try{ const stEl = document.getElementById('print-station-id-display'); if(stEl) stEl.textContent = PRINT_STATION_ID; }catch(e){}
-try{
-  const chk0 = document.getElementById('print-test-mode-toggle');
-  const note0 = document.getElementById('print-test-mode-note');
-  const on0 = isPrintTestMode();
-  if(chk0) chk0.checked = on0;
-  if(note0) note0.style.display = on0 ? 'block' : 'none';
-  if(on0) startPrintTestModeStatusPolling();
-}catch(e){}
-function renameStationId(){
-  const inp = document.getElementById('print-station-id-input');
-  if(!inp) return;
-  const v = (inp.value || '').trim();
-  if(!v){ showToast('⚠️ Nome inválido', 'Digite um nome para identificar esta estação (ex.: PC-CAIXA).', 3000); return; }
-  localStorage.setItem('shogatsu_station_id', v);
-  PRINT_STATION_ID = v;
-  try{ const stEl = document.getElementById('print-station-id-display'); if(stEl) stEl.textContent = PRINT_STATION_ID; }catch(e){}
-  inp.value = '';
-  if(isPrintTestMode()){
-    showToast('🧪 Nome salvo (Modo Teste)', `Nome guardado como "${v}", mas este computador está em Modo Teste e não vai assumir a Estação Ativa.`, 5000);
-    return;
-  }
-  registerPrintStation(); // reivindica a Estação Ativa AGORA com o novo nome
-  showToast('🖥️ Estação renomeada', `Este computador agora é a estação "${v}". Confira se é o mesmo valor em "stationId" no config.json do Agente Local.`, 5000);
-}
 // Rótulo só pra identificação humana no indicador/log — não precisa ser único, é só exibição.
 function printStationLabel(){
   const who = userName || 'Painel';
@@ -2999,7 +2902,7 @@ function updatePrintStationIndicator(){
 // Reivindica a Estação Ativa pra ESTE computador imediatamente ao abrir o Painel (chamado uma
 // vez em boot()) — "o mais recente a abrir o painel assume automaticamente" (regra pedida).
 function registerPrintStation(){
-  if(!token || isPrintTestMode()) return;
+  if(!token) return;
   apiPost('/api/print-station/register', { stationId: PRINT_STATION_ID, label: printStationLabel() }).then(r=>{
     if(r.ok){ activeStationInfo = { active: true, label: r.data.activeLabel }; updatePrintStationIndicator(); }
   }).catch(()=>{});
@@ -3020,7 +2923,7 @@ let printStationHeartbeatInterval = null;
 // (painel fechado, sem heartbeat por tempo suficiente), este computador assume sozinho no
 // próximo heartbeat, sem precisar recarregar nada (failover automático).
 function startPrintStationHeartbeat(){
-  if(printStationHeartbeatInterval || !token || isPrintTestMode()) return;
+  if(printStationHeartbeatInterval || !token) return;
   const ping = ()=>{
     apiPost('/api/print-station/heartbeat', { stationId: PRINT_STATION_ID, label: printStationLabel() }).then(r=>{
       if(r.ok){ activeStationInfo = { active: r.data.active, label: r.data.activeLabel }; updatePrintStationIndicator(); }
@@ -3147,7 +3050,6 @@ async function boot(){
   updatePrintTerminalHeartbeat();
   registerPrintStation();
   startPrintStationHeartbeat();
-  if(isPrintTestMode()) startPrintTestModeStatusPolling();
   updatePrintStationIndicator();
   loadReservations();
   setInterval(loadReservations, 30000);
@@ -9193,12 +9095,8 @@ async function loadPrintFailureLog(){
   box.innerHTML = '<div style="font-size:11px;color:var(--muted);">Carregando...</div>';
   try{
     const res = await apiGet('/api/print-log');
-    // v104 — BUG CORRIGIDO: esse quadro sempre mostrava "Não consegui carregar." mesmo quando
-    // tudo estava certo. apiGet() devolve o JSON puro da resposta (ver definição de apiGet mais
-    // acima), não um envelope {ok, data} como apiPost/apiPatch — e GET /api/print-log devolve só
-    // { log: [...] }, sem nenhum campo "ok". A checagem `!res.ok` e a leitura `res.data.log`
-    // nunca bateram com o formato real da resposta.
-    const log = (res && Array.isArray(res.log)) ? res.log : [];
+    if(!res.ok){ box.innerHTML = '<div style="font-size:11px;color:var(--muted);">Não consegui carregar.</div>'; return; }
+    const log = res.data.log || [];
     if(!log.length){ box.innerHTML = '<div style="font-size:11px;color:var(--muted);">Nenhuma falha registrada. 🎉</div>'; return; }
     const stationLabels = { caixa:'Caixa', cozinha:'Cozinha', sushibar:'Sushibar', bar:'Bar' };
     box.innerHTML = log.slice(0,20).map(l => `
