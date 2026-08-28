@@ -216,7 +216,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
         {/* Checkout Header */}
         <div className="p-4 sm:p-5 bg-stone-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
+            <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950 font-bold">
               <CheckCircle2 className="w-5 h-5" />
             </div>
             <div>
@@ -256,11 +256,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 onClick={() => setOrderType('delivery')}
                 className={`p-3.5 rounded-2xl border text-center flex items-center justify-center gap-2.5 transition-all ${
                   orderType === 'delivery'
-                    ? 'bg-amber-50 border-amber-500 text-slate-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                    ? 'bg-[var(--brand-tint)] border-[var(--brand)] text-slate-950 ring-2 ring-[var(--brand)]/20 font-black shadow-xs'
                     : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
-                <Bike className="w-5 h-5 text-amber-600" />
+                <Bike className="w-5 h-5 text-[var(--brand-dark)]" />
                 <div className="text-left">
                   <span className="text-xs font-black block">Entrega em Domicílio</span>
                   <span className="text-[11px] text-stone-500 font-normal">Motoboy leva até você</span>
@@ -273,11 +273,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 onClick={() => setOrderType('takeaway')}
                 className={`p-3.5 rounded-2xl border text-center flex items-center justify-center gap-2.5 transition-all ${
                   orderType === 'takeaway'
-                    ? 'bg-amber-50 border-amber-500 text-slate-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                    ? 'bg-[var(--brand-tint)] border-[var(--brand)] text-slate-950 ring-2 ring-[var(--brand)]/20 font-black shadow-xs'
                     : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
-                <ShoppingBag className="w-5 h-5 text-amber-600" />
+                <ShoppingBag className="w-5 h-5 text-[var(--brand-dark)]" />
                 <div className="text-left">
                   <span className="text-xs font-black block">Retirar no Balcão</span>
                   <span className="text-[11px] text-stone-500 font-normal">Sem taxa de entrega</span>
@@ -289,7 +289,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           {/* Section 2: Customer and Location details */}
           <div className="bg-stone-50 p-4 sm:p-5 rounded-2xl border border-stone-200 space-y-3.5">
             <h3 className="text-xs font-black uppercase tracking-wider text-stone-800 flex items-center gap-1.5">
-              <MapPin className="w-4 h-4 text-amber-600" />
+              <MapPin className="w-4 h-4 text-[var(--brand-dark)]" />
               <span>2. Dados do Cliente e Endereço</span>
             </h3>
 
@@ -304,7 +304,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Carlos Silva"
-                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
               </div>
 
@@ -318,7 +318,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="(11) 98765-4321"
-                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
               </div>
             </div>
@@ -335,7 +335,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     id="checkout-neighborhood-select"
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                   >
                     {restaurantConfig.deliveryZones.map((zone) => (
                       <option key={zone.id} value={zone.name}>
@@ -356,7 +356,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
                       placeholder="Ex: Av. Paulista"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                     />
                   </div>
                   <div>
@@ -369,7 +369,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={number}
                       onChange={(e) => setNumber(e.target.value)}
                       placeholder="1500"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 font-bold"
+                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] font-bold"
                     />
                   </div>
                 </div>
@@ -385,7 +385,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={complement}
                       onChange={(e) => setComplement(e.target.value)}
                       placeholder="Apto 42, Bloco B"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                     />
                   </div>
                   <div>
@@ -398,7 +398,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
                       placeholder="Em frente ao parque"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                     />
                   </div>
                 </div>
@@ -407,8 +407,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
 
             {/* Takeaway notes */}
             {orderType === 'takeaway' && (
-              <div className="text-xs text-stone-700 bg-amber-50 p-3 rounded-xl border border-amber-200 flex items-start gap-2">
-                <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-stone-700 bg-[var(--brand-tint)] p-3 rounded-xl border border-[var(--brand-tint)] flex items-start gap-2">
+                <MapPin className="w-4 h-4 text-[var(--brand-dark)] flex-shrink-0 mt-0.5" />
                 <div>
                   <strong>Endereço para retirada no balcão:</strong> {restaurantConfig.address}
                   <p className="text-[11px] text-stone-500 mt-0.5">Seu pedido ficará pronto em aproximadamente 20-30 min.</p>
@@ -444,11 +444,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 onClick={() => setPaymentMethod('credit_card')}
                 className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'credit_card'
-                    ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                    ? 'bg-[var(--brand-tint)] border-[var(--brand)] text-[var(--brand-dark)] ring-2 ring-[var(--brand)]/20 font-black shadow-xs'
                     : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
-                <CreditCard className="w-4 h-4 text-amber-600" />
+                <CreditCard className="w-4 h-4 text-[var(--brand-dark)]" />
                 <span className="text-xs">Cartão de Crédito</span>
               </button>
 
@@ -458,11 +458,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 onClick={() => setPaymentMethod('debit_card')}
                 className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'debit_card'
-                    ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                    ? 'bg-[var(--brand-tint)] border-[var(--brand)] text-[var(--brand-dark)] ring-2 ring-[var(--brand)]/20 font-black shadow-xs'
                     : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
-                <CreditCard className="w-4 h-4 text-amber-600" />
+                <CreditCard className="w-4 h-4 text-[var(--brand-dark)]" />
                 <span className="text-xs">Cartão de Débito</span>
               </button>
 
@@ -472,11 +472,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                 onClick={() => setPaymentMethod('cash')}
                 className={`p-3 rounded-xl border text-center flex flex-col items-center gap-1 transition-all ${
                   paymentMethod === 'cash'
-                    ? 'bg-amber-50 border-amber-500 text-amber-950 ring-2 ring-amber-500/20 font-black shadow-xs'
+                    ? 'bg-[var(--brand-tint)] border-[var(--brand)] text-[var(--brand-dark)] ring-2 ring-[var(--brand)]/20 font-black shadow-xs'
                     : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
                 }`}
               >
-                <Banknote className="w-4 h-4 text-amber-600" />
+                <Banknote className="w-4 h-4 text-[var(--brand-dark)]" />
                 <span className="text-xs">Dinheiro</span>
               </button>
             </div>
@@ -531,7 +531,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       onClick={() => setCardBrand(brand)}
                       className={`px-3 py-1.5 rounded-lg text-xs font-semibold border transition-all ${
                         cardBrand === brand
-                          ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold'
+                          ? 'bg-[var(--brand)] text-slate-950 border-[var(--brand)] font-bold'
                           : 'bg-stone-50 text-stone-700 border-stone-200 hover:bg-stone-100'
                       }`}
                     >
@@ -550,7 +550,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     type="checkbox"
                     checked={needCashChange}
                     onChange={(e) => setNeedCashChange(e.target.checked)}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                    className="w-4 h-4 rounded text-[var(--brand-dark)] focus:ring-[var(--brand)]"
                   />
                   <span className="text-xs font-bold text-stone-800">
                     Preciso de troco em dinheiro
@@ -566,7 +566,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={cashChangeFor}
                       onChange={(e) => setCashChangeFor(e.target.value)}
                       placeholder={total.toFixed(2)}
-                      className="w-28 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      className="w-28 px-3 py-1.5 bg-stone-50 border border-stone-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                     />
                   </div>
                 )}
@@ -585,7 +585,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               value={generalNotes}
               onChange={(e) => setGeneralNotes(e.target.value)}
               placeholder="Ex: Tocar campainha do 2º andar, deixar na portaria, mandar talheres..."
-              className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
             />
           </div>
         </div>
@@ -599,7 +599,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
             </span>
             <div className="text-right">
               <span className="text-xs text-stone-500 mr-2">Total a pagar:</span>
-              <span className="text-lg sm:text-xl font-black text-amber-600">
+              <span className="text-lg sm:text-xl font-black text-[var(--brand-dark)]">
                 {formatCurrency(total)}
               </span>
             </div>
@@ -621,7 +621,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               id="confirm-online-order-btn"
               type="button"
               onClick={() => handleCompleteOrder(false)}
-              className="py-3.5 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-amber-400 font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+              className="py-3.5 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-[var(--brand-light)] font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md"
             >
               <Clock className="w-4 h-4" />
               <span>Acompanhar Entrega Online</span>

@@ -154,7 +154,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 bg-stone-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
+            <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950 font-bold">
               <MapPin className="w-5 h-5" />
             </div>
             <div>
@@ -195,7 +195,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 value={cep}
                 onChange={handleCepChange}
                 placeholder="Ex: 01310-100"
-                className="flex-1 px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                className="flex-1 px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
               />
               <button
                 type="button"
@@ -234,7 +234,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                     onClick={() => handleSelectZoneQuick(zone)}
                     className={`p-2 rounded-xl text-left border transition-all ${
                       isSelected
-                        ? 'bg-amber-500 text-slate-950 border-amber-400 font-bold shadow-xs'
+                        ? 'bg-[var(--brand)] text-slate-950 border-[var(--brand-light)] font-bold shadow-xs'
                         : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
@@ -261,7 +261,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 onChange={(e) => setStreet(e.target.value)}
                 placeholder="Ex: Av. Paulista"
                 required
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
               />
             </div>
             <div>
@@ -275,7 +275,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 onChange={(e) => setNumber(e.target.value)}
                 placeholder="1500"
                 required
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white font-bold"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white font-bold"
               />
             </div>
           </div>
@@ -293,7 +293,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 onChange={(e) => setNeighborhood(e.target.value)}
                 placeholder="Ex: Bela Vista"
                 required
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white font-semibold"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white font-semibold"
               />
             </div>
             <div>
@@ -305,7 +305,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
                 placeholder="São Paulo - SP"
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white text-stone-600"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white text-stone-600"
               />
             </div>
           </div>
@@ -321,7 +321,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 value={complement}
                 onChange={(e) => setComplement(e.target.value)}
                 placeholder="Apto 42, Bloco B"
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
               />
             </div>
             <div>
@@ -333,15 +333,15 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 value={reference}
                 onChange={(e) => setReference(e.target.value)}
                 placeholder="Próximo ao metrô MASP"
-                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
               />
             </div>
           </div>
 
           {/* Summary Box for the Delivery Zone */}
-          <div className="bg-amber-50 border border-amber-200 rounded-2xl p-3.5 flex items-center justify-between text-stone-900">
+          <div className="bg-[var(--brand-tint)] border border-[var(--brand-tint)] rounded-2xl p-3.5 flex items-center justify-between text-stone-900">
             <div className="flex items-center gap-2">
-              <div className="p-2 rounded-xl bg-amber-500 text-slate-950">
+              <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950">
                 <Bike className="w-5 h-5" />
               </div>
               <div>
@@ -354,7 +354,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 </p>
               </div>
             </div>
-            <span className="text-[10px] uppercase font-black bg-white px-2 py-1 rounded-lg border border-amber-300 text-amber-800">
+            <span className="text-[10px] uppercase font-black bg-white px-2 py-1 rounded-lg border border-[var(--brand-light)] text-amber-800">
               Delivery Ativo
             </span>
           </div>
@@ -364,7 +364,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
             <button
               id="save-delivery-address-btn"
               type="submit"
-              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-black rounded-2xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
+              className="w-full py-3.5 bg-slate-900 hover:bg-slate-800 text-[var(--brand-light)] font-black rounded-2xl text-sm transition-all shadow-md flex items-center justify-center gap-2"
             >
               <Check className="w-4 h-4" />
               <span>Confirmar Endereço de Entrega</span>

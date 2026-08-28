@@ -126,7 +126,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
         {/* Drawer Header */}
         <div className="p-4 sm:p-5 border-b border-stone-200 flex items-center justify-between bg-stone-50">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950">
+            <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
@@ -160,10 +160,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
 
         {/* Free Shipping Meter */}
         {items.length > 0 && (
-          <div className="bg-amber-50 px-4 py-2.5 border-b border-amber-200 flex flex-col gap-1.5">
+          <div className="bg-[var(--brand-tint)] px-4 py-2.5 border-b border-[var(--brand-tint)] flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-amber-900 flex items-center gap-1.5">
-                <Bike className="w-3.5 h-3.5 text-amber-600" />
+                <Bike className="w-3.5 h-3.5 text-[var(--brand-dark)]" />
                 {isFreeDelivery ? (
                   <span className="text-emerald-700 font-bold flex items-center gap-1">
                     <Sparkles className="w-3.5 h-3.5 text-emerald-600" />
@@ -177,10 +177,10 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               </span>
               <span className="font-bold text-amber-800 text-[11px]">{freePercent}%</span>
             </div>
-            <div className="w-full bg-amber-200/80 rounded-full h-1.5 overflow-hidden">
+            <div className="w-full bg-[var(--brand-tint)]/80 rounded-full h-1.5 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
-                  isFreeDelivery ? 'bg-emerald-500' : 'bg-amber-500'
+                  isFreeDelivery ? 'bg-emerald-500' : 'bg-[var(--brand)]'
                 }`}
                 style={{ width: `${freePercent}%` }}
               />
@@ -197,7 +197,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               className="p-3 bg-stone-50 border border-stone-200 rounded-2xl flex items-center justify-between cursor-pointer hover:bg-stone-100 transition-all text-xs"
             >
               <div className="flex items-center gap-2 text-stone-700 truncate">
-                <MapPin className="w-4 h-4 text-amber-600 flex-shrink-0" />
+                <MapPin className="w-4 h-4 text-[var(--brand-dark)] flex-shrink-0" />
                 <div className="truncate">
                   <span className="font-bold block text-stone-900 truncate">
                     {currentAddress ? `${currentAddress.street}, ${currentAddress.number}` : 'Definir endereço de entrega'}
@@ -225,7 +225,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               <button
                 id="empty-cart-explore-btn"
                 onClick={onClose}
-                className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 font-bold text-xs transition-all shadow-xs"
+                className="mt-4 px-4 py-2 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand-light)] text-stone-950 font-bold text-xs transition-all shadow-xs"
               >
                 Ver Cardápio
               </button>
@@ -326,7 +326,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {items.length > 0 && upsellItems.length > 0 && onQuickAddItem && (
             <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200 space-y-2">
               <span className="text-[11px] font-black text-stone-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Flame className="w-3.5 h-3.5 text-amber-500" />
+                <Flame className="w-3.5 h-3.5 text-[var(--brand)]" />
                 Combina com seu pedido (Bebidas & Doces):
               </span>
               <div className="space-y-1.5">
@@ -349,7 +349,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                     <button
                       type="button"
                       onClick={() => onQuickAddItem(uItem)}
-                      className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-lg flex items-center gap-1 transition-all shadow-2xs flex-shrink-0"
+                      className="px-2.5 py-1 bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 font-bold text-xs rounded-lg flex items-center gap-1 transition-all shadow-2xs flex-shrink-0"
                     >
                       <PlusCircle className="w-3.5 h-3.5" />
                       <span>Adicionar</span>
@@ -364,7 +364,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           {items.length > 0 && !appliedCoupon && (
             <div className="bg-stone-50 p-3 rounded-2xl border border-stone-200">
               <span className="text-[11px] font-bold text-stone-600 uppercase flex items-center gap-1 mb-2">
-                <Tag className="w-3 h-3 text-amber-500" />
+                <Tag className="w-3 h-3 text-[var(--brand)]" />
                 Cupons de Desconto Disponíveis
               </span>
               <div className="flex flex-wrap gap-1.5">
@@ -375,7 +375,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                       setCouponInput(c.code);
                       onApplyCoupon(c.code);
                     }}
-                    className="text-[11px] font-semibold bg-white hover:bg-amber-50 text-stone-700 border border-stone-200 hover:border-amber-300 px-2 py-1 rounded-lg transition-all"
+                    className="text-[11px] font-semibold bg-white hover:bg-[var(--brand-tint)] text-stone-700 border border-stone-200 hover:border-[var(--brand-light)] px-2 py-1 rounded-lg transition-all"
                   >
                     {c.code}
                   </button>
@@ -416,7 +416,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                   value={couponInput}
                   onChange={(e) => setCouponInput(e.target.value.toUpperCase())}
                   placeholder="Cupom (ex: BEMVINDO10)"
-                  className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs uppercase font-bold placeholder:normal-case placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  className="flex-1 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-xs uppercase font-bold placeholder:normal-case placeholder:font-normal focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                 />
                 <button
                   id="apply-coupon-btn"
@@ -455,7 +455,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
               )}
               <div className="flex justify-between items-baseline pt-2 border-t border-stone-100">
                 <span className="text-sm font-extrabold text-stone-900">Total dos Itens</span>
-                <span className="text-lg font-black text-amber-600">{formatCurrency(total)}</span>
+                <span className="text-lg font-black text-[var(--brand-dark)]">{formatCurrency(total)}</span>
               </div>
             </div>
 
@@ -477,7 +477,7 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
                 onClose();
                 onProceedToCheckout();
               }}
-              className="w-full py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[var(--brand)] hover:bg-[var(--brand-light)] disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.99] text-slate-950 font-black text-sm flex items-center justify-center gap-2 transition-all shadow-md"
             >
               <span>Avançar para Entrega & Pagamento</span>
               <ArrowRight className="w-4 h-4" />

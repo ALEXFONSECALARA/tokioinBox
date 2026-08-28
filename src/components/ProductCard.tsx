@@ -25,7 +25,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
     <article
       id={`product-card-${item.id}`}
       onClick={() => item.available && onSelect(item)}
-      className={`group bg-white rounded-2xl border border-stone-200 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-amber-400 flex flex-col justify-between cursor-pointer relative ${
+      className={`group bg-white rounded-2xl border border-stone-200 overflow-hidden transition-all duration-200 hover:shadow-md hover:border-[var(--brand-light)] flex flex-col justify-between cursor-pointer relative ${
         !item.available ? 'opacity-60 cursor-not-allowed grayscale-[0.4]' : ''
       }`}
     >
@@ -43,7 +43,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           {/* Discount and Availability Badges */}
           <div className="absolute top-2.5 left-2.5 flex flex-col gap-1 items-start">
             {hasDiscount && (
-              <span className="bg-rose-500 text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow-xs">
+              <span className="bg-[var(--accent-red)] text-white text-[11px] font-bold px-2 py-0.5 rounded-md shadow-xs">
                 -{discountPercent}% OFF
               </span>
             )}
@@ -61,7 +61,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             className="absolute top-2.5 right-2.5 p-2 rounded-full bg-black/30 backdrop-blur-md text-white hover:bg-black/50 transition-all border border-white/20"
             title={isFavorite ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
           >
-            <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
+            <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-[var(--accent-red)] text-[var(--accent-red)]' : 'text-white'}`} />
           </button>
 
           {/* Dietary / Feature Tags Over Image */}
@@ -83,7 +83,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
         {/* Card Body */}
         <div className="p-4">
           <div className="flex items-start justify-between gap-2">
-            <h3 className="font-bold text-stone-900 text-sm sm:text-base leading-snug group-hover:text-amber-600 transition-colors line-clamp-1">
+            <h3 className="font-bold text-stone-900 text-sm sm:text-base leading-snug group-hover:text-[var(--brand-dark)] transition-colors line-clamp-1">
               {item.name}
             </h3>
           </div>
@@ -132,7 +132,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
           }}
           className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1.5 transition-all ${
             item.available
-              ? 'bg-amber-500 hover:bg-amber-400 text-stone-950 active:scale-95 shadow-xs'
+              ? 'bg-[var(--brand)] hover:bg-[var(--brand-light)] text-stone-950 active:scale-95 shadow-xs'
               : 'bg-stone-200 text-stone-400 cursor-not-allowed'
           }`}
         >

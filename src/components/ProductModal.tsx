@@ -176,7 +176,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
               )}
               {item.calories && (
                 <span className="flex items-center gap-1">
-                  <Flame className="w-3.5 h-3.5 text-amber-500" />
+                  <Flame className="w-3.5 h-3.5 text-[var(--brand)]" />
                   {item.calories} kcal
                 </span>
               )}
@@ -199,7 +199,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     {group.title}
                   </h4>
                   {group.required ? (
-                    <span className="text-[10px] uppercase font-extrabold bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">
+                    <span className="text-[10px] uppercase font-extrabold bg-[var(--brand-tint)] text-amber-900 px-2 py-0.5 rounded-md">
                       Obrigatório
                     </span>
                   ) : (
@@ -217,7 +217,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         key={opt.id}
                         className={`flex items-center justify-between p-2.5 rounded-xl border cursor-pointer transition-all ${
                           isSelected
-                            ? 'bg-white border-amber-500 shadow-xs ring-1 ring-amber-500'
+                            ? 'bg-white border-[var(--brand)] shadow-xs ring-1 ring-[var(--brand)]'
                             : 'bg-white border-stone-200 hover:border-stone-300'
                         }`}
                         onClick={() =>
@@ -228,7 +228,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                           <div
                             className={`w-4 h-4 rounded-full border flex items-center justify-center ${
                               isSelected
-                                ? 'border-amber-500 bg-amber-500 text-white'
+                                ? 'border-[var(--brand)] bg-[var(--brand)] text-white'
                                 : 'border-stone-300'
                             }`}
                           >
@@ -269,7 +269,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                     >
                       <div>
                         <p className="text-xs font-medium text-stone-800">{extra.name}</p>
-                        <p className="text-xs font-bold text-amber-600 mt-0.5">
+                        <p className="text-xs font-bold text-[var(--brand-dark)] mt-0.5">
                           +{formatCurrency(extra.price)}
                         </p>
                       </div>
@@ -290,7 +290,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                         <button
                           id={`extra-plus-${extra.id}`}
                           onClick={() => handleExtraQuantityChange(extra, 1)}
-                          className="w-7 h-7 rounded-lg bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center font-bold shadow-xs"
+                          className="w-7 h-7 rounded-lg bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 flex items-center justify-center font-bold shadow-xs"
                         >
                           <Plus className="w-3.5 h-3.5" />
                         </button>
@@ -315,7 +315,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
                 placeholder="Ex: Tirar cebola, molho à parte, bem passado, sem picles..."
                 rows={2}
                 maxLength={160}
-                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:bg-white transition-all"
+                className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white transition-all"
               />
               <span className="text-[10px] text-stone-400 text-right block mt-0.5">
                 {specialNotes.length}/160 caracteres
@@ -352,13 +352,13 @@ export const ProductModal: React.FC<ProductModalProps> = ({
           <button
             id="modal-add-to-cart-cta"
             onClick={handleAdd}
-            className="flex-1 py-3 px-4 rounded-xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-between transition-all shadow-md"
+            className="flex-1 py-3 px-4 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand-light)] active:scale-[0.98] text-slate-950 font-bold text-xs sm:text-sm flex items-center justify-between transition-all shadow-md"
           >
             <span className="flex items-center gap-1.5">
               <ShoppingBag className="w-4 h-4" />
               <span>Adicionar ao Pedido</span>
             </span>
-            <span className="bg-slate-950 text-amber-400 px-2.5 py-1 rounded-lg text-xs font-black">
+            <span className="bg-slate-950 text-[var(--brand-light)] px-2.5 py-1 rounded-lg text-xs font-black">
               {formatCurrency(totalPrice)}
             </span>
           </button>

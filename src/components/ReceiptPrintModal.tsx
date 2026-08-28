@@ -127,7 +127,7 @@ export const ReceiptPrintModal: React.FC<ReceiptPrintModalProps> = ({
         {/* Header */}
         <div className="bg-stone-900 text-white p-4 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
+            <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950 font-bold">
               <Printer className="w-5 h-5" />
             </div>
             <div>
@@ -214,7 +214,7 @@ export const ReceiptPrintModal: React.FC<ReceiptPrintModalProps> = ({
                     </p>
                   )}
                   {item.specialNotes && (
-                    <p className="text-[10px] text-amber-900 font-bold bg-amber-50 p-1 rounded mt-0.5">
+                    <p className="text-[10px] text-amber-900 font-bold bg-[var(--brand-tint)] p-1 rounded mt-0.5">
                       ⚠️ OBS: {item.specialNotes}
                     </p>
                   )}
@@ -251,7 +251,7 @@ export const ReceiptPrintModal: React.FC<ReceiptPrintModalProps> = ({
                 💳 {paymentLabels[order.paymentMethod] || order.paymentMethod}
               </p>
               {order.paymentMethod === 'cash' && order.cashChangeFor && (
-                <p className="font-bold text-amber-900 bg-amber-50 p-1 rounded">
+                <p className="font-bold text-amber-900 bg-[var(--brand-tint)] p-1 rounded">
                   💵 Troco para {formatCurrency(order.cashChangeFor)} (Levar troco de{' '}
                   {formatCurrency(order.cashChangeFor - order.total)})
                 </p>
@@ -297,7 +297,7 @@ export const ReceiptPrintModal: React.FC<ReceiptPrintModalProps> = ({
 
           <button
             onClick={handlePrint}
-            className="px-5 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 text-xs font-extrabold flex items-center gap-2 shadow-xs transition-transform active:scale-95"
+            className="px-5 py-2.5 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 text-xs font-extrabold flex items-center gap-2 shadow-xs transition-transform active:scale-95"
           >
             <Printer className="w-4 h-4" />
             <span>Imprimir Comanda (Ctrl+P)</span>

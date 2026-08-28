@@ -64,13 +64,13 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="bg-white border-b border-stone-200">
       {/* Top Sticky Delivery Address Selector Bar */}
-      <div className="bg-amber-500 text-slate-950 px-3 sm:px-6 py-2 flex items-center justify-between text-xs font-black shadow-xs">
+      <div className="bg-[var(--brand)] text-slate-950 px-3 sm:px-6 py-2 flex items-center justify-between text-xs font-black shadow-xs">
         <button
           id="header-delivery-address-trigger"
           onClick={onOpenAddressModal}
           className="flex items-center gap-1.5 sm:gap-2 hover:opacity-80 transition-opacity text-left max-w-[80%]"
         >
-          <div className="p-1 rounded-lg bg-slate-950 text-amber-400">
+          <div className="p-1 rounded-lg bg-slate-950 text-[var(--brand-light)]">
             <MapPin className="w-3.5 h-3.5" />
           </div>
           <div className="truncate">
@@ -87,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
 
         <div className="flex items-center gap-2">
-          <span className="hidden md:inline-flex items-center gap-1 bg-slate-950 text-amber-400 px-2.5 py-1 rounded-full text-[11px] font-bold">
+          <span className="hidden md:inline-flex items-center gap-1 bg-slate-950 text-[var(--brand-light)] px-2.5 py-1 rounded-full text-[11px] font-bold">
             <Bike className="w-3.5 h-3.5" />
             Taxa: {currentFee === 0 ? 'GRÁTIS' : formatCurrency(currentFee)}
           </span>
@@ -113,7 +113,7 @@ export const Header: React.FC<HeaderProps> = ({
           <div className="pointer-events-auto flex items-center gap-2">
             <span
               className={`px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase shadow-sm flex items-center gap-1.5 ${
-                config.isOpen ? 'bg-emerald-500 text-white' : 'bg-rose-500 text-white'
+                config.isOpen ? 'bg-emerald-500 text-white' : 'bg-[var(--accent-red)] text-white'
               }`}
             >
               <span className={`w-2 h-2 rounded-full ${config.isOpen ? 'bg-white animate-pulse' : 'bg-white'}`} />
@@ -128,9 +128,9 @@ export const Header: React.FC<HeaderProps> = ({
               className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-all border border-white/20 relative"
               title="Pratos Favoritos"
             >
-              <Heart className={`w-4 h-4 ${favoritesCount > 0 ? 'fill-rose-500 text-rose-500' : 'text-white'}`} />
+              <Heart className={`w-4 h-4 ${favoritesCount > 0 ? 'fill-[var(--accent-red)] text-[var(--accent-red)]' : 'text-white'}`} />
               {favoritesCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-rose-500 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-[var(--accent-red)] text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center">
                   {favoritesCount}
                 </span>
               )}
@@ -154,8 +154,8 @@ export const Header: React.FC<HeaderProps> = ({
                 <h1 className="text-xl sm:text-2xl font-black text-stone-900 tracking-tight">
                   {config.name}
                 </h1>
-                <div className="flex items-center gap-1 bg-amber-50 border border-amber-200 text-amber-900 px-2 py-0.5 rounded-md text-xs font-bold">
-                  <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-500" />
+                <div className="flex items-center gap-1 bg-[var(--brand-tint)] border border-[var(--brand-tint)] text-amber-900 px-2 py-0.5 rounded-md text-xs font-bold">
+                  <Star className="w-3.5 h-3.5 fill-[var(--brand-light)] text-[var(--brand)]" />
                   <span>4.9 • 850+ entregas</span>
                 </div>
               </div>
@@ -166,7 +166,7 @@ export const Header: React.FC<HeaderProps> = ({
               {/* Delivery info pills */}
               <div className="flex flex-wrap items-center gap-y-1 gap-x-2 sm:gap-x-3 text-xs text-stone-600 mt-2">
                 <span className="flex items-center gap-1 bg-stone-100 px-2.5 py-0.5 rounded-md font-semibold">
-                  <Bike className="w-3.5 h-3.5 text-amber-600" />
+                  <Bike className="w-3.5 h-3.5 text-[var(--brand-dark)]" />
                   <span>{currentFee === 0 ? 'Frete Grátis' : `Taxa: ${formatCurrency(currentFee)}`}</span>
                 </span>
                 <span className="flex items-center gap-1 bg-stone-100 px-2.5 py-0.5 rounded-md font-semibold">
@@ -222,7 +222,7 @@ export const Header: React.FC<HeaderProps> = ({
               value={searchQuery}
               onChange={(e) => onSearchChange(e.target.value)}
               placeholder="Buscar no cardápio de delivery (hambúrgueres, pizzas, combos, bebidas...)"
-              className="w-full pl-10 pr-10 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:border-transparent transition-all shadow-xs"
+              className="w-full pl-10 pr-10 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm text-stone-900 placeholder:text-stone-400 focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:border-transparent transition-all shadow-xs"
             />
             {searchQuery && (
               <button
@@ -258,7 +258,7 @@ export const Header: React.FC<HeaderProps> = ({
                   onClick={() => onTagSelect(isSelected ? null : tag)}
                   className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all flex items-center gap-1 ${
                     isSelected
-                      ? 'bg-amber-500 text-slate-950 border-amber-500 font-bold shadow-xs'
+                      ? 'bg-[var(--brand)] text-slate-950 border-[var(--brand)] font-bold shadow-xs'
                       : `${info.bg} ${info.color} hover:opacity-80`
                   }`}
                 >

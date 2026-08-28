@@ -66,7 +66,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 bg-stone-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950 font-bold">
+            <div className="p-2 rounded-xl bg-[var(--brand)] text-slate-950 font-bold">
               <Clock className="w-5 h-5" />
             </div>
             <div>
@@ -74,7 +74,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                 <h2 className="text-base sm:text-lg font-black tracking-tight">
                   Rastreamento do Pedido #{currentOrder.orderNumber}
                 </h2>
-                <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-400 text-[10px] font-black uppercase">
+                <span className="px-2 py-0.5 rounded-md bg-[var(--brand)]/20 text-[var(--brand-light)] text-[10px] font-black uppercase">
                   {currentOrder.orderType === 'delivery' ? '🛵 Delivery' : '🛍️ Retirada'}
                 </span>
               </div>
@@ -113,7 +113,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                 onClick={() => onSelectOrder(o.id)}
                 className={`px-3 py-1 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
                   o.id === currentOrder.id
-                    ? 'bg-amber-500 text-slate-950 shadow-xs'
+                    ? 'bg-[var(--brand)] text-slate-950 shadow-xs'
                     : 'bg-white text-stone-600 hover:bg-stone-200'
                 }`}
               >
@@ -126,7 +126,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
         {/* Body Content */}
         <div className="p-4 sm:p-6 overflow-y-auto space-y-5 text-stone-900 text-xs sm:text-sm">
           {/* Status Live Progress Tracker */}
-          <div className="bg-amber-500/5 p-5 rounded-2xl border border-amber-500/20">
+          <div className="bg-[var(--brand)]/5 p-5 rounded-2xl border border-[var(--brand)]/20">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <span className="text-[11px] uppercase font-black text-amber-700 block">Status da Entrega:</span>
@@ -153,7 +153,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                         isPassed
                           ? 'bg-emerald-600 text-white'
                           : isCurrent
-                          ? 'bg-amber-500 text-slate-950 ring-4 ring-amber-200 animate-pulse'
+                          ? 'bg-[var(--brand)] text-slate-950 ring-4 ring-[var(--brand-tint)] animate-pulse'
                           : 'bg-stone-200 text-stone-400'
                       }`}
                     >
@@ -175,19 +175,19 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
           {currentOrder.orderType === 'delivery' && driver && (
             <div className="bg-stone-900 text-white p-4 sm:p-5 rounded-2xl border border-stone-800 flex items-center justify-between gap-4">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center font-black text-lg flex-shrink-0 shadow-md">
+                <div className="w-12 h-12 rounded-2xl bg-[var(--brand)] text-slate-950 flex items-center justify-center font-black text-lg flex-shrink-0 shadow-md">
                   <Bike className="w-6 h-6" />
                 </div>
                 <div>
                   <div className="flex items-center gap-2">
                     <span className="font-black text-sm text-white">{driver.name}</span>
-                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">
-                      <Star className="w-3 h-3 fill-amber-400 text-amber-400" />
+                    <span className="flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-[var(--brand)]/20 text-[var(--brand-light)] text-[10px] font-bold">
+                      <Star className="w-3 h-3 fill-[var(--brand-light)] text-[var(--brand-light)]" />
                       {driver.rating.toFixed(1)}
                     </span>
                   </div>
                   <p className="text-xs text-stone-300 mt-0.5">
-                    {driver.vehicle} • Placa: <strong className="text-amber-400">{driver.plate}</strong>
+                    {driver.vehicle} • Placa: <strong className="text-[var(--brand-light)]">{driver.plate}</strong>
                   </p>
                   <p className="text-[11px] text-emerald-400 flex items-center gap-1 mt-0.5 font-medium">
                     <ShieldCheck className="w-3.5 h-3.5" />
@@ -219,7 +219,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
               </p>
               {currentOrder.customer.address ? (
                 <p className="text-xs text-stone-600 flex items-start gap-1 leading-relaxed">
-                  <MapPin className="w-3.5 h-3.5 text-amber-600 flex-shrink-0 mt-0.5" />
+                  <MapPin className="w-3.5 h-3.5 text-[var(--brand-dark)] flex-shrink-0 mt-0.5" />
                   <span>
                     {currentOrder.customer.address.street}, {currentOrder.customer.address.number}
                     {currentOrder.customer.address.complement && ` (${currentOrder.customer.address.complement})`}
@@ -243,7 +243,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
             <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-1.5">
               <span className="text-[10px] uppercase font-black text-stone-400">Previsão & Pagamento</span>
               <p className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-amber-600" />
+                <Clock className="w-4 h-4 text-[var(--brand-dark)]" />
                 <span>Previsão: {currentOrder.estimatedMinutes || 35} - {(currentOrder.estimatedMinutes || 35) + 15} min</span>
               </p>
               <p className="text-xs text-stone-600">
@@ -323,7 +323,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
               )}
               <div className="flex justify-between items-baseline pt-2 border-t border-stone-100 text-sm font-black">
                 <span>Total</span>
-                <span className="text-amber-600 text-base">{formatCurrency(currentOrder.total)}</span>
+                <span className="text-[var(--brand-dark)] text-base">{formatCurrency(currentOrder.total)}</span>
               </div>
             </div>
           </div>

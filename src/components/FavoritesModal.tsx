@@ -29,7 +29,7 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
         {/* Header */}
         <div className="p-4 sm:p-5 bg-stone-900 text-white flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-rose-500 text-white">
+            <div className="p-2 rounded-xl bg-[var(--accent-red)] text-white">
               <Heart className="w-5 h-5 fill-white" />
             </div>
             <div>
@@ -71,22 +71,22 @@ export const FavoritesModal: React.FC<FavoritesModalProps> = ({
                 />
                 <div className="flex-1 min-w-0">
                   <h4 className="font-bold text-stone-900 text-xs sm:text-sm truncate">{dish.name}</h4>
-                  <p className="text-xs font-black text-amber-600 mt-0.5">{formatCurrency(dish.price)}</p>
+                  <p className="text-xs font-black text-[var(--brand-dark)] mt-0.5">{formatCurrency(dish.price)}</p>
                 </div>
                 <div className="flex items-center gap-1.5">
                   <button
                     onClick={() => onRemoveFavorite(dish.id)}
-                    className="p-2 text-stone-400 hover:text-rose-500 rounded-xl"
+                    className="p-2 text-stone-400 hover:text-[var(--accent-red)] rounded-xl"
                     title="Remover"
                   >
-                    <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+                    <Heart className="w-4 h-4 fill-[var(--accent-red)] text-[var(--accent-red)]" />
                   </button>
                   <button
                     onClick={() => {
                       onClose();
                       onSelectDish(dish);
                     }}
-                    className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs"
+                    className="px-3 py-1.5 bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 rounded-xl text-xs font-bold flex items-center gap-1 shadow-2xs"
                   >
                     <Plus className="w-3.5 h-3.5" />
                     <span>Pedir</span>

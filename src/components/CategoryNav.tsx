@@ -53,7 +53,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
           onClick={() => onSelectCategory('all')}
           className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
             activeCategoryId === 'all'
-              ? 'bg-amber-500 text-stone-950 shadow-sm'
+              ? 'bg-[var(--brand)] text-stone-950 shadow-sm'
               : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
           }`}
         >
@@ -71,7 +71,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
               onClick={() => onSelectCategory(cat.id)}
               className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-xs sm:text-sm font-semibold transition-all whitespace-nowrap ${
                 isActive
-                  ? 'bg-amber-500 text-stone-950 shadow-sm'
+                  ? 'bg-[var(--brand)] text-stone-950 shadow-sm'
                   : 'bg-stone-100 text-stone-700 hover:bg-stone-200'
               }`}
             >
@@ -80,7 +80,7 @@ export const CategoryNav: React.FC<CategoryNavProps> = ({
               {count > 0 && (
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
-                    isActive ? 'bg-stone-950 text-amber-400' : 'bg-stone-200 text-stone-600'
+                    isActive ? 'bg-stone-950 text-[var(--brand-light)]' : 'bg-stone-200 text-stone-600'
                   }`}
                 >
                   {count}
