@@ -23,6 +23,11 @@ export default defineConfig(() => {
           target: process.env.VITE_BACKEND_URL || 'http://localhost:3001',
           changeOrigin: true,
         },
+        // Fotos enviadas pelo admin (logo, banner, splash, pratos) ficam no backend
+        '/uploads': {
+          target: process.env.VITE_BACKEND_URL || 'http://localhost:3001',
+          changeOrigin: true,
+        },
       },
     },
   };

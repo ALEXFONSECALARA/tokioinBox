@@ -73,6 +73,33 @@ Pra uso de teste/demonstração, o jeito atual (arquivos JSON) funciona bem —
 só não confie nele pra não perder pedidos reais em produção sem um dos ajustes
 acima.
 
+## Fotos (logo, banner, splash, pratos, entregadores)
+
+Todo upload de foto feito pelo admin é salvo em `server/data/uploads/<slug>/`
+e servido em `/uploads/<slug>/<arquivo>`. Como fica dentro de `server/data/`,
+vale o mesmo aviso de disco efêmero do Render grátis acima: fotos enviadas
+depois do último deploy somem se o serviço reiniciar, a menos que você use
+Persistent Disk.
+
+## Splash de Boas-vindas
+
+Cada restaurante pode ter sua própria tela de abertura em tela cheia (fotos
+de pratos/ambiente/promoções, com animação suave, por alguns segundos, antes
+do cardápio abrir — estilo iFood/Uber Eats/Airbnb). É configurada em
+`/admin` → aba **Configurações** → **Splash de Boas-vindas**: liga/desliga,
+adiciona/remove fotos e ajusta os segundos por foto. Aparece uma vez por
+sessão do navegador do cliente (some ao trocar de aba ou recarregar; volta a
+aparecer numa sessão nova) e tem um botão "Pular".
+
+## Segurança do acesso admin
+
+O acesso ao painel de cada restaurante é **só** por `/admin` com senha — o
+cardápio do cliente (`/japones`, `/pizza` etc.) nunca mostra nenhum atalho
+ou botão que abra o painel sem login. (Uma versão anterior deste projeto,
+herdada do gerador do AI Studio, tinha um "simulador de dispositivo" com um
+botão "Painel do Restaurante" que abria o admin sem senha nenhuma dentro do
+próprio app do cliente — isso foi removido.)
+
 ## Adicionando um 5º restaurante no futuro
 
 1. Edite `scripts/seed-restaurants.mjs` e adicione o novo restaurante no
