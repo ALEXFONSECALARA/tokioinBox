@@ -109,6 +109,22 @@ export async function saveCategories(slug: string, token: string, categories: Ca
   await handleResponse(res);
 }
 
+// Envia uma foto (logo, banner, splash, prato, entregador) do computador do
+// restaurante para o backend, que salva localmente e devolve a URL pública.
+export async function uploadImage(slug: string, token: string, file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append('image', file);
+  const res = await fetch(`${API_BASE}/api/${slug}/upload`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` }, // sem Content-Type: o browser define o boundary do multipart
+    body: formData,
+  });
+  const data = await handleResponse<{ url: string }>(res);
+  // Se o front e o back estiverem em domínios separados (VITE_API_URL definido),
+  // a URL relativa devolvida pelo backend precisa do prefixo pra funcionar.
+  return API_BASE ? `${API_BASE}${data.url}` : data.url;
+}
+
 export async function saveRestaurantConfig(
   slug: string,
   token: string,
