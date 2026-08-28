@@ -1,10 +1,13 @@
-import { Category, MenuItem, RestaurantConfig } from '../types';
+import { Category, MenuItem, Order, RestaurantConfig } from '../types';
 
-// Em dev, o Vite faz proxy de /api para o backend local (veja vite.config.ts).
-// Em produção (Render), o mesmo servidor Express serve o front-end e a API,
-// então string vazia (caminho relativo) funciona nos dois casos.
-// Se quiser apontar para um backend em outro domínio, defina VITE_API_URL.
 const API_BASE = import.meta.env.VITE_API_URL || '';
+
+export interface RestaurantSummary {
+  slug: string;
+  name: string;
+  emoji: string;
+  color: string;
+}
 
 export interface MenuData {
   categories: Category[];
@@ -26,33 +29,94 @@ async function handleResponse<T>(res: Response): Promise<T> {
   return res.json();
 }
 
-export async function fetchMenu(): Promise<MenuData> {
-  const res = await fetch(`${API_BASE}/api/menu`);
+function authHeaders(token: string): HeadersInit {
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+}
+
+// ---------- Público ----------
+
+export async function fetchRestaurants(): Promise<RestaurantSummary[]> {
+  const res = await fetch(`${API_BASE}/api/restaurants`);
+  return handleResponse<RestaurantSummary[]>(res);
+}
+
+export async function fetchMenu(slug: string): Promise<MenuData> {
+  const res = await fetch(`${API_BASE}/api/${slug}/menu`);
   return handleResponse<MenuData>(res);
 }
 
-export async function saveMenuItems(menuItems: MenuItem[]): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/menu-items`, {
-    method: 'PUT',
+export async function createOrder(slug: string, order: Order): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/${slug}/orders`, {
+    method: 'POST',
     headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(order),
+  });
+  await handleResponse(res);
+}
+
+export async function fetchOrder(slug: string, orderId: string): Promise<Order> {
+  const res = await fetch(`${API_BASE}/api/${slug}/orders/${orderId}`);
+  return handleResponse<Order>(res);
+}
+
+// ---------- Admin (super-admin único, com token) ----------
+
+export async function adminLogin(password: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/admin/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password }),
+  });
+  const data = await handleResponse<{ token: string }>(res);
+  return data.token;
+}
+
+export async function fetchOrdersAdmin(slug: string, token: string): Promise<Order[]> {
+  const res = await fetch(`${API_BASE}/api/${slug}/orders`, { headers: authHeaders(token) });
+  return handleResponse<Order[]>(res);
+}
+
+export async function updateOrderAdmin(
+  slug: string,
+  token: string,
+  orderId: string,
+  patch: Partial<Order>
+): Promise<Order> {
+  const res = await fetch(`${API_BASE}/api/${slug}/orders/${orderId}`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify(patch),
+  });
+  const data = await handleResponse<{ order: Order }>(res);
+  return data.order;
+}
+
+export async function saveMenuItems(slug: string, token: string, menuItems: MenuItem[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/${slug}/menu-items`, {
+    method: 'PUT',
+    headers: authHeaders(token),
     body: JSON.stringify(menuItems),
   });
   await handleResponse(res);
 }
 
-export async function saveCategories(categories: Category[]): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/categories`, {
+export async function saveCategories(slug: string, token: string, categories: Category[]): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/${slug}/categories`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify(categories),
   });
   await handleResponse(res);
 }
 
-export async function saveRestaurantConfig(config: RestaurantConfig): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/config`, {
+export async function saveRestaurantConfig(
+  slug: string,
+  token: string,
+  config: RestaurantConfig
+): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/${slug}/config`, {
     method: 'PUT',
-    headers: { 'Content-Type': 'application/json' },
+    headers: authHeaders(token),
     body: JSON.stringify(config),
   });
   await handleResponse(res);
