@@ -1,94 +1,245 @@
 import express from 'express';
 import cors from 'cors';
 import path from 'path';
+import crypto from 'crypto';
 import { fileURLToPath } from 'url';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 import { existsSync } from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
-const DATA_FILE = path.join(DATA_DIR, 'menu.json');
+const RESTAURANTS_FILE = path.join(DATA_DIR, 'restaurants.json');
 const DIST_DIR = path.join(__dirname, '..', 'dist');
+
+// Senha única do super-admin. Em produção, defina ADMIN_PASSWORD nas variáveis
+// de ambiente do Render. Em desenvolvimento local, usa "admin123" por padrão.
+const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
+
+// Tokens de sessão do admin ficam em memória (somem se o servidor reiniciar,
+// então o admin só precisa logar de novo — nada grave).
+const adminTokens = new Map(); // token -> expiresAt (timestamp ms)
+const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12 horas
+
+function issueToken() {
+  const token = crypto.randomBytes(24).toString('hex');
+  adminTokens.set(token, Date.now() + TOKEN_TTL_MS);
+  return token;
+}
+
+function isTokenValid(token) {
+  if (!token) return false;
+  const expiresAt = adminTokens.get(token);
+  if (!expiresAt) return false;
+  if (Date.now() > expiresAt) {
+    adminTokens.delete(token);
+    return false;
+  }
+  return true;
+}
+
+function requireAdmin(req, res, next) {
+  const auth = req.headers.authorization || '';
+  const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
+  if (!isTokenValid(token)) {
+    return res.status(401).json({ error: 'Não autorizado. Faça login no admin novamente.' });
+  }
+  next();
+}
 
 const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
-async function readMenu() {
-  const raw = await readFile(DATA_FILE, 'utf-8');
-  return JSON.parse(raw);
-}
-
-async function writeMenu(data) {
-  await mkdir(DATA_DIR, { recursive: true });
-  await writeFile(DATA_FILE, JSON.stringify(data, null, 2), 'utf-8');
-}
-
-// GET /api/menu -> tudo (categorias, itens, config do restaurante)
-app.get('/api/menu', async (req, res) => {
+async function readJson(filePath, fallback) {
   try {
-    const data = await readMenu();
+    const raw = await readFile(filePath, 'utf-8');
+    return JSON.parse(raw);
+  } catch (err) {
+    if (err.code === 'ENOENT' && fallback !== undefined) return fallback;
+    throw err;
+  }
+}
+
+async function writeJson(filePath, data) {
+  await mkdir(path.dirname(filePath), { recursive: true });
+  await writeFile(filePath, JSON.stringify(data, null, 2), 'utf-8');
+}
+
+async function getRestaurants() {
+  return readJson(RESTAURANTS_FILE, []);
+}
+
+async function restaurantExists(slug) {
+  const list = await getRestaurants();
+  return list.some((r) => r.slug === slug);
+}
+
+function menuPath(slug) {
+  return path.join(DATA_DIR, 'restaurants', slug, 'menu.json');
+}
+function ordersPath(slug) {
+  return path.join(DATA_DIR, 'restaurants', slug, 'orders.json');
+}
+
+// ---------- Rotas públicas ----------
+
+app.get('/api/health', (req, res) => res.json({ ok: true }));
+
+// Lista os restaurantes disponíveis (pra tela inicial de escolha)
+app.get('/api/restaurants', async (req, res) => {
+  try {
+    res.json(await getRestaurants());
+  } catch (err) {
+    console.error('Erro ao listar restaurantes:', err);
+    res.status(500).json({ error: 'Não foi possível carregar a lista de restaurantes.' });
+  }
+});
+
+// Cardápio de um restaurante específico
+app.get('/api/:slug/menu', async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    const data = await readJson(menuPath(slug));
     res.json(data);
   } catch (err) {
-    console.error('Erro ao ler menu.json:', err);
+    console.error(`Erro ao ler cardápio de ${slug}:`, err);
     res.status(500).json({ error: 'Não foi possível carregar o cardápio.' });
   }
 });
 
-// PUT /api/menu-items -> substitui a lista completa de itens do cardápio
-app.put('/api/menu-items', async (req, res) => {
+// Cliente cria um pedido (não precisa de login)
+app.post('/api/:slug/orders', async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
   try {
-    const menuItems = req.body;
-    if (!Array.isArray(menuItems)) {
-      return res.status(400).json({ error: 'Corpo da requisição deve ser um array de itens.' });
+    const order = req.body;
+    if (!order || !order.id) {
+      return res.status(400).json({ error: 'Pedido inválido.' });
     }
-    const data = await readMenu();
-    data.menuItems = menuItems;
-    await writeMenu(data);
-    res.json({ ok: true, menuItems });
+    const orders = await readJson(ordersPath(slug), []);
+    orders.unshift(order);
+    await writeJson(ordersPath(slug), orders);
+    res.status(201).json({ ok: true, order });
   } catch (err) {
-    console.error('Erro ao salvar itens:', err);
-    res.status(500).json({ error: 'Não foi possível salvar os itens do cardápio.' });
+    console.error(`Erro ao salvar pedido de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível registrar o pedido.' });
   }
 });
 
-// PUT /api/categories -> substitui a lista completa de categorias
-app.put('/api/categories', async (req, res) => {
+// Cliente consulta o status do próprio pedido (id é praticamente impossível de adivinhar)
+app.get('/api/:slug/orders/:id', async (req, res) => {
+  const { slug, id } = req.params;
+  if (!(await restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
   try {
-    const categories = req.body;
-    if (!Array.isArray(categories)) {
-      return res.status(400).json({ error: 'Corpo da requisição deve ser um array de categorias.' });
-    }
-    const data = await readMenu();
+    const orders = await readJson(ordersPath(slug), []);
+    const order = orders.find((o) => o.id === id);
+    if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
+    res.json(order);
+  } catch (err) {
+    console.error(`Erro ao buscar pedido de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível buscar o pedido.' });
+  }
+});
+
+// ---------- Login do super-admin ----------
+
+app.post('/api/admin/login', (req, res) => {
+  const { password } = req.body || {};
+  if (password !== ADMIN_PASSWORD) {
+    return res.status(401).json({ error: 'Senha incorreta.' });
+  }
+  res.json({ token: issueToken() });
+});
+
+// ---------- Rotas do admin (protegidas) ----------
+
+app.put('/api/:slug/menu-items', requireAdmin, async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  const menuItems = req.body;
+  if (!Array.isArray(menuItems)) return res.status(400).json({ error: 'Corpo deve ser um array de itens.' });
+  try {
+    const data = await readJson(menuPath(slug));
+    data.menuItems = menuItems;
+    await writeJson(menuPath(slug), data);
+    res.json({ ok: true, menuItems });
+  } catch (err) {
+    console.error(`Erro ao salvar itens de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível salvar os itens.' });
+  }
+});
+
+app.put('/api/:slug/categories', requireAdmin, async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  const categories = req.body;
+  if (!Array.isArray(categories)) return res.status(400).json({ error: 'Corpo deve ser um array de categorias.' });
+  try {
+    const data = await readJson(menuPath(slug));
     data.categories = categories;
-    await writeMenu(data);
+    await writeJson(menuPath(slug), data);
     res.json({ ok: true, categories });
   } catch (err) {
-    console.error('Erro ao salvar categorias:', err);
+    console.error(`Erro ao salvar categorias de ${slug}:`, err);
     res.status(500).json({ error: 'Não foi possível salvar as categorias.' });
   }
 });
 
-// PUT /api/config -> substitui a configuração do restaurante
-app.put('/api/config', async (req, res) => {
+app.put('/api/:slug/config', requireAdmin, async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  const restaurantConfig = req.body;
+  if (!restaurantConfig || typeof restaurantConfig !== 'object' || Array.isArray(restaurantConfig)) {
+    return res.status(400).json({ error: 'Corpo deve ser um objeto de configuração.' });
+  }
   try {
-    const restaurantConfig = req.body;
-    if (!restaurantConfig || typeof restaurantConfig !== 'object' || Array.isArray(restaurantConfig)) {
-      return res.status(400).json({ error: 'Corpo da requisição deve ser um objeto de configuração.' });
-    }
-    const data = await readMenu();
+    const data = await readJson(menuPath(slug));
     data.restaurantConfig = restaurantConfig;
-    await writeMenu(data);
+    await writeJson(menuPath(slug), data);
     res.json({ ok: true, restaurantConfig });
   } catch (err) {
-    console.error('Erro ao salvar configuração:', err);
-    res.status(500).json({ error: 'Não foi possível salvar a configuração do restaurante.' });
+    console.error(`Erro ao salvar configuração de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível salvar a configuração.' });
   }
 });
 
-app.get('/api/health', (req, res) => res.json({ ok: true }));
+// Admin lista todos os pedidos de um restaurante
+app.get('/api/:slug/orders', requireAdmin, async (req, res) => {
+  const { slug } = req.params;
+  if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  try {
+    res.json(await readJson(ordersPath(slug), []));
+  } catch (err) {
+    console.error(`Erro ao listar pedidos de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível carregar os pedidos.' });
+  }
+});
 
-// Em produção, o Express também serve o front-end já buildado (npm run build -> dist/)
+// Admin atualiza um pedido (status, entregador, etc)
+app.patch('/api/:slug/orders/:id', requireAdmin, async (req, res) => {
+  const { slug, id } = req.params;
+  if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  try {
+    const orders = await readJson(ordersPath(slug), []);
+    const idx = orders.findIndex((o) => o.id === id);
+    if (idx === -1) return res.status(404).json({ error: 'Pedido não encontrado.' });
+    orders[idx] = { ...orders[idx], ...req.body };
+    await writeJson(ordersPath(slug), orders);
+    res.json({ ok: true, order: orders[idx] });
+  } catch (err) {
+    console.error(`Erro ao atualizar pedido de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível atualizar o pedido.' });
+  }
+});
+
+// Em produção, o mesmo processo também serve os arquivos estáticos de dist/
 if (existsSync(DIST_DIR)) {
   app.use(express.static(DIST_DIR));
   app.get(/^(?!\/api).*/, (req, res) => {
@@ -98,5 +249,8 @@ if (existsSync(DIST_DIR)) {
 
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
-  console.log(`Servidor do cardápio rodando na porta ${PORT}`);
+  console.log(`Servidor multicardápio rodando na porta ${PORT}`);
+  if (!process.env.ADMIN_PASSWORD) {
+    console.log('⚠️  ADMIN_PASSWORD não definido — usando senha padrão "admin123". Configure isso no Render em produção.');
+  }
 });
