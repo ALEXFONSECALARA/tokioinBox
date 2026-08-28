@@ -4,13 +4,9 @@ import {
   Category, 
   CartItem, 
   Order, 
-  OrderStatus, 
   RestaurantConfig, 
-  ActivePlatformView, 
-  DeviceFrame,
   DietaryTag,
-  DeliveryAddress,
-  DriverInfo
+  DeliveryAddress
 } from './types';
 import { 
   INITIAL_CATEGORIES, 
@@ -19,7 +15,7 @@ import {
 } from './data/initialData';
 import { fetchMenu, createOrder, fetchOrder } from './utils/api';
 import { formatCurrency, playSoundEffect, COUPONS } from './utils/helpers';
-import { DeviceSimulatorToolbar } from './components/DeviceSimulatorToolbar';
+import { SplashScreen } from './components/SplashScreen';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
 import { ProductCard } from './components/ProductCard';
@@ -27,19 +23,15 @@ import { ProductModal } from './components/ProductModal';
 import { CartDrawer } from './components/CartDrawer';
 import { CheckoutModal } from './components/CheckoutModal';
 import { OrderStatusModal } from './components/OrderStatusModal';
-import { AdminDashboard } from './components/AdminDashboard';
 import { DeliveryAddressModal } from './components/DeliveryAddressModal';
 import { FavoritesModal } from './components/FavoritesModal';
 import { 
   ShoppingBag, 
   Bike,
-  Sparkles, 
   ChefHat, 
   MapPin,
   Clock,
-  ShieldCheck,
-  Percent,
-  CheckCircle2
+  Percent
 } from 'lucide-react';
 
 // Tema visual por restaurante. O padrão (dourado/âmbar genérico) é o mesmo de
@@ -125,11 +117,13 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   });
 
   // UI state
-  const [activeView, setActiveView] = useState<ActivePlatformView>('customer');
-  const [deviceFrame, setDeviceFrame] = useState<DeviceFrame>('fluid');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<DietaryTag | null>(null);
   const [activeCategoryId, setActiveCategoryId] = useState('all');
+
+  // Splash screen (tela de abertura em tela cheia): mostra uma vez por sessão
+  // do navegador, por restaurante, se o admin tiver ativado e cadastrado fotos.
+  const [showSplash, setShowSplash] = useState(false);
 
   // Modals & Drawers
   const [selectedProduct, setSelectedProduct] = useState<MenuItem | null>(null);
@@ -181,6 +175,20 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
     })();
     return () => { cancelled = true; };
   }, [restaurantSlug]);
+
+  // Decide se mostra a splash screen: só se o admin ativou e cadastrou fotos,
+  // e só uma vez por sessão do navegador (não repete a cada nova aba/recarregar
+  // fica marcado em sessionStorage — mas volta a aparecer numa sessão nova).
+  useEffect(() => {
+    if (isMenuLoading) return;
+    const splashSeenKey = `cardapio_splash_seen_${restaurantSlug}`;
+    const alreadySeen = sessionStorage.getItem(splashSeenKey);
+    const hasSplashContent = restaurantConfig.splashEnabled && (restaurantConfig.splashImages?.length || 0) > 0;
+    if (hasSplashContent && !alreadySeen) {
+      setShowSplash(true);
+      sessionStorage.setItem(splashSeenKey, '1');
+    }
+  }, [isMenuLoading, restaurantSlug, restaurantConfig.splashEnabled, restaurantConfig.splashImages]);
 
   // Mantém uma cópia local (cache/offline) do cardápio. Quem realmente salva as
   // edições no backend é o painel /admin (AdminPortal), que tem o token de login.
@@ -320,50 +328,6 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
     });
   };
 
-  // Admin Operations
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, driver?: DriverInfo) => {
-    setOrders((prev) =>
-      prev.map((o) => {
-        if (o.id === orderId) {
-          return {
-            ...o,
-            status,
-            driver: driver || o.driver,
-            statusHistory: [
-              ...o.statusHistory,
-              {
-                status,
-                timestamp: new Date().toISOString(),
-                note: driver ? `Atribuído ao entregador ${driver.name}` : `Status alterado para ${status}`,
-              },
-            ],
-          };
-        }
-        return o;
-      })
-    );
-    playSoundEffect('notification');
-  };
-
-  const handleAddMenuItem = (item: MenuItem) => {
-    setMenuItems((prev) => [item, ...prev]);
-  };
-
-  const handleUpdateMenuItem = (item: MenuItem) => {
-    setMenuItems((prev) => prev.map((i) => (i.id === item.id ? item : i)));
-  };
-
-  const handleDeleteMenuItem = (id: string) => {
-    setMenuItems((prev) => prev.filter((i) => i.id !== id));
-  };
-
-  const handleToggleAvailability = (id: string) => {
-    setMenuItems((prev) =>
-      prev.map((i) => (i.id === id ? { ...i, available: !i.available } : i))
-    );
-    playSoundEffect('beep');
-  };
-
   // Filtered menu items
   const filteredMenuItems = useMemo(() => {
     return menuItems.filter((item) => {
@@ -428,39 +392,15 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   }
 
   // Render Admin Dashboard
-  if (activeView === 'admin') {
-    return (
-      <div className="min-h-screen bg-stone-100">
-        <DeviceSimulatorToolbar
-          activeView={activeView}
-          onViewChange={setActiveView}
-          deviceFrame={deviceFrame}
-          onDeviceFrameChange={setDeviceFrame}
-          activeOrdersCount={activeOrdersCount}
-          onOpenOrders={() => setIsOrderStatusOpen(true)}
-        />
-        <AdminDashboard
-          orders={orders}
-          onUpdateOrderStatus={handleUpdateOrderStatus}
-          menuItems={menuItems}
-          categories={categories}
-          onAddMenuItem={handleAddMenuItem}
-          onUpdateMenuItem={handleUpdateMenuItem}
-          onDeleteMenuItem={handleDeleteMenuItem}
-          onToggleAvailability={handleToggleAvailability}
-          onInjectDemoOrder={(demoOrder) => setOrders((prev) => [demoOrder, ...prev])}
-          onUpdateMenuItems={setMenuItems}
-          restaurantConfig={restaurantConfig}
-          onUpdateConfig={setRestaurantConfig}
-          onCloseAdmin={() => setActiveView('customer')}
-        />
-      </div>
-    );
-  }
+  // (removido: o painel de administração só é acessível de forma protegida
+  // por senha em /admin — ver AdminPortal.tsx. O cliente nunca tem esse acesso.)
 
-  // Customer Delivery View (with optional device simulation frame)
+  // Customer Delivery View
   return (
     <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans" style={getThemeStyle(restaurantSlug)}>
+      {showSplash && (
+        <SplashScreen config={restaurantConfig} onFinish={() => setShowSplash(false)} />
+      )}
       {menuLoadError && (
         <div className="bg-amber-100 text-amber-800 text-sm text-center py-1.5 px-4">
           {menuLoadError}
@@ -474,26 +414,8 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
           ← Trocar de restaurante
         </button>
       )}
-      {/* Top Device & Mode Simulator Toolbar */}
-      <DeviceSimulatorToolbar
-        activeView={activeView}
-        onViewChange={setActiveView}
-        deviceFrame={deviceFrame}
-        onDeviceFrameChange={setDeviceFrame}
-        activeOrdersCount={activeOrdersCount}
-        onOpenOrders={() => setIsOrderStatusOpen(true)}
-      />
 
-      {/* Device Shell Simulation Container */}
-      <div
-        className={`flex-1 flex flex-col mx-auto w-full transition-all duration-300 ${
-          deviceFrame === 'mobile'
-            ? 'max-w-md my-4 rounded-3xl shadow-2xl overflow-hidden border-8 border-stone-800 bg-white ring-1 ring-stone-900/10'
-            : deviceFrame === 'tablet'
-            ? 'max-w-3xl my-4 rounded-3xl shadow-2xl overflow-hidden border-8 border-stone-800 bg-white ring-1 ring-stone-900/10'
-            : 'max-w-full bg-white'
-        }`}
-      >
+      <div className="flex-1 flex flex-col mx-auto w-full max-w-full bg-white">
         {/* Restaurant Header */}
         <Header
           config={restaurantConfig}
@@ -696,13 +618,13 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
                 <MapPin className="w-3.5 h-3.5 text-[var(--brand)]" />
                 <span>Trocar Endereço</span>
               </button>
-              <button
-                onClick={() => setActiveView('admin')}
+              <a
+                href="/admin"
                 className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-[var(--brand-light)] text-xs font-semibold flex items-center gap-1"
               >
                 <ChefHat className="w-3.5 h-3.5" />
                 <span>Acesso Restaurante</span>
-              </button>
+              </a>
             </div>
           </div>
         </footer>

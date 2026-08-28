@@ -162,7 +162,9 @@ export interface RestaurantConfig {
   instagram: string;
   allowTableOrders: boolean;
   totalTables: number;
+  // Tela de abertura em tela cheia (fotos de pratos/ambiente/promoções) exibida
+  // por alguns segundos antes do cardápio, estilo iFood/Uber Eats/Airbnb.
+  splashEnabled?: boolean;
+  splashImages?: string[];
+  splashDurationSeconds?: number;
 }
-
-export type ActivePlatformView = 'customer' | 'admin' | 'kiosk' | 'table';
-export type DeviceFrame = 'fluid' | 'mobile' | 'tablet' | 'desktop';
