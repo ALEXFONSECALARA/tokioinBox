@@ -39,6 +39,9 @@ const baseConfig = (overrides) => ({
   instagram: '',
   allowTableOrders: false,
   totalTables: 0,
+  splashEnabled: false,
+  splashImages: [],
+  splashDurationSeconds: 3,
   ...overrides,
 });
 
