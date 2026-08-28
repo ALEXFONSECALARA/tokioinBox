@@ -220,6 +220,8 @@ export const AdminPortal: React.FC = () => {
       {loading && !currentRestaurant ? null : (
         <AdminDashboard
           key={selectedSlug}
+          slug={selectedSlug}
+          token={token}
           orders={orders}
           onUpdateOrderStatus={handleUpdateOrderStatus}
           menuItems={menuItems}

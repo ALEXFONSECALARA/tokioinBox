@@ -12,6 +12,7 @@ import {
 import { formatCurrency, playSoundEffect } from '../utils/helpers';
 import { ToolsHub } from './ToolsHub';
 import { ReceiptPrintModal } from './ReceiptPrintModal';
+import { ImageUploadField } from './ImageUploadField';
 import { 
   ChefHat, 
   Plus, 
@@ -42,10 +43,16 @@ import {
   Printer,
   Wrench,
   Sparkles,
-  FileSpreadsheet
+  FileSpreadsheet,
+  ImageOff,
+  Images
 } from 'lucide-react';
 
 interface AdminDashboardProps {
+  // Restaurante sendo administrado e token de sessão do admin — necessários
+  // pra fazer upload de fotos (POST /api/:slug/upload) direto do painel.
+  slug: string;
+  token: string;
   orders: Order[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus, driver?: DriverInfo) => void;
   menuItems: MenuItem[];
@@ -62,6 +69,8 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+  slug,
+  token,
   orders,
   onUpdateOrderStatus,
   menuItems,
@@ -1160,6 +1169,127 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             )}
 
+            {/* Identidade Visual: logo e banner, com upload local de foto */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div>
+                <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                  <ImageOff className="w-4 h-4" />
+                  Identidade Visual
+                </h3>
+                <p className="text-[11px] text-stone-500">
+                  Logo e foto de capa exibidos no topo do cardápio deste restaurante
+                </p>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <ImageUploadField
+                  slug={slug}
+                  token={token}
+                  label="Logo do Restaurante"
+                  value={localConfig.logo}
+                  onChange={(url) => {
+                    const updated = { ...localConfig, logo: url };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  }}
+                  aspect="square"
+                />
+                <ImageUploadField
+                  slug={slug}
+                  token={token}
+                  label="Foto de Capa (Banner)"
+                  value={localConfig.bannerImage}
+                  onChange={(url) => {
+                    const updated = { ...localConfig, bannerImage: url };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  }}
+                  aspect="wide"
+                />
+              </div>
+            </div>
+
+            {/* Splash de Boas-vindas: fotos em tela cheia mostradas por alguns
+                segundos antes do cardápio abrir, estilo iFood/Uber Eats/Airbnb */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                    <Images className="w-4 h-4" />
+                    Splash de Boas-vindas
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Fotos em tela cheia (pratos, ambiente, promoções) mostradas por alguns
+                    segundos antes do cliente ver o cardápio
+                  </p>
+                </div>
+                <label className="flex items-center gap-2 cursor-pointer shrink-0">
+                  <input
+                    type="checkbox"
+                    checked={!!localConfig.splashEnabled}
+                    onChange={(e) => {
+                      const updated = { ...localConfig, splashEnabled: e.target.checked };
+                      setLocalConfig(updated);
+                      onUpdateConfig(updated);
+                    }}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="font-bold text-stone-800">Ativada</span>
+                </label>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                {(localConfig.splashImages || []).map((img, idx) => (
+                  <div key={img + idx} className="relative rounded-xl overflow-hidden border border-stone-200 aspect-square group">
+                    <img src={img} alt={`Splash ${idx + 1}`} className="w-full h-full object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const updated = {
+                          ...localConfig,
+                          splashImages: (localConfig.splashImages || []).filter((_, i) => i !== idx),
+                        };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="absolute top-1 right-1 p-1 rounded-lg bg-slate-950/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                      title="Remover foto"
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <ImageUploadField
+                slug={slug}
+                token={token}
+                label={`Adicionar foto à sequência${(localConfig.splashImages?.length || 0) > 0 ? ` (${localConfig.splashImages!.length} já cadastradas)` : ''}`}
+                value=""
+                onChange={(url) => {
+                  const updated = { ...localConfig, splashImages: [...(localConfig.splashImages || []), url] };
+                  setLocalConfig(updated);
+                  onUpdateConfig(updated);
+                }}
+                aspect="wide"
+              />
+
+              <div>
+                <label className="block font-bold text-stone-700 mb-1">Segundos por foto</label>
+                <input
+                  type="number"
+                  min={1}
+                  max={10}
+                  value={localConfig.splashDurationSeconds || 3}
+                  onChange={(e) => {
+                    const updated = { ...localConfig, splashDurationSeconds: parseInt(e.target.value) || 3 };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  }}
+                  className="w-24 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                />
+              </div>
+            </div>
+
             <form onSubmit={handleSaveConfig} className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1577,13 +1707,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">URL Foto de Perfil</label>
-                <input
-                  type="url"
+                <ImageUploadField
+                  slug={slug}
+                  token={token}
+                  label="Foto de Perfil do Entregador"
                   value={driverPhoto}
-                  onChange={(e) => setDriverPhoto(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:ring-2 focus:ring-amber-500 focus:outline-none"
+                  onChange={setDriverPhoto}
+                  aspect="square"
                 />
               </div>
 
@@ -1678,14 +1808,26 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div>
-                <label className="block font-bold text-stone-700 mb-1">URL da Imagem</label>
-                <input
-                  type="url"
+                <ImageUploadField
+                  slug={slug}
+                  token={token}
+                  label="Foto do Prato"
                   value={dishImage}
-                  onChange={(e) => setDishImage(e.target.value)}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  onChange={setDishImage}
+                  aspect="wide"
                 />
+                <details className="mt-1.5">
+                  <summary className="text-[11px] text-stone-400 cursor-pointer hover:text-stone-600">
+                    ou usar uma URL de imagem existente
+                  </summary>
+                  <input
+                    type="url"
+                    value={dishImage}
+                    onChange={(e) => setDishImage(e.target.value)}
+                    placeholder="https://..."
+                    className="mt-1.5 w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </details>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
