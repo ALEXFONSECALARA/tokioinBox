@@ -17,7 +17,7 @@ import {
   INITIAL_MENU_ITEMS, 
   INITIAL_RESTAURANT_CONFIG 
 } from './data/initialData';
-import { fetchMenu, saveMenuItems, saveCategories, saveRestaurantConfig } from './utils/api';
+import { fetchMenu, createOrder, fetchOrder } from './utils/api';
 import { formatCurrency, playSoundEffect, COUPONS } from './utils/helpers';
 import { DeviceSimulatorToolbar } from './components/DeviceSimulatorToolbar';
 import { Header } from './components/Header';
@@ -42,8 +42,19 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
-export default function App() {
-  // Cardápio (categorias, itens, config do restaurante) agora vem do backend (/api/menu).
+interface AppProps {
+  // Identifica qual restaurante esta loja representa (ex: 'japones', 'pizza').
+  // Cada restaurante tem seu próprio cardápio, carrinho e pedidos isolados.
+  restaurantSlug: string;
+  onExit?: () => void;
+}
+
+export default function App({ restaurantSlug, onExit }: AppProps) {
+  // Chaves do localStorage isoladas por restaurante, pra não misturar carrinho/pedidos
+  // de lojas diferentes no mesmo navegador.
+  const storageKey = (name: string) => `cardapio_${restaurantSlug}_${name}`;
+
+  // Cardápio (categorias, itens, config do restaurante) agora vem do backend (/api/:slug/menu).
   // Os valores INITIAL_* servem só de fallback enquanto carrega ou se a API falhar.
   const [menuItems, setMenuItems] = useState<MenuItem[]>(INITIAL_MENU_ITEMS);
   const [categories, setCategories] = useState<Category[]>(INITIAL_CATEGORIES);
@@ -53,23 +64,23 @@ export default function App() {
   const isMenuHydrated = React.useRef(false);
 
   const [cartItems, setCartItems] = useState<CartItem[]>(() => {
-    const saved = localStorage.getItem('cardapio_cart');
+    const saved = localStorage.getItem(storageKey('cart'));
     return saved ? JSON.parse(saved) : [];
   });
 
   const [orders, setOrders] = useState<Order[]>(() => {
-    const saved = localStorage.getItem('cardapio_orders');
+    const saved = localStorage.getItem(storageKey('orders'));
     return saved ? JSON.parse(saved) : [];
   });
 
   const [favorites, setFavorites] = useState<string[]>(() => {
-    const saved = localStorage.getItem('cardapio_favorites');
-    return saved ? JSON.parse(saved) : ['item-1', 'item-8'];
+    const saved = localStorage.getItem(storageKey('favorites'));
+    return saved ? JSON.parse(saved) : [];
   });
 
   // Saved Delivery Address State
   const [deliveryAddress, setDeliveryAddress] = useState<DeliveryAddress | null>(() => {
-    const saved = localStorage.getItem('cardapio_delivery_address');
+    const saved = localStorage.getItem(storageKey('delivery_address'));
     return saved ? JSON.parse(saved) : {
       street: 'Av. Paulista',
       number: '1578',
@@ -100,24 +111,32 @@ export default function App() {
   // Coupon state
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>('BEMVINDO10');
 
-  // Carrega o cardápio do backend (GET /api/menu) na primeira renderização
+  // Carrega o cardápio do backend (GET /api/:slug/menu) na primeira renderização
+  // e sempre que o restaurante (slug) mudar.
   useEffect(() => {
     let cancelled = false;
+    isMenuHydrated.current = false;
+    setIsMenuLoading(true);
     (async () => {
       try {
-        const data = await fetchMenu();
+        const data = await fetchMenu(restaurantSlug);
         if (cancelled) return;
         setMenuItems(data.menuItems);
         setCategories(data.categories);
         setRestaurantConfig(data.restaurantConfig);
         setMenuLoadError(null);
-      } catch (err) {
+      } catch (err: any) {
         console.error('Falha ao buscar cardápio do backend, usando dados locais:', err);
         if (!cancelled) {
-          setMenuLoadError('Não foi possível conectar ao servidor do cardápio. Mostrando dados salvos localmente.');
+          const message = String(err?.message || '');
+          setMenuLoadError(
+            message.includes('não encontrado')
+              ? `Restaurante "${restaurantSlug}" não encontrado.`
+              : 'Não foi possível conectar ao servidor do cardápio. Mostrando dados salvos localmente.'
+          );
           // Fallback: usa o que estiver salvo no localStorage, se houver
-          const savedItems = localStorage.getItem('cardapio_menu_items');
-          const savedConfig = localStorage.getItem('cardapio_restaurant_config');
+          const savedItems = localStorage.getItem(storageKey('menu_items'));
+          const savedConfig = localStorage.getItem(storageKey('restaurant_config'));
           if (savedItems) setMenuItems(JSON.parse(savedItems));
           if (savedConfig) setRestaurantConfig(JSON.parse(savedConfig));
         }
@@ -129,43 +148,50 @@ export default function App() {
       }
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [restaurantSlug]);
 
-  // Persist cardápio: mantém uma cópia local (cache/offline) e sincroniza com o backend
+  // Mantém uma cópia local (cache/offline) do cardápio. Quem realmente salva as
+  // edições no backend é o painel /admin (AdminPortal), que tem o token de login.
   useEffect(() => {
-    localStorage.setItem('cardapio_menu_items', JSON.stringify(menuItems));
-    if (!isMenuHydrated.current) return;
-    saveMenuItems(menuItems).catch((err) => console.error('Erro ao salvar itens no backend:', err));
+    localStorage.setItem(storageKey('menu_items'), JSON.stringify(menuItems));
   }, [menuItems]);
 
   useEffect(() => {
-    if (!isMenuHydrated.current) return;
-    saveCategories(categories).catch((err) => console.error('Erro ao salvar categorias no backend:', err));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem('cardapio_restaurant_config', JSON.stringify(restaurantConfig));
-    if (!isMenuHydrated.current) return;
-    saveRestaurantConfig(restaurantConfig).catch((err) => console.error('Erro ao salvar configuração no backend:', err));
+    localStorage.setItem(storageKey('restaurant_config'), JSON.stringify(restaurantConfig));
   }, [restaurantConfig]);
 
   useEffect(() => {
-    localStorage.setItem('cardapio_cart', JSON.stringify(cartItems));
+    localStorage.setItem(storageKey('cart'), JSON.stringify(cartItems));
   }, [cartItems]);
 
   useEffect(() => {
-    localStorage.setItem('cardapio_orders', JSON.stringify(orders));
+    localStorage.setItem(storageKey('orders'), JSON.stringify(orders));
   }, [orders]);
 
   useEffect(() => {
-    localStorage.setItem('cardapio_favorites', JSON.stringify(favorites));
+    localStorage.setItem(storageKey('favorites'), JSON.stringify(favorites));
   }, [favorites]);
 
   useEffect(() => {
     if (deliveryAddress) {
-      localStorage.setItem('cardapio_delivery_address', JSON.stringify(deliveryAddress));
+      localStorage.setItem(storageKey('delivery_address'), JSON.stringify(deliveryAddress));
     }
   }, [deliveryAddress]);
+
+  // Enquanto o pedido do cliente está ativo, consulta o backend a cada poucos
+  // segundos pra saber se o admin mudou o status (recebido -> em preparo -> etc).
+  useEffect(() => {
+    if (!activeOrderId) return;
+    const interval = setInterval(async () => {
+      try {
+        const updated = await fetchOrder(restaurantSlug, activeOrderId);
+        setOrders((prev) => prev.map((o) => (o.id === updated.id ? updated : o)));
+      } catch {
+        // Backend pode estar indisponível momentaneamente; ignora e tenta de novo depois.
+      }
+    }, 6000);
+    return () => clearInterval(interval);
+  }, [activeOrderId, restaurantSlug]);
 
   // Cart operations
   const handleAddToCart = (newItem: CartItem) => {
@@ -256,6 +282,10 @@ export default function App() {
     if (!openWhatsApp) {
       setIsOrderStatusOpen(true);
     }
+    // Envia o pedido pro backend, pra aparecer no painel do admin (super-admin)
+    createOrder(restaurantSlug, order).catch((err) => {
+      console.error('Não foi possível enviar o pedido ao servidor:', err);
+    });
   };
 
   // Admin Operations
@@ -403,6 +433,14 @@ export default function App() {
         <div className="bg-amber-100 text-amber-800 text-sm text-center py-1.5 px-4">
           {menuLoadError}
         </div>
+      )}
+      {onExit && (
+        <button
+          onClick={onExit}
+          className="text-xs text-stone-500 hover:text-stone-800 underline px-4 py-1.5 text-left w-fit"
+        >
+          ← Trocar de restaurante
+        </button>
       )}
       {/* Top Device & Mode Simulator Toolbar */}
       <DeviceSimulatorToolbar
