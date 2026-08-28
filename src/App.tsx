@@ -42,6 +42,38 @@ import {
   CheckCircle2
 } from 'lucide-react';
 
+// Tema visual por restaurante. O padrão (dourado/âmbar genérico) é o mesmo de
+// sempre — só o "japones" (Sakura Sushi House) recebe o tema tradicional
+// japonês (vermelho + preto + dourado). Os outros restaurantes não mudam.
+const DEFAULT_THEME = {
+  brand: '#F59E0B',
+  brandLight: '#FBBF24',
+  brandDark: '#D97706',
+  brandTint: '#FFFBEB',
+  accentRed: '#F43F5E',
+};
+
+const RESTAURANT_THEMES: Record<string, typeof DEFAULT_THEME> = {
+  japones: {
+    brand: '#C9A227', // dourado
+    brandLight: '#E0B94D',
+    brandDark: '#8A6D1D',
+    brandTint: '#FBF3D9',
+    accentRed: '#B91C1C', // vermelho tradicional
+  },
+};
+
+function getThemeStyle(slug: string): React.CSSProperties {
+  const theme = RESTAURANT_THEMES[slug] || DEFAULT_THEME;
+  return {
+    ['--brand' as any]: theme.brand,
+    ['--brand-light' as any]: theme.brandLight,
+    ['--brand-dark' as any]: theme.brandDark,
+    ['--brand-tint' as any]: theme.brandTint,
+    ['--accent-red' as any]: theme.accentRed,
+  };
+}
+
 interface AppProps {
   // Identifica qual restaurante esta loja representa (ex: 'japones', 'pizza').
   // Cada restaurante tem seu próprio cardápio, carrinho e pedidos isolados.
@@ -428,7 +460,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
 
   // Customer Delivery View (with optional device simulation frame)
   return (
-    <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans" style={getThemeStyle(restaurantSlug)}>
       {menuLoadError && (
         <div className="bg-amber-100 text-amber-800 text-sm text-center py-1.5 px-4">
           {menuLoadError}
@@ -487,9 +519,9 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
 
         {/* Promo Delivery Banner */}
         <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4">
-          <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 rounded-2xl p-3 sm:p-4 text-slate-950 flex flex-wrap items-center justify-between gap-3 shadow-xs border border-amber-300">
+          <div className="bg-gradient-to-r from-[var(--brand)] via-[var(--brand-light)] to-[var(--brand)] rounded-2xl p-3 sm:p-4 text-slate-950 flex flex-wrap items-center justify-between gap-3 shadow-xs border border-[var(--brand-light)]">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center flex-shrink-0">
+              <div className="w-10 h-10 rounded-xl bg-slate-950 text-[var(--brand-light)] flex items-center justify-center flex-shrink-0">
                 <Bike className="w-5 h-5" />
               </div>
               <div>
@@ -504,7 +536,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
 
             <button
               onClick={() => handleApplyCoupon('BEMVINDO10')}
-              className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 text-amber-400 rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5"
+              className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 text-[var(--brand-light)] rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5"
             >
               <Percent className="w-3.5 h-3.5" />
               <span>Aplicar 10% OFF</span>
@@ -597,7 +629,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
                       setSelectedTag(null);
                       setActiveCategoryId('all');
                     }}
-                    className="mt-4 px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-xs"
+                    className="mt-4 px-4 py-2 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 font-bold text-xs shadow-xs"
                   >
                     Ver Todo o Cardápio
                   </button>
@@ -625,15 +657,15 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
             <button
               id="floating-cart-bar"
               onClick={() => setIsCartOpen(true)}
-              className="w-full py-3.5 px-4 rounded-2xl bg-amber-500 hover:bg-amber-400 active:scale-[0.98] text-slate-950 font-black text-sm flex items-center justify-between transition-all shadow-xl border border-amber-300 ring-4 ring-amber-500/20"
+              className="w-full py-3.5 px-4 rounded-2xl bg-[var(--brand)] hover:bg-[var(--brand-light)] active:scale-[0.98] text-slate-950 font-black text-sm flex items-center justify-between transition-all shadow-xl border border-[var(--brand-light)] ring-4 ring-[var(--brand)]/20"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-slate-950 text-amber-400 flex items-center justify-center text-xs font-black">
+                <div className="w-8 h-8 rounded-xl bg-slate-950 text-[var(--brand-light)] flex items-center justify-center text-xs font-black">
                   {cartItemCount}
                 </div>
                 <span>Ver Sacola Delivery</span>
               </div>
-              <span className="bg-slate-950 text-amber-400 px-3 py-1 rounded-xl text-xs font-black">
+              <span className="bg-slate-950 text-[var(--brand-light)] px-3 py-1 rounded-xl text-xs font-black">
                 {formatCurrency(cartSubtotal - discountAmount)}
               </span>
             </button>
@@ -661,12 +693,12 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
                 onClick={() => setIsAddressModalOpen(true)}
                 className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-stone-300 text-xs font-semibold flex items-center gap-1"
               >
-                <MapPin className="w-3.5 h-3.5 text-amber-500" />
+                <MapPin className="w-3.5 h-3.5 text-[var(--brand)]" />
                 <span>Trocar Endereço</span>
               </button>
               <button
                 onClick={() => setActiveView('admin')}
-                className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-amber-400 text-xs font-semibold flex items-center gap-1"
+                className="px-3 py-1.5 rounded-xl bg-stone-800 hover:bg-stone-700 text-[var(--brand-light)] text-xs font-semibold flex items-center gap-1"
               >
                 <ChefHat className="w-3.5 h-3.5" />
                 <span>Acesso Restaurante</span>
