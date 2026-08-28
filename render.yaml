@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: sabor-e-brasa-cardapio
+    name: tokioinbox-multicardapio
     runtime: node
     plan: free
     buildCommand: npm install && npm run build
@@ -8,9 +8,16 @@ services:
     envVars:
       - key: NODE_VERSION
         value: 20.11.0
+      - key: ADMIN_PASSWORD
+        sync: false
+        # ⚠️ Defina o valor real dessa senha direto no painel do Render
+        # (Environment). É a senha ÚNICA que dá acesso ao painel /admin,
+        # onde dá pra gerenciar os 4 restaurantes e ver os pedidos.
     autoDeploy: true
-    # ATENÇÃO: o plano free do Render tem disco efêmero — server/data/menu.json
-    # volta ao estado do último deploy (do repositório) sempre que o serviço reinicia
-    # ou é atualizado. Para persistir de verdade as edições feitas pelo Admin,
-    # adicione um "Persistent Disk" no Render (pago) montado em /opt/render/project/src/server/data
-    # ou migre para um banco de dados (ex: Render Postgres).
+    # ATENÇÃO: o plano free do Render tem disco efêmero — server/data/
+    # volta ao estado do último deploy (do repositório) sempre que o serviço
+    # reinicia. Ou seja: cardápios editados e pedidos recebidos se perdem
+    # quando o serviço reiniciar/redeployar. Para persistir de verdade,
+    # adicione um "Persistent Disk" no Render (pago) montado em
+    # /opt/render/project/src/server/data, ou migre pra um banco de dados
+    # de verdade (ex: Render Postgres) no futuro.

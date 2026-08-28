@@ -1,81 +1,82 @@
-# Cardápio online (JSON + backend) — GitHub + Render
+# Tokio inBox — Multicardápio (4 restaurantes)
 
-O cardápio (categorias, itens do menu e configurações do restaurante) agora é
-servido por um pequeno backend Node/Express, que lê e grava um arquivo JSON
-(`server/data/menu.json`). O front-end (React) busca esses dados em
-`GET /api/menu` em vez de usar o arquivo `src/data/initialData.ts` fixo.
+Plataforma com **4 restaurantes separados** (Japonês, Italiano, Pizza e
+Hamburgueria), cada um com seu próprio cardápio, URL e pedidos — e um **painel
+único de super-admin** (uma senha só) pra gerenciar todos e receber os pedidos
+em tempo real.
 
-## Estrutura nova
+## Como está organizado
 
-- `server/index.js` — API Express:
-  - `GET /api/menu` → categorias + itens + configuração do restaurante
-  - `PUT /api/menu-items` → salva a lista completa de itens
-  - `PUT /api/categories` → salva a lista completa de categorias
-  - `PUT /api/config` → salva a configuração do restaurante
-  - Em produção, o mesmo processo também serve os arquivos estáticos de `dist/`
-    (o build do front-end), então é **um único serviço** no Render.
-- `server/data/menu.json` — onde os dados ficam salvos. Já vem populado com o
-  cardápio atual (gerado a partir do `initialData.ts` antigo).
-- `src/utils/api.ts` — funções do front-end para buscar/salvar no backend.
-- `src/App.tsx` — agora busca o cardápio do backend ao carregar, e sempre que o
-  Admin edita um item, categoria ou a configuração do restaurante, a mudança é
-  enviada de volta pro backend (além de continuar guardando uma cópia em
-  `localStorage` como cache).
+- `GET /:slug` → cardápio público do restaurante (ex: `/japones`, `/pizza`,
+  `/italiano`, `/hamburgueria`)
+- `/` → página inicial com a lista dos 4 restaurantes
+- `/admin` → painel do super-admin (pede senha), com um seletor pra trocar
+  entre os 4 restaurantes e gerenciar cardápio + pedidos de cada um
+- `server/data/restaurants.json` → registro dos 4 restaurantes (nome, emoji, cor)
+- `server/data/restaurants/<slug>/menu.json` → cardápio de cada restaurante
+- `server/data/restaurants/<slug>/orders.json` → pedidos de cada restaurante
+
+## Login do admin
+
+Uma senha única dá acesso ao painel `/admin`, de onde dá pra gerenciar os 4
+restaurantes (não precisa logar de novo pra cada um).
+
+- **Local:** a senha padrão é `admin123` (veja `server/index.js`)
+- **Produção (Render):** defina a variável de ambiente `ADMIN_PASSWORD` com uma
+  senha forte, em Render → seu serviço → Environment
 
 ## Rodando localmente
-
-Precisa de **dois processos** em desenvolvimento (o Vite não roda o backend
-sozinho):
 
 ```bash
 npm install
 
+# Gera os dados iniciais dos 4 restaurantes (só precisa rodar uma vez,
+# ou se quiser resetar tudo pro estado original)
+node scripts/seed-restaurants.mjs
+
 # Terminal 1 — backend (API + dados)
-npm run server        # roda em http://localhost:3001
+npm run server        # http://localhost:3001
 
 # Terminal 2 — front-end
-npm run dev            # roda em http://localhost:3000
+npm run dev            # http://localhost:3000
 ```
 
-O Vite já está configurado para redirecionar chamadas `/api/*` para
-`http://localhost:3001` (veja `vite.config.ts`), então tudo funciona junto.
+Acesse `http://localhost:3000` pra ver a lista de restaurantes, ou direto
+`http://localhost:3000/japones`, `/italiano`, `/pizza`, `/hamburgueria`.
+Pra administrar, vá em `http://localhost:3000/admin` (senha `admin123` em dev).
 
 ## Deploy: GitHub + Render
 
-1. **Suba o projeto para o GitHub** (repositório novo ou existente):
-   ```bash
-   git add .
-   git commit -m "Migra cardápio para backend JSON"
-   git push origin main
-   ```
+1. Suba o projeto pro GitHub (`git add . && git commit -m "..." && git push`)
+2. No Render, crie um **Web Service** apontando pro repositório (o
+   `render.yaml` já vem configurado como Blueprint)
+3. **Importante:** em Render → Environment, defina `ADMIN_PASSWORD` com a
+   senha que você quer usar em produção (não deixe a padrão `admin123`)
+4. Depois do deploy, a URL do Render já serve tudo: `/`, `/japones`, `/admin`
+   etc, no mesmo domínio
 
-2. **No Render**, crie um novo **Web Service** apontando para esse repositório.
-   Se você usar o arquivo `render.yaml` incluso, o Render já detecta a
-   configuração automaticamente (Blueprint). Caso configure manualmente, use:
-   - **Build Command:** `npm install && npm run build`
-   - **Start Command:** `npm run start`
-   - **Environment:** Node
+### ⚠️ Persistência de dados no Render (plano grátis)
 
-3. Depois do deploy, o Render vai te dar uma URL única
-   (ex: `https://sabor-e-brasa-cardapio.onrender.com`) que já serve tanto o
-   site quanto a API (`/api/menu`, etc), tudo no mesmo lugar.
+O plano gratuito do Render usa disco **efêmero**. Isso significa que sempre
+que o serviço reiniciar ou você fizer um novo deploy, os arquivos em
+`server/data/` voltam pro estado que está no GitHub — ou seja, **pedidos
+recebidos e edições de cardápio feitas depois do último deploy se perdem**.
 
-### ⚠️ Importante: persistência do JSON no Render
+Duas formas de resolver isso de verdade:
 
-O plano **gratuito** do Render usa disco **efêmero**: toda vez que o serviço
-reinicia (deploy novo, ou o serviço "dorme" e acorda de novo), o arquivo
-`server/data/menu.json` volta para a versão que está no seu repositório
-GitHub — ou seja, **edições feitas pelo Admin Dashboard depois do deploy se
-perdem** quando o serviço reiniciar.
+- **Persistent Disk** (recurso pago do Render) montado em `server/data`, pra
+  que os arquivos sobrevivam a reinícios
+- **Migrar pra um banco de dados** (ex: Render Postgres), recomendado se o
+  volume de pedidos for grande ou se isso for pra uso real de produção
 
-Para editar de forma permanente sem esse problema, você tem duas opções:
+Pra uso de teste/demonstração, o jeito atual (arquivos JSON) funciona bem —
+só não confie nele pra não perder pedidos reais em produção sem um dos ajustes
+acima.
 
-- **Opção simples:** edite o cardápio localmente (rodando `npm run server` na
-  sua máquina, usando o Admin Dashboard), depois faça commit do
-  `server/data/menu.json` atualizado e dê `git push` — o próximo deploy do
-  Render já sobe com o cardápio novo.
-- **Opção robusta (recomendada para uso real):** adicione um **Persistent
-  Disk** no Render (recurso pago) montado em
-  `server/data`, para que o arquivo sobreviva a reinícios e deploys. Ou migre
-  o armazenamento para um banco de dados de verdade (ex: Render Postgres),
-  caso o restaurante vá editar o cardápio com frequência direto em produção.
+## Adicionando um 5º restaurante no futuro
+
+1. Edite `scripts/seed-restaurants.mjs` e adicione o novo restaurante no
+   objeto `restaurants` (categorias, itens, config)
+2. Rode `node scripts/seed-restaurants.mjs` (ele não sobrescreve restaurantes
+   que já existem, só cria os novos)
+3. Pronto — o novo restaurante já aparece na lista (`/`) e no admin (`/admin`)

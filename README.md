@@ -16,11 +16,15 @@ View your app in AI Studio: https://ai.studio/apps/d50af42b-1b9c-471c-9389-ec1ca
 1. Install dependencies:
    `npm install`
 2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the backend (serves the menu JSON API):
+3. Generate the seed data for the 4 restaurants (only needed once):
+   `node scripts/seed-restaurants.mjs`
+4. Run the backend (serves the multi-restaurant JSON API):
    `npm run server`
-4. Run the app (in another terminal):
+5. Run the app (in another terminal):
    `npm run dev`
 
-> O cardápio agora é servido por um backend Node/Express (JSON em
-> `server/data/menu.json`) em vez de estar fixo no código. Veja
-> [DEPLOY.md](DEPLOY.md) para detalhes e instruções de deploy no GitHub + Render.
+> Este é um sistema **multicardápio**: 4 restaurantes separados (Japonês,
+> Italiano, Pizza, Hamburgueria), cada um com sua própria URL
+> (`/japones`, `/italiano`, `/pizza`, `/hamburgueria`), e um painel único de
+> super-admin em `/admin` (uma senha só) pra gerenciar todos e ver os pedidos.
+> Veja [DEPLOY.md](DEPLOY.md) para detalhes e instruções de deploy no GitHub + Render.

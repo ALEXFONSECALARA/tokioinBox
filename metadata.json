@@ -1,6 +1,6 @@
 {
-  "name": "Delivery Sabor & Brasa",
-  "description": "Sistema completo de Delivery gastronômico com cálculo de taxa de entrega por bairro/CEP, rastreamento de motoboy em tempo real, pedidos via WhatsApp, upselling e painel de despacho da cozinha.",
+  "name": "Tokio inBox - Multicardápio",
+  "description": "Plataforma multi-restaurante (Japonês, Italiano, Pizza, Hamburgueria) com cardápio online, painel único de super-admin para gerenciar todos os restaurantes e receber pedidos em tempo real.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
