@@ -93,6 +93,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null);
+  // Pedidos já impressos nesta sessão do painel (troca o botão pra
+  // "Reimprimir" e deixa claro que os dados usados são os mesmos salvos).
+  const [printedOrderIds, setPrintedOrderIds] = useState<Set<string>>(new Set());
   
   // Modal for add/edit dish
   const [isDishModalOpen, setIsDishModalOpen] = useState(false);
@@ -1316,6 +1319,63 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             </div>
 
+            {/* Impressão: tamanho de papel padrão da impressora térmica.
+                Impressão automática fica registrada aqui como preferência,
+                mas depende de um driver/app de impressora do sistema
+                operacional pra funcionar sem clique manual — o navegador
+                sozinho não consegue imprimir silenciosamente. */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div>
+                <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                  <Printer className="w-4 h-4" />
+                  Impressão
+                </h3>
+                <p className="text-[11px] text-stone-500">
+                  Tamanho padrão do papel da impressora térmica usada no restaurante
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {(['58mm', '80mm'] as const).map((w) => (
+                  <button
+                    key={w}
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...localConfig, printPaperWidth: w };
+                      setLocalConfig(updated);
+                      onUpdateConfig(updated);
+                    }}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold border transition-colors ${
+                      (localConfig.printPaperWidth || '80mm') === w
+                        ? 'bg-stone-900 text-white border-stone-900'
+                        : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    {w}
+                  </button>
+                ))}
+              </div>
+              <label className="flex items-start gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={!!localConfig.printAutoNewOrders}
+                  onChange={(e) => {
+                    const updated = { ...localConfig, printAutoNewOrders: e.target.checked };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  }}
+                  className="w-4 h-4 mt-0.5 rounded text-amber-600 focus:ring-amber-500"
+                />
+                <span>
+                  <span className="font-bold text-stone-800 block">Impressão automática de novos pedidos</span>
+                  <span className="text-[11px] text-stone-500">
+                    Guarda a preferência pra quando houver um app/driver de impressora instalado no
+                    computador da cozinha. Sozinho, o navegador não consegue mandar imprimir sem um
+                    clique — por segurança, nenhum site pode acionar sua impressora sem confirmação.
+                  </span>
+                </span>
+              </label>
+            </div>
+
             <form onSubmit={handleSaveConfig} className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1898,12 +1958,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* Receipt Thermal Printer Modal */}
+      {/* Impressão do pedido (cozinha / entrega / cliente) */}
       {selectedReceiptOrder && (
         <ReceiptPrintModal
           order={selectedReceiptOrder}
           restaurantConfig={localConfig}
           onClose={() => setSelectedReceiptOrder(null)}
+          alreadyPrinted={printedOrderIds.has(selectedReceiptOrder.id)}
+          onPrinted={() => {
+            setPrintedOrderIds((prev) => new Set(prev).add(selectedReceiptOrder.id));
+          }}
         />
       )}
     </div>
