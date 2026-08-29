@@ -48,32 +48,25 @@
   animation: splash-progress linear forwards;
 }
 
-/* ---------- Impressão de comanda térmica ---------- */
-/* Ao clicar em "Imprimir Comanda" (window.print), imprime só a comanda —
-   nada do resto da página (cardápio, modais, botões) vai para o papel/impressora. */
+/* ---------- Impressão de pedidos (cozinha / entrega / cliente) ---------- */
+/* O conteúdo a imprimir é montado num portal fora da árvore do app (ver
+   PrintPortal.tsx), como irmão direto de <body>. Isso evita depender de
+   "visibility" atravessando ancestrais com position:fixed/overflow/flex do
+   modal — que é exatamente o que cortava/zerava impressões antes. */
 @media print {
-  body * {
-    visibility: hidden;
+  body > *:not(#print-portal-root) {
+    display: none !important;
   }
-  #thermal-receipt-container,
-  #thermal-receipt-container * {
-    visibility: visible;
+  #print-portal-root {
+    display: block !important;
+    position: static !important;
   }
-  #thermal-receipt-container {
-    position: absolute;
-    inset: 0;
-    left: 0;
-    top: 0;
-    width: 80mm;
-    max-width: 80mm;
-    margin: 0;
-    padding: 8px;
-    box-shadow: none;
-    border: none;
-    border-radius: 0;
+  .printable-receipt {
+    width: 100% !important;
+    max-width: 100% !important;
   }
   @page {
     margin: 0;
-    size: 80mm auto;
+    size: auto;
   }
 }

@@ -167,4 +167,10 @@ export interface RestaurantConfig {
   splashEnabled?: boolean;
   splashImages?: string[];
   splashDurationSeconds?: number;
+  // Configurações → Impressão: tamanho do papel da impressora térmica e
+  // impressão automática de novos pedidos (a automação de fato — sem clique
+  // manual — depende de driver/app da impressora do sistema operacional;
+  // aqui só guardamos a preferência pra usar quando essa integração existir).
+  printPaperWidth?: '58mm' | '80mm';
+  printAutoNewOrders?: boolean;
 }
