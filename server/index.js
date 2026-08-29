@@ -113,8 +113,28 @@ async function restaurantExists(slug) {
 function menuPath(slug) {
   return path.join(DATA_DIR, 'restaurants', slug, 'menu.json');
 }
+function configPath(slug) {
+  return path.join(DATA_DIR, 'restaurants', slug, 'config.json');
+}
 function ordersPath(slug) {
   return path.join(DATA_DIR, 'restaurants', slug, 'orders.json');
+}
+
+// Cada restaurante tem seu PRÓPRIO arquivo (menu.json / config.json / orders.json)
+// dentro de server/data/restaurants/<slug>/ — nunca existe um arquivo global
+// compartilhado entre restaurantes. Ler ou gravar sempre exige o :slug da rota,
+// então é estruturalmente impossível um restaurante enxergar ou sobrescrever
+// o arquivo de outro.
+async function readRestaurantData(slug) {
+  const [menu, config] = await Promise.all([
+    readJson(menuPath(slug), { menuItems: [], categories: [] }),
+    readJson(configPath(slug), null),
+  ]);
+  return {
+    menuItems: menu.menuItems || [],
+    categories: menu.categories || [],
+    restaurantConfig: config,
+  };
 }
 
 // ---------- Rotas públicas ----------
@@ -131,14 +151,17 @@ app.get('/api/restaurants', async (req, res) => {
   }
 });
 
-// Cardápio de um restaurante específico
+// Cardápio + configuração de UM restaurante específico (nunca de outro)
 app.get('/api/:slug/menu', async (req, res) => {
   const { slug } = req.params;
   if (!(await restaurantExists(slug))) {
     return res.status(404).json({ error: 'Restaurante não encontrado.' });
   }
   try {
-    const data = await readJson(menuPath(slug));
+    const data = await readRestaurantData(slug);
+    if (!data.restaurantConfig) {
+      return res.status(500).json({ error: `Configuração de "${slug}" não encontrada (config.json ausente).` });
+    }
     res.json(data);
   } catch (err) {
     console.error(`Erro ao ler cardápio de ${slug}:`, err);
@@ -223,9 +246,11 @@ app.put('/api/:slug/menu-items', requireAdmin, async (req, res) => {
   const menuItems = req.body;
   if (!Array.isArray(menuItems)) return res.status(400).json({ error: 'Corpo deve ser um array de itens.' });
   try {
-    const data = await readJson(menuPath(slug));
-    data.menuItems = menuItems;
-    await writeJson(menuPath(slug), data);
+    // Só toca no menu.json deste restaurante — config.json (identidade, taxas,
+    // pagamento, entregadores etc.) fica intocado, em arquivo separado.
+    const menu = await readJson(menuPath(slug), { menuItems: [], categories: [] });
+    menu.menuItems = menuItems;
+    await writeJson(menuPath(slug), menu);
     res.json({ ok: true, menuItems });
   } catch (err) {
     console.error(`Erro ao salvar itens de ${slug}:`, err);
@@ -239,9 +264,9 @@ app.put('/api/:slug/categories', requireAdmin, async (req, res) => {
   const categories = req.body;
   if (!Array.isArray(categories)) return res.status(400).json({ error: 'Corpo deve ser um array de categorias.' });
   try {
-    const data = await readJson(menuPath(slug));
-    data.categories = categories;
-    await writeJson(menuPath(slug), data);
+    const menu = await readJson(menuPath(slug), { menuItems: [], categories: [] });
+    menu.categories = categories;
+    await writeJson(menuPath(slug), menu);
     res.json({ ok: true, categories });
   } catch (err) {
     console.error(`Erro ao salvar categorias de ${slug}:`, err);
@@ -252,15 +277,19 @@ app.put('/api/:slug/categories', requireAdmin, async (req, res) => {
 app.put('/api/:slug/config', requireAdmin, async (req, res) => {
   const { slug } = req.params;
   if (!(await restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
-  const restaurantConfig = req.body;
-  if (!restaurantConfig || typeof restaurantConfig !== 'object' || Array.isArray(restaurantConfig)) {
+  const incoming = req.body;
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
     return res.status(400).json({ error: 'Corpo deve ser um objeto de configuração.' });
   }
   try {
-    const data = await readJson(menuPath(slug));
-    data.restaurantConfig = restaurantConfig;
-    await writeJson(menuPath(slug), data);
-    res.json({ ok: true, restaurantConfig });
+    // Atualização segura: faz MERGE com a configuração já salva deste restaurante,
+    // em vez de substituir o arquivo inteiro. Assim, um payload incompleto (de uma
+    // versão antiga do painel, ou uma aba desatualizada) nunca apaga silenciosamente
+    // campos que não vieram no corpo da requisição.
+    const existing = await readJson(configPath(slug), {});
+    const merged = { ...existing, ...incoming };
+    await writeJson(configPath(slug), merged);
+    res.json({ ok: true, restaurantConfig: merged });
   } catch (err) {
     console.error(`Erro ao salvar configuração de ${slug}:`, err);
     res.status(500).json({ error: 'Não foi possível salvar a configuração.' });
