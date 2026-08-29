@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   MenuItem, 
   Category, 
@@ -66,6 +66,10 @@ interface AdminDashboardProps {
   restaurantConfig: RestaurantConfig;
   onUpdateConfig: (config: RestaurantConfig) => void;
   onCloseAdmin: () => void;
+  // Avisa o painel pai (AdminPortal) se existem edições no formulário de
+  // Configurações ainda não salvas — usado pra impedir troca de restaurante
+  // sem confirmação e perda acidental de alterações.
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -84,6 +88,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   restaurantConfig,
   onUpdateConfig,
   onCloseAdmin,
+  onDirtyChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
   const [soundEnabled, setSoundEnabled] = useState(true);
@@ -127,6 +132,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // Config Form State
   const [localConfig, setLocalConfig] = useState<RestaurantConfig>({ ...restaurantConfig });
   const [configSaved, setConfigSaved] = useState(false);
+
+  // Campos do formulário de Configurações que só salvam ao clicar em "Salvar
+  // Alterações" (nome, telefone, taxas, etc.) ficam "sujos" (não salvos) até lá.
+  // Avisa o AdminPortal disso pra ele poder confirmar antes de trocar de restaurante.
+  useEffect(() => {
+    onDirtyChange?.(JSON.stringify(localConfig) !== JSON.stringify(restaurantConfig));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [localConfig, restaurantConfig]);
+
+  // Se este painel for desmontado (ex: o admin trocou de restaurante) com
+  // alterações pendentes, avisa que não há mais nada "sujo" nesta instância.
+  useEffect(() => {
+    return () => onDirtyChange?.(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
 
   // Financial Metrics Calculation
   const totalRevenue = orders
@@ -404,8 +425,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Operação Ativa
                 </span>
               </h1>
-              <p className="text-xs text-stone-400">
-                {restaurantConfig.name} • {validOrdersCount} pedidos registrados
+              <p className="text-xs text-stone-400 flex items-center gap-1.5 flex-wrap">
+                <span className="inline-flex items-center gap-1 bg-stone-800 text-amber-400 font-bold px-2 py-0.5 rounded-full text-[10px] uppercase tracking-wide">
+                  Restaurante Ativo
+                </span>
+                <span className="font-semibold text-stone-200">{restaurantConfig.name}</span>
+                <span className="text-stone-500">· slug: {slug}</span>
+                <span className="text-stone-500">· {validOrdersCount} pedidos registrados</span>
               </p>
             </div>
           </div>
