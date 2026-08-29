@@ -623,8 +623,8 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
               onClick={() => handleCompleteOrder(false)}
               className="py-3.5 px-4 rounded-2xl bg-slate-900 hover:bg-slate-800 active:scale-[0.99] text-[var(--brand-light)] font-black text-xs sm:text-sm flex items-center justify-center gap-2 transition-all shadow-md"
             >
-              <Clock className="w-4 h-4" />
-              <span>Acompanhar Entrega Online</span>
+              <ShoppingBag className="w-4 h-4" />
+              <span>Pedir Aqui</span>
             </button>
           </div>
         </div>

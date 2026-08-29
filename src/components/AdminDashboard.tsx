@@ -54,7 +54,7 @@ interface AdminDashboardProps {
   slug: string;
   token: string;
   orders: Order[];
-  onUpdateOrderStatus: (orderId: string, status: OrderStatus, driver?: DriverInfo) => void;
+  onUpdateOrderStatus: (orderId: string, status: OrderStatus, driver?: DriverInfo, cancelReason?: string) => void;
   menuItems: MenuItem[];
   categories: Category[];
   onAddMenuItem: (item: MenuItem) => void;
@@ -119,6 +119,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Order Dispatch Modal (assigning driver)
   const [dispatchOrder, setDispatchOrder] = useState<Order | null>(null);
+  // Cancelamento de pedido com motivo obrigatório (fica registrado no
+  // histórico do pedido — nunca cancela silenciosamente).
+  const [cancelOrderTarget, setCancelOrderTarget] = useState<Order | null>(null);
+  const [cancelReasonInput, setCancelReasonInput] = useState('');
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
 
   // Dish Form State
@@ -387,6 +391,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setDispatchOrder(order);
     const availableDrivers = (localConfig.drivers || []).filter((d) => d.status === 'available');
     setSelectedDriverId(availableDrivers[0]?.id || localConfig.drivers?.[0]?.id || '');
+  };
+
+  const CANCEL_REASON_SUGGESTIONS = [
+    'Cliente desistiu do pedido',
+    'Endereço fora da área de entrega',
+    'Item indisponível no momento',
+    'Pedido duplicado',
+    'Não foi possível contatar o cliente',
+  ];
+
+  const handleConfirmCancel = () => {
+    if (!cancelOrderTarget || !cancelReasonInput.trim()) return;
+    onUpdateOrderStatus(cancelOrderTarget.id, 'cancelado', undefined, cancelReasonInput.trim());
+    setCancelOrderTarget(null);
+    setCancelReasonInput('');
+    playSoundEffect('beep');
   };
 
   const handleConfirmDispatch = () => {
@@ -683,7 +703,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <span>Aceitar & Cozinhar</span>
                           </button>
                           <button
-                            onClick={() => onUpdateOrderStatus(order.id, 'cancelado')}
+                            onClick={() => setCancelOrderTarget(order)}
                             className="py-2 px-2 bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-600 rounded-xl font-bold text-xs text-center"
                           >
                             Recusar
@@ -759,6 +779,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             title="Imprimir Comanda Térmica"
                           >
                             <Printer className="w-4 h-4" />
+                          </button>
+                          <button
+                            onClick={() => setCancelOrderTarget(order)}
+                            className="p-2.5 rounded-xl bg-stone-100 hover:bg-rose-50 hover:text-rose-700 text-stone-600"
+                            title="Cancelar pedido"
+                          >
+                            <X className="w-4 h-4" />
                           </button>
                         </div>
                       </div>
@@ -846,6 +873,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         >
                           <Check className="w-4 h-4" />
                           <span>Confirmar Entrega Concluída</span>
+                        </button>
+                        <button
+                          onClick={() => setCancelOrderTarget(order)}
+                          className="w-full py-1.5 text-stone-400 hover:text-rose-700 rounded-xl font-bold text-[11px] text-center"
+                        >
+                          Cancelar pedido
                         </button>
                       </div>
                     ))
@@ -1652,6 +1685,85 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 <Check className="w-4 h-4" />
                 <span>Confirmar Saída</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancelar pedido — motivo obrigatório, fica registrado no histórico */}
+      {cancelOrderTarget && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-black text-base text-stone-900 flex items-center gap-2">
+                <X className="w-5 h-5 text-rose-500" />
+                Cancelar Pedido #{cancelOrderTarget.orderNumber}
+              </h3>
+              <button
+                onClick={() => {
+                  setCancelOrderTarget(null);
+                  setCancelReasonInput('');
+                }}
+                className="p-1 text-stone-400 hover:text-stone-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="text-xs text-stone-600 bg-stone-50 p-3 rounded-2xl space-y-1">
+              <p><strong>Cliente:</strong> {cancelOrderTarget.customer.name}</p>
+              <p><strong>Total:</strong> {formatCurrency(cancelOrderTarget.total)}</p>
+            </div>
+
+            <div>
+              <label className="block font-bold text-stone-700 text-xs mb-1.5">
+                Motivo do cancelamento (obrigatório):
+              </label>
+              <div className="flex flex-wrap gap-1.5 mb-2">
+                {CANCEL_REASON_SUGGESTIONS.map((reason) => (
+                  <button
+                    key={reason}
+                    type="button"
+                    onClick={() => setCancelReasonInput(reason)}
+                    className={`px-2.5 py-1 rounded-full text-[11px] font-bold border transition-colors ${
+                      cancelReasonInput === reason
+                        ? 'bg-rose-600 text-white border-rose-600'
+                        : 'bg-white text-stone-600 border-stone-200 hover:border-stone-300'
+                    }`}
+                  >
+                    {reason}
+                  </button>
+                ))}
+              </div>
+              <textarea
+                value={cancelReasonInput}
+                onChange={(e) => setCancelReasonInput(e.target.value)}
+                rows={2}
+                placeholder="Descreva o motivo do cancelamento..."
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+
+            <div className="pt-2 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setCancelOrderTarget(null);
+                  setCancelReasonInput('');
+                }}
+                className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-bold text-xs"
+              >
+                Voltar
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmCancel}
+                disabled={!cancelReasonInput.trim()}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl font-bold text-xs flex items-center gap-1.5 shadow-xs"
+              >
+                <X className="w-4 h-4" />
+                <span>Confirmar Cancelamento</span>
               </button>
             </div>
           </div>

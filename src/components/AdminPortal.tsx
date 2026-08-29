@@ -198,19 +198,24 @@ export const AdminPortal: React.FC = () => {
     );
   }
 
-  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, driver?: DriverInfo) => {
+  const handleUpdateOrderStatus = (orderId: string, status: OrderStatus, driver?: DriverInfo, cancelReason?: string) => {
     const target = orders.find((o) => o.id === orderId);
     if (!target) return;
     const updatedOrder: Order = {
       ...target,
       status,
       driver: driver || target.driver,
+      cancelReason: status === 'cancelado' ? cancelReason || target.cancelReason : target.cancelReason,
       statusHistory: [
         ...target.statusHistory,
         {
           status,
           timestamp: new Date().toISOString(),
-          note: driver ? `Atribuído ao entregador ${driver.name}` : `Status alterado para ${status}`,
+          note: driver
+            ? `Atribuído ao entregador ${driver.name}`
+            : status === 'cancelado' && cancelReason
+            ? `Pedido cancelado — motivo: ${cancelReason}`
+            : `Status alterado para ${status}`,
         },
       ],
     };
