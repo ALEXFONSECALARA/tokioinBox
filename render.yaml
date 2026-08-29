@@ -13,11 +13,25 @@ services:
         # ⚠️ Defina o valor real dessa senha direto no painel do Render
         # (Environment). É a senha ÚNICA que dá acesso ao painel /admin,
         # onde dá pra gerenciar os 4 restaurantes e ver os pedidos.
+      - key: SUPABASE_URL
+        sync: false
+        # Fase 2 — ver docs/SUPABASE_SETUP.md. Se deixar em branco, o
+        # servidor volta a usar server/data/ (arquivos JSON) automaticamente.
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+        # A chave "service_role" do projeto Supabase (ojztmcnghgsrvstmasnc).
+        # NUNCA a chave "anon". Defina só aqui no painel do Render — nunca
+        # no repositório.
     autoDeploy: true
-    # ATENÇÃO: o plano free do Render tem disco efêmero — server/data/
-    # volta ao estado do último deploy (do repositório) sempre que o serviço
-    # reinicia. Ou seja: cardápios editados e pedidos recebidos se perdem
-    # quando o serviço reiniciar/redeployar. Para persistir de verdade,
-    # adicione um "Persistent Disk" no Render (pago) montado em
-    # /opt/render/project/src/server/data, ou migre pra um banco de dados
-    # de verdade (ex: Render Postgres) no futuro.
+    # ATENÇÃO (resolvido pela Fase 2, se SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY
+    # estiverem configurados): o plano free do Render tem disco efêmero —
+    # server/data/ volta ao estado do último deploy sempre que o serviço
+    # reinicia. Sem Supabase configurado, cardápios editados e pedidos
+    # recebidos se perdem a cada reinício/redeploy. Com Supabase configurado,
+    # pedidos/cardápio/config passam a viver no Postgres do Supabase, e o
+    # disco efêmero deixa de ser um problema para ESSES dados.
+    #
+    # Isso NÃO cobre as imagens enviadas em server/data/uploads/ (logo,
+    # banner, fotos de prato) — essas continuam em disco local e ainda
+    # seriam perdidas num redeploy no plano free. Migrar uploads para o
+    # Supabase Storage é trabalho futuro, fora desta fase.
