@@ -31,7 +31,8 @@ import {
   ChefHat, 
   MapPin,
   Clock,
-  Percent
+  Percent,
+  X
 } from 'lucide-react';
 
 // Tema visual por restaurante. O padrão (dourado/âmbar genérico) é o mesmo de
@@ -132,7 +133,19 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   const [isOrderStatusOpen, setIsOrderStatusOpen] = useState(false);
   const [isAddressModalOpen, setIsAddressModalOpen] = useState(false);
   const [isFavoritesOpen, setIsFavoritesOpen] = useState(false);
-  const [activeOrderId, setActiveOrderId] = useState<string | null>(null);
+  const [activeOrderId, setActiveOrderId] = useState<string | null>(() => {
+    // Se o cliente fechar o navegador e voltar, reconecta com o pedido em
+    // andamento (nem entregue, nem cancelado) em vez de esquecer dele.
+    const saved = localStorage.getItem(storageKey('orders'));
+    const savedOrders: Order[] = saved ? JSON.parse(saved) : [];
+    const ongoing = savedOrders
+      .filter((o) => o.status !== 'entregue' && o.status !== 'cancelado')
+      .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+    return ongoing[0]?.id || null;
+  });
+  // Controla o banner "Você possui um pedido em andamento" — só é dispensado
+  // quando o cliente clica em "Acompanhar Pedido" ou fecha o aviso.
+  const [showOngoingOrderBanner, setShowOngoingOrderBanner] = useState(!!activeOrderId);
 
   // Coupon state
   const [appliedCoupon, setAppliedCoupon] = useState<string | null>('BEMVINDO10');
@@ -233,6 +246,15 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
     return () => clearInterval(interval);
   }, [activeOrderId, restaurantSlug]);
 
+  // Some com o aviso de "pedido em andamento" assim que ele for entregue ou cancelado
+  useEffect(() => {
+    if (!activeOrderId) return;
+    const current = orders.find((o) => o.id === activeOrderId);
+    if (current && (current.status === 'entregue' || current.status === 'cancelado')) {
+      setShowOngoingOrderBanner(false);
+    }
+  }, [orders, activeOrderId]);
+
   // Cart operations
   const handleAddToCart = (newItem: CartItem) => {
     setCartItems((prev) => {
@@ -318,6 +340,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   const handleOrderPlaced = (order: Order, openWhatsApp: boolean) => {
     setOrders((prev) => [order, ...prev]);
     setActiveOrderId(order.id);
+    setShowOngoingOrderBanner(true);
     setCartItems([]);
     if (!openWhatsApp) {
       setIsOrderStatusOpen(true);
@@ -430,6 +453,52 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
           favoritesCount={favorites.length}
           onOpenFavorites={() => setIsFavoritesOpen(true)}
         />
+
+        {/* "Você possui um pedido em andamento" — reaparece se o cliente
+            fechar o navegador e voltar com um pedido ainda não entregue */}
+        {showOngoingOrderBanner && activeOrderId && (() => {
+          const ongoingOrder = orders.find((o) => o.id === activeOrderId);
+          if (!ongoingOrder) return null;
+          const statusLabels: Record<string, string> = {
+            recebido: 'Pedido recebido',
+            em_preparo: 'Preparando',
+            pronto: 'Pronto',
+            saiu_entrega: 'Saiu para entrega',
+          };
+          return (
+            <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4">
+              <div className="bg-slate-900 text-white rounded-2xl p-3 sm:p-4 flex flex-wrap items-center justify-between gap-3 shadow-md">
+                <div className="flex items-center gap-3">
+                  <div className="w-9 h-9 rounded-xl bg-[var(--brand)] text-slate-950 flex items-center justify-center flex-shrink-0">
+                    <ShoppingBag className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-[11px] text-stone-300 font-semibold">Você possui um pedido em andamento</p>
+                    <p className="text-sm font-black">
+                      Pedido #{ongoingOrder.orderNumber} — {statusLabels[ongoingOrder.status] || ongoingOrder.status}
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setIsOrderStatusOpen(true)}
+                    className="px-4 py-2 rounded-xl bg-[var(--brand)] hover:bg-[var(--brand-light)] text-slate-950 text-xs font-black flex items-center gap-1.5"
+                  >
+                    <Clock className="w-3.5 h-3.5" />
+                    <span>Acompanhar Pedido</span>
+                  </button>
+                  <button
+                    onClick={() => setShowOngoingOrderBanner(false)}
+                    className="p-2 rounded-xl text-stone-400 hover:text-white hover:bg-stone-800"
+                    title="Dispensar aviso"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {/* Category Navigation Bar */}
         <CategoryNav

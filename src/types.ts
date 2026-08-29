@@ -133,6 +133,7 @@ export interface Order {
   status: OrderStatus;
   driver?: DriverInfo;
   estimatedMinutes?: number;
+  cancelReason?: string;
   statusHistory: {
     status: OrderStatus;
     timestamp: string;
