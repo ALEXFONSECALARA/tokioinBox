@@ -151,21 +151,23 @@ writeFileSync(path.join(DATA_DIR, 'restaurants.json'), JSON.stringify(registry, 
 for (const r of Object.values(restaurants)) {
   const dir = path.join(DATA_DIR, 'restaurants', r.slug);
   mkdirSync(dir, { recursive: true });
+
+  // Cada restaurante tem arquivos próprios e independentes: config.json (identidade,
+  // delivery, pagamento, entregadores, splash...), menu.json (categorias + itens) e
+  // orders.json (pedidos). Nunca existe um arquivo global compartilhado entre eles.
+  const configFile = path.join(dir, 'config.json');
+  if (!existsSync(configFile)) {
+    writeFileSync(configFile, JSON.stringify(r.restaurantConfig, null, 2));
+  }
   const menuFile = path.join(dir, 'menu.json');
   if (!existsSync(menuFile)) {
-    writeFileSync(
-      menuFile,
-      JSON.stringify(
-        { categories: r.categories, menuItems: r.menuItems, restaurantConfig: r.restaurantConfig },
-        null,
-        2
-      )
-    );
+    writeFileSync(menuFile, JSON.stringify({ categories: r.categories, menuItems: r.menuItems }, null, 2));
   }
   const ordersFile = path.join(dir, 'orders.json');
   if (!existsSync(ordersFile)) {
     writeFileSync(ordersFile, JSON.stringify([], null, 2));
   }
+  mkdirSync(path.join(dir, 'uploads'), { recursive: true });
 }
 
 console.log('Restaurantes gerados:', registry.map((r) => r.slug).join(', '));
