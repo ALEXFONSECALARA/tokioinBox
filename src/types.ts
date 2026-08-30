@@ -183,6 +183,7 @@ export interface RestaurantConfig {
   bannerPositionY?: number; // 0-100
   bannerZoom?: number; // 100-200
   bannerOverlay?: number; // 0-100
+  bannerText?: string; // texto opcional sobreposto à capa (ex: chamada/promoção)
   // Identidade visual: cor principal e secundária do restaurante, usadas nos
   // cards da vitrine multi-restaurantes (nunca fixas/douradas por padrão).
   color?: string;
