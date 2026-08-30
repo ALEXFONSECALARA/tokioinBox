@@ -100,6 +100,17 @@ app.get('/api/restaurants', async (req, res) => {
   }
 });
 
+// Configuração da vitrine principal "/" (título, subtítulo, layout escolhido
+// pelo super-admin) — global, não pertence a nenhum restaurante específico.
+app.get('/api/platform', async (req, res) => {
+  try {
+    res.json(await db.getPlatformSettings());
+  } catch (err) {
+    console.error('Erro ao carregar configuração da vitrine:', err);
+    res.status(500).json({ error: 'Não foi possível carregar a configuração da vitrine.' });
+  }
+});
+
 // Cardápio + configuração de UM restaurante específico (nunca de outro)
 app.get('/api/:slug/menu', async (req, res) => {
   const { slug } = req.params;
@@ -230,6 +241,21 @@ app.put('/api/:slug/config', requireAdmin, async (req, res) => {
   } catch (err) {
     console.error(`Erro ao salvar configuração de ${slug}:`, err);
     res.status(500).json({ error: 'Não foi possível salvar a configuração.' });
+  }
+});
+
+// Super-admin atualiza a configuração global da vitrine "/"
+app.put('/api/admin/platform', requireAdmin, async (req, res) => {
+  const incoming = req.body;
+  if (!incoming || typeof incoming !== 'object' || Array.isArray(incoming)) {
+    return res.status(400).json({ error: 'Corpo deve ser um objeto de configuração.' });
+  }
+  try {
+    const merged = await db.updatePlatformSettings(incoming);
+    res.json({ ok: true, platform: merged });
+  } catch (err) {
+    console.error('Erro ao salvar configuração da vitrine:', err);
+    res.status(500).json({ error: 'Não foi possível salvar a configuração da vitrine.' });
   }
 });
 
