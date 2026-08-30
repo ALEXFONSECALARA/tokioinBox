@@ -9,10 +9,12 @@ import {
   DeliveryZone,
   DriverInfo
 } from '../types';
-import { formatCurrency, playSoundEffect } from '../utils/helpers';
+import { formatCurrency, playSoundEffect, normalizeSplashImage } from '../utils/helpers';
+import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
 import { ReceiptPrintModal } from './ReceiptPrintModal';
 import { ImageUploadField } from './ImageUploadField';
+import { LayoutPreviewModal } from './LayoutPreviewModal';
 import { 
   ChefHat, 
   Plus, 
@@ -45,7 +47,12 @@ import {
   Sparkles,
   FileSpreadsheet,
   ImageOff,
-  Images
+  Images,
+  Palette,
+  LayoutGrid,
+  Move,
+  ChevronUp,
+  ChevronDown
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -138,6 +145,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   // Config Form State
   const [localConfig, setLocalConfig] = useState<RestaurantConfig>({ ...restaurantConfig });
+  // Modal de prévia (celular/desktop) do layout escolhido pra este restaurante
+  const [showLayoutPreview, setShowLayoutPreview] = useState(false);
   const [configSaved, setConfigSaved] = useState(false);
 
   // Campos do formulário de Configurações que só salvam ao clicar em "Salvar
@@ -1231,17 +1240,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
             )}
 
-            {/* Identidade Visual: logo e banner, com upload local de foto */}
+            {/* 🎨 Aparência e Página Inicial — identidade visual completa deste
+                restaurante: capa ajustável, logo, nome/slogan, cores, layout
+                escolhido entre os 10 disponíveis, e o splash de boas-vindas.
+                Tudo salva pelo mesmo saveRestaurantConfig já existente. */}
+            <div>
+              <h3 className="font-black text-stone-900 flex items-center gap-1.5 mb-1">
+                <Palette className="w-4 h-4" />
+                🎨 Aparência e Página Inicial
+              </h3>
+              <p className="text-[11px] text-stone-500 mb-3">
+                Como este restaurante aparece na vitrine "Escolha seu restaurante" e no
+                próprio cardápio — capa, identidade, cores, layout e splash de abertura
+              </p>
+            </div>
+
+            {/* Capa do restaurante: upload + ajuste de enquadramento/zoom/overlay,
+                pra imagem nunca ficar deformada nem cortar a comida em nenhuma tela */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
               <div>
                 <h3 className="font-black text-stone-900 flex items-center gap-1.5">
                   <ImageOff className="w-4 h-4" />
-                  Identidade Visual
+                  Capa do Restaurante
                 </h3>
                 <p className="text-[11px] text-stone-500">
-                  Logo e foto de capa exibidos no topo do cardápio deste restaurante
+                  Foto grande de capa exibida no topo do cardápio e usada como foto do
+                  card deste restaurante na vitrine principal
                 </p>
               </div>
+
+              {localConfig.bannerImage && (
+                <div className="relative w-full aspect-video rounded-xl overflow-hidden border border-stone-200 bg-stone-100">
+                  <img
+                    src={localConfig.bannerImage}
+                    alt="Pré-visualização da capa"
+                    className="w-full h-full object-cover"
+                    style={{
+                      objectPosition: `${localConfig.bannerPositionX ?? 50}% ${localConfig.bannerPositionY ?? 50}%`,
+                      transform: `scale(${(localConfig.bannerZoom ?? 100) / 100})`,
+                    }}
+                  />
+                  {(localConfig.bannerOverlay ?? 0) > 0 && (
+                    <div className="absolute inset-0 bg-black" style={{ opacity: (localConfig.bannerOverlay ?? 0) / 100 }} />
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <ImageUploadField
                   slug={slug}
@@ -1258,7 +1302,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <ImageUploadField
                   slug={slug}
                   token={token}
-                  label="Foto de Capa (Banner)"
+                  label="Alterar capa"
                   value={localConfig.bannerImage}
                   onChange={(url) => {
                     const updated = { ...localConfig, bannerImage: url };
@@ -1268,16 +1312,201 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   aspect="wide"
                 />
               </div>
+
+              {localConfig.bannerImage && (
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1 flex items-center gap-1">
+                      <Move className="w-3 h-3" /> Posição H
+                    </label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={localConfig.bannerPositionX ?? 50}
+                      onChange={(e) => {
+                        const updated = { ...localConfig, bannerPositionX: parseInt(e.target.value) };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Posição V</label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={100}
+                      value={localConfig.bannerPositionY ?? 50}
+                      onChange={(e) => {
+                        const updated = { ...localConfig, bannerPositionY: parseInt(e.target.value) };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Zoom</label>
+                    <input
+                      type="range"
+                      min={100}
+                      max={180}
+                      value={localConfig.bannerZoom ?? 100}
+                      onChange={(e) => {
+                        const updated = { ...localConfig, bannerZoom: parseInt(e.target.value) };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Overlay escuro</label>
+                    <input
+                      type="range"
+                      min={0}
+                      max={70}
+                      value={localConfig.bannerOverlay ?? 0}
+                      onChange={(e) => {
+                        const updated = { ...localConfig, bannerOverlay: parseInt(e.target.value) };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+              )}
             </div>
 
+            {/* Cores da identidade — nunca fixas, vêm daqui pra vitrine e pro
+                card deste restaurante em QUALQUER layout escolhido */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div>
+                <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                  <Palette className="w-4 h-4" />
+                  Cores
+                </h3>
+                <p className="text-[11px] text-stone-500">
+                  Cor principal e secundária usadas no card deste restaurante na vitrine
+                </p>
+              </div>
+              <div className="flex flex-wrap items-center gap-6">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Cor Principal</label>
+                  <input
+                    type="color"
+                    value={localConfig.color || '#B45309'}
+                    onChange={(e) => {
+                      const updated = { ...localConfig, color: e.target.value };
+                      setLocalConfig(updated);
+                      onUpdateConfig(updated);
+                    }}
+                    className="w-14 h-10 rounded-lg border border-stone-200 cursor-pointer"
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Cor Secundária</label>
+                  <input
+                    type="color"
+                    value={localConfig.secondaryColor || localConfig.color || '#78350F'}
+                    onChange={(e) => {
+                      const updated = { ...localConfig, secondaryColor: e.target.value };
+                      setLocalConfig(updated);
+                      onUpdateConfig(updated);
+                    }}
+                    className="w-14 h-10 rounded-lg border border-stone-200 cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Layout — um dos 10 estilos visuais disponíveis pro card deste
+                restaurante na vitrine "Escolha seu restaurante" */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                    <LayoutGrid className="w-4 h-4" />
+                    Layout da Página Inicial
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Estilo visual do card deste restaurante na vitrine principal — as cores
+                    usadas em cada estilo vêm sempre da identidade configurada acima
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowLayoutPreview(true)}
+                  className="shrink-0 flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold min-h-[44px]"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  Pré-visualizar
+                </button>
+              </div>
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                {LAYOUTS.map((l, idx) => (
+                  <button
+                    key={l.id}
+                    type="button"
+                    onClick={() => {
+                      const updated = { ...localConfig, layout: l.id };
+                      setLocalConfig(updated);
+                      onUpdateConfig(updated);
+                    }}
+                    className={`relative p-2.5 rounded-xl border-2 text-left transition-colors ${
+                      (localConfig.layout || 'galeria-gourmet') === l.id
+                        ? 'border-amber-500 ring-2 ring-amber-200'
+                        : 'border-stone-200 hover:border-stone-300'
+                    } ${l.pageBg}`}
+                  >
+                    <span className="absolute top-1.5 left-1.5 w-4 h-4 rounded-full bg-white/80 text-[9px] font-black text-stone-800 flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <span className={`block text-[10px] font-bold mt-3.5 ${l.pageText}`}>{l.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {showLayoutPreview && (
+              <LayoutPreviewModal
+                open={showLayoutPreview}
+                onClose={() => setShowLayoutPreview(false)}
+                title="Escolha seu restaurante"
+                subtitle="Cada loja tem seu próprio cardápio e pedidos"
+                pageLayout="galeria-gourmet"
+                highlightSlug={slug}
+                restaurants={[
+                  {
+                    slug,
+                    name: localConfig.name || 'Seu Restaurante',
+                    tagline: localConfig.tagline,
+                    photo: localConfig.bannerImage || localConfig.logo,
+                    color: localConfig.color,
+                    secondaryColor: localConfig.secondaryColor,
+                    layout: localConfig.layout,
+                    bannerPositionX: localConfig.bannerPositionX,
+                    bannerPositionY: localConfig.bannerPositionY,
+                    bannerZoom: localConfig.bannerZoom,
+                  },
+                  { name: 'Outro Restaurante', tagline: 'Exemplo de card vizinho', color: '#6B7280' },
+                  { name: 'Mais um Restaurante', tagline: 'Exemplo de card vizinho', color: '#6B7280' },
+                ]}
+              />
+            )}
+
             {/* Splash de Boas-vindas: fotos em tela cheia mostradas por alguns
-                segundos antes do cardápio abrir, estilo iFood/Uber Eats/Airbnb */}
+                segundos antes do cardápio abrir, estilo iFood/Uber Eats/Airbnb.
+                Cada foto aceita ajuste individual de enquadramento/zoom/overlay/texto. */}
             <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <h3 className="font-black text-stone-900 flex items-center gap-1.5">
                     <Images className="w-4 h-4" />
-                    Splash de Boas-vindas
+                    ✨ Sequência de fotos ao abrir o app
                   </h3>
                   <p className="text-[11px] text-stone-500">
                     Fotos em tela cheia (pratos, ambiente, promoções) mostradas por alguns
@@ -1299,27 +1528,148 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </label>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                {(localConfig.splashImages || []).map((img, idx) => (
-                  <div key={img + idx} className="relative rounded-xl overflow-hidden border border-stone-200 aspect-square group">
-                    <img src={img} alt={`Splash ${idx + 1}`} className="w-full h-full object-cover" />
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const updated = {
-                          ...localConfig,
-                          splashImages: (localConfig.splashImages || []).filter((_, i) => i !== idx),
-                        };
-                        setLocalConfig(updated);
-                        onUpdateConfig(updated);
-                      }}
-                      className="absolute top-1 right-1 p-1 rounded-lg bg-slate-950/70 text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                      title="Remover foto"
-                    >
-                      <X className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                ))}
+              <div className="space-y-3">
+                {(localConfig.splashImages || []).map((raw, idx) => {
+                  const img = normalizeSplashImage(raw);
+                  const total = (localConfig.splashImages || []).length;
+                  const updateImage = (patch: Partial<typeof img>) => {
+                    const images = (localConfig.splashImages || []).map(normalizeSplashImage);
+                    images[idx] = { ...images[idx], ...patch };
+                    const updated = { ...localConfig, splashImages: images };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  };
+                  // Reordena trocando a foto de lugar com a vizinha (sem lib de
+                  // drag-and-drop) — simples, acessível por clique/teclado.
+                  const moveImage = (direction: -1 | 1) => {
+                    const images = (localConfig.splashImages || []).map(normalizeSplashImage);
+                    const targetIdx = idx + direction;
+                    if (targetIdx < 0 || targetIdx >= images.length) return;
+                    [images[idx], images[targetIdx]] = [images[targetIdx], images[idx]];
+                    const updated = { ...localConfig, splashImages: images };
+                    setLocalConfig(updated);
+                    onUpdateConfig(updated);
+                  };
+                  return (
+                    <div key={img.url + idx} className="rounded-xl border border-stone-200 overflow-hidden">
+                      <div className="flex gap-3 p-3">
+                        {/* Reordenar: sobe/desce na sequência (posição atual em destaque) */}
+                        <div className="flex flex-col items-center gap-1 shrink-0 pt-1">
+                          <button
+                            type="button"
+                            onClick={() => moveImage(-1)}
+                            disabled={idx === 0}
+                            className="p-1 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover pra cima na sequência"
+                          >
+                            <ChevronUp className="w-3.5 h-3.5" />
+                          </button>
+                          <span className="text-[10px] font-black text-stone-400 w-4 text-center">{idx + 1}</span>
+                          <button
+                            type="button"
+                            onClick={() => moveImage(1)}
+                            disabled={idx === total - 1}
+                            className="p-1 rounded-md bg-stone-100 hover:bg-stone-200 text-stone-600 disabled:opacity-30 disabled:cursor-not-allowed"
+                            title="Mover pra baixo na sequência"
+                          >
+                            <ChevronDown className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+                        <div className="relative w-24 h-24 shrink-0 rounded-lg overflow-hidden border border-stone-200">
+                          <img
+                            src={img.url}
+                            alt={`Splash ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            style={{
+                              objectPosition: `${img.positionX ?? 50}% ${img.positionY ?? 50}%`,
+                              transform: `scale(${(img.zoom ?? 100) / 100})`,
+                            }}
+                          />
+                          {(img.overlay ?? 0) > 0 && (
+                            <div className="absolute inset-0 bg-black" style={{ opacity: (img.overlay ?? 0) / 100 }} />
+                          )}
+                        </div>
+                        <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
+                          <label className="text-[10px] font-bold text-stone-600 col-span-2 flex items-center gap-1.5">
+                            <input
+                              type="checkbox"
+                              checked={img.enabled !== false}
+                              onChange={(e) => updateImage({ enabled: e.target.checked })}
+                              className="w-3.5 h-3.5 rounded text-amber-600"
+                            />
+                            Ativa nesta sequência
+                          </label>
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-500">Zoom</label>
+                            <input
+                              type="range"
+                              min={100}
+                              max={180}
+                              value={img.zoom ?? 100}
+                              onChange={(e) => updateImage({ zoom: parseInt(e.target.value) })}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-500">Overlay</label>
+                            <input
+                              type="range"
+                              min={0}
+                              max={70}
+                              value={img.overlay ?? 0}
+                              onChange={(e) => updateImage({ overlay: parseInt(e.target.value) })}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-500">Posição H</label>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={img.positionX ?? 50}
+                              onChange={(e) => updateImage({ positionX: parseInt(e.target.value) })}
+                              className="w-full"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] font-bold text-stone-500">Posição V</label>
+                            <input
+                              type="range"
+                              min={0}
+                              max={100}
+                              value={img.positionY ?? 50}
+                              onChange={(e) => updateImage({ positionY: parseInt(e.target.value) })}
+                              className="w-full"
+                            />
+                          </div>
+                          <input
+                            type="text"
+                            placeholder="Texto opcional sobre a foto"
+                            value={img.text || ''}
+                            onChange={(e) => updateImage({ text: e.target.value })}
+                            className="col-span-2 px-2 py-1.5 bg-stone-50 border border-stone-200 rounded-lg text-[11px] focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const updated = {
+                              ...localConfig,
+                              splashImages: (localConfig.splashImages || []).filter((_, i) => i !== idx),
+                            };
+                            setLocalConfig(updated);
+                            onUpdateConfig(updated);
+                          }}
+                          className="self-start p-1.5 rounded-lg bg-stone-100 hover:bg-red-50 hover:text-red-600 text-stone-500 transition-colors shrink-0"
+                          title="Remover foto"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
 
               <ImageUploadField
@@ -1328,7 +1678,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 label={`Adicionar foto à sequência${(localConfig.splashImages?.length || 0) > 0 ? ` (${localConfig.splashImages!.length} já cadastradas)` : ''}`}
                 value=""
                 onChange={(url) => {
-                  const updated = { ...localConfig, splashImages: [...(localConfig.splashImages || []), url] };
+                  const newImage = { url, positionX: 50, positionY: 50, zoom: 100, overlay: 0, text: '', enabled: true };
+                  const updated = { ...localConfig, splashImages: [...(localConfig.splashImages || []), newImage] };
                   setLocalConfig(updated);
                   onUpdateConfig(updated);
                 }}

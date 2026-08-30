@@ -8,11 +8,16 @@ import {
   updateOrderAdmin,
   saveMenuItems,
   saveRestaurantConfig,
+  fetchPlatformSettings,
+  savePlatformSettings,
+  PlatformSettings,
   RestaurantSummary,
 } from '../utils/api';
 import { AdminDashboard } from './AdminDashboard';
 import { playSoundEffect } from '../utils/helpers';
-import { Lock, ShieldCheck } from 'lucide-react';
+import { LAYOUTS } from '../utils/layouts';
+import { LayoutPreviewModal } from './LayoutPreviewModal';
+import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye } from 'lucide-react';
 
 const TOKEN_KEY = 'super_admin_token';
 
@@ -64,6 +69,138 @@ const LoginScreen: React.FC<{ onLoggedIn: (token: string) => void }> = ({ onLogg
           ← Voltar
         </a>
       </form>
+    </div>
+  );
+};
+
+// Painel da vitrine principal "/" — título, subtítulo e layout de fundo
+// compartilhados por TODOS os restaurantes na página "Escolha seu
+// restaurante". Diferente das Configurações de cada restaurante (essas
+// continuam em AdminDashboard): isto é global, por isso mora aqui, na barra
+// do super-admin, e não dentro do painel de um restaurante específico.
+const PlatformSettingsPanel: React.FC<{ token: string; restaurants: RestaurantSummary[] }> = ({ token, restaurants }) => {
+  const [open, setOpen] = useState(false);
+  const [settings, setSettings] = useState<PlatformSettings | null>(null);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [showPreview, setShowPreview] = useState(false);
+
+  useEffect(() => {
+    fetchPlatformSettings()
+      .then(setSettings)
+      .catch(() => {});
+  }, []);
+
+  if (!settings) return null;
+
+  const handleSave = () => {
+    setSaving(true);
+    setSaved(false);
+    savePlatformSettings(token, settings)
+      .then((saved) => {
+        setSettings(saved);
+        setSaved(true);
+        setTimeout(() => setSaved(false), 2500);
+      })
+      .catch((err) => console.error('Erro ao salvar configuração da vitrine:', err))
+      .finally(() => setSaving(false));
+  };
+
+  return (
+    <div className="bg-stone-800 border-t border-stone-700">
+      <button
+        onClick={() => setOpen((v) => !v)}
+        className="w-full flex items-center gap-2 px-4 py-2 text-xs font-medium text-stone-300 hover:text-white"
+      >
+        <Palette size={14} />
+        <span>Vitrine Principal (página "Escolha seu restaurante")</span>
+        <ChevronDown size={14} className={`ml-auto transition-transform ${open ? 'rotate-180' : ''}`} />
+      </button>
+
+      {open && (
+        <div className="px-4 pb-4 space-y-3 max-w-2xl">
+          <div>
+            <label className="block text-[11px] font-bold text-stone-400 mb-1">Título</label>
+            <input
+              type="text"
+              value={settings.landingTitle}
+              onChange={(e) => setSettings({ ...settings, landingTitle: e.target.value })}
+              className="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-stone-400 mb-1">Subtítulo</label>
+            <input
+              type="text"
+              value={settings.landingSubtitle}
+              onChange={(e) => setSettings({ ...settings, landingSubtitle: e.target.value })}
+              className="w-full px-3 py-2 bg-stone-900 border border-stone-700 rounded-xl text-white text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+            />
+          </div>
+          <div>
+            <label className="block text-[11px] font-bold text-stone-400 mb-1">Layout de fundo</label>
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+              {LAYOUTS.map((l) => (
+                <button
+                  key={l.id}
+                  type="button"
+                  onClick={() => setSettings({ ...settings, landingLayout: l.id })}
+                  className={`text-[10px] font-bold px-2 py-2 rounded-lg border-2 ${l.pageBg} ${l.pageText} ${
+                    settings.landingLayout === l.id ? 'border-amber-500' : 'border-transparent opacity-70'
+                  }`}
+                >
+                  {l.label}
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSave}
+              disabled={saving}
+              className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-stone-950 text-xs font-bold disabled:opacity-50"
+            >
+              {saving ? 'Salvando...' : 'Salvar alterações'}
+            </button>
+            {saved && (
+              <span className="flex items-center gap-1 text-emerald-400 text-xs font-bold">
+                <Check size={14} /> Salvo!
+              </span>
+            )}
+            <button
+              onClick={() => setShowPreview(true)}
+              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-stone-700 hover:bg-stone-600 text-white text-xs font-bold"
+            >
+              <Eye size={14} /> Pré-visualizar
+            </button>
+            <a href="/" target="_blank" rel="noreferrer" className="text-xs text-stone-400 hover:text-white ml-auto">
+              Ver vitrine →
+            </a>
+          </div>
+        </div>
+      )}
+
+      {showPreview && settings && (
+        <LayoutPreviewModal
+          open={showPreview}
+          onClose={() => setShowPreview(false)}
+          title={settings.landingTitle}
+          subtitle={settings.landingSubtitle}
+          pageLayout={settings.landingLayout}
+          restaurants={restaurants.map((r) => ({
+            slug: r.slug,
+            name: r.name,
+            tagline: r.tagline,
+            photo: r.bannerImage || r.logo,
+            color: r.color,
+            secondaryColor: r.secondaryColor,
+            layout: r.layout,
+            bannerPositionX: r.bannerPositionX,
+            bannerPositionY: r.bannerPositionY,
+            bannerZoom: r.bannerZoom,
+          }))}
+        />
+      )}
     </div>
   );
 };
@@ -284,6 +421,8 @@ export const AdminPortal: React.FC = () => {
           Sair
         </button>
       </div>
+
+      <PlatformSettingsPanel token={token} restaurants={restaurants} />
 
       <AdminDashboard
         key={selectedSlug}

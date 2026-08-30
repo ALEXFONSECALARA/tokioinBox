@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { RestaurantConfig } from '../types';
+import { normalizeSplashImage } from '../utils/helpers';
 
 interface SplashScreenProps {
   config: RestaurantConfig;
@@ -10,7 +11,12 @@ interface SplashScreenProps {
 // promoções) em sequência, com transição suave (crossfade + leve zoom "Ken Burns"),
 // por alguns segundos, antes de abrir o cardápio — estilo iFood / Uber Eats / Airbnb.
 export const SplashScreen: React.FC<SplashScreenProps> = ({ config, onFinish }) => {
-  const images = (config.splashImages || []).filter(Boolean);
+  // Aceita o formato novo (objeto com ajuste individual) e o antigo (string[])
+  // ao mesmo tempo — normalizeSplashImage() cuida da conversão dos dois.
+  const images = (config.splashImages || [])
+    .filter(Boolean)
+    .map(normalizeSplashImage)
+    .filter((img) => img.enabled !== false && img.url);
   const secondsPerImage = config.splashDurationSeconds || 3;
   const [activeIndex, setActiveIndex] = useState(0);
   const [isLeaving, setIsLeaving] = useState(false);
@@ -51,19 +57,32 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ config, onFinish }) 
       role="dialog"
       aria-label={`Abrindo ${config.name}`}
     >
-      {/* Fotos em crossfade com leve zoom contínuo (Ken Burns) */}
-      {images.map((src, idx) => (
+      {/* Fotos em crossfade com leve zoom contínuo (Ken Burns) — cada uma com
+          seu próprio enquadramento/zoom/escurecimento e legenda opcional */}
+      {images.map((img, idx) => (
         <div
-          key={src + idx}
+          key={img.url + idx}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
             idx === activeIndex ? 'opacity-100' : 'opacity-0'
           }`}
         >
           <img
-            src={src}
+            src={img.url}
             alt=""
             className={`w-full h-full object-cover ${idx === activeIndex ? 'animate-splash-kenburns' : ''}`}
+            style={{
+              objectPosition: `${img.positionX ?? 50}% ${img.positionY ?? 50}%`,
+              transform: `scale(${(img.zoom ?? 100) / 100})`,
+            }}
           />
+          {(img.overlay ?? 0) > 0 && (
+            <div className="absolute inset-0 bg-black" style={{ opacity: (img.overlay ?? 0) / 100 }} />
+          )}
+          {img.text && (
+            <div className="absolute bottom-24 inset-x-0 text-center px-6">
+              <p className="text-white text-base sm:text-lg font-bold drop-shadow-lg">{img.text}</p>
+            </div>
+          )}
         </div>
       ))}
 
