@@ -1,12 +1,31 @@
-import { Category, MenuItem, Order, RestaurantConfig } from '../types';
+import { Category, MenuItem, Order, RestaurantConfig, LayoutId } from '../types';
 
 const API_BASE = import.meta.env.VITE_API_URL || '';
 
+// Dados usados pela vitrine multi-restaurantes "/". `emoji` é mantido só por
+// compatibilidade retroativa (restaurantes antigos sem foto configurada);
+// a Landing prioriza sempre `logo`/`bannerImage` quando existirem.
 export interface RestaurantSummary {
   slug: string;
   name: string;
-  emoji: string;
+  emoji?: string;
   color: string;
+  secondaryColor?: string;
+  tagline?: string;
+  logo?: string;
+  bannerImage?: string;
+  bannerPositionX?: number;
+  bannerPositionY?: number;
+  bannerZoom?: number;
+  layout?: LayoutId;
+}
+
+// Configuração global da vitrine multi-restaurantes "/" — título, subtítulo
+// e layout escolhidos pelo super-admin. Não pertence a nenhum restaurante.
+export interface PlatformSettings {
+  landingTitle: string;
+  landingSubtitle: string;
+  landingLayout: LayoutId;
 }
 
 export interface MenuData {
@@ -38,6 +57,11 @@ function authHeaders(token: string): HeadersInit {
 export async function fetchRestaurants(): Promise<RestaurantSummary[]> {
   const res = await fetch(`${API_BASE}/api/restaurants`);
   return handleResponse<RestaurantSummary[]>(res);
+}
+
+export async function fetchPlatformSettings(): Promise<PlatformSettings> {
+  const res = await fetch(`${API_BASE}/api/platform`);
+  return handleResponse<PlatformSettings>(res);
 }
 
 export async function fetchMenu(slug: string): Promise<MenuData> {
@@ -123,6 +147,16 @@ export async function uploadImage(slug: string, token: string, file: File): Prom
   // Se o front e o back estiverem em domínios separados (VITE_API_URL definido),
   // a URL relativa devolvida pelo backend precisa do prefixo pra funcionar.
   return API_BASE ? `${API_BASE}${data.url}` : data.url;
+}
+
+export async function savePlatformSettings(token: string, settings: PlatformSettings): Promise<PlatformSettings> {
+  const res = await fetch(`${API_BASE}/api/admin/platform`, {
+    method: 'PUT',
+    headers: authHeaders(token),
+    body: JSON.stringify(settings),
+  });
+  const data = await handleResponse<{ platform: PlatformSettings }>(res);
+  return data.platform;
 }
 
 export async function saveRestaurantConfig(

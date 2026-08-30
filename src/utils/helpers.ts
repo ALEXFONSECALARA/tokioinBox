@@ -1,4 +1,23 @@
-import { CartItem, Order, RestaurantConfig, DietaryTag } from '../types';
+import { CartItem, Order, RestaurantConfig, DietaryTag, SplashImageConfig } from '../types';
+
+// Restaurantes antigos guardam splashImages como string[] (só a URL). Esta
+// função normaliza qualquer item (string OU objeto) pro formato novo, com
+// valores padrão neutros, sem nunca precisar migrar/reescrever os dados
+// salvos — os dois formatos convivem em paz.
+export const normalizeSplashImage = (img: string | SplashImageConfig): SplashImageConfig => {
+  if (typeof img === 'string') {
+    return { url: img, positionX: 50, positionY: 50, zoom: 100, overlay: 0, text: '', enabled: true };
+  }
+  return {
+    url: img.url,
+    positionX: img.positionX ?? 50,
+    positionY: img.positionY ?? 50,
+    zoom: img.zoom ?? 100,
+    overlay: img.overlay ?? 0,
+    text: img.text ?? '',
+    enabled: img.enabled ?? true,
+  };
+};
 
 export const formatCurrency = (value: number): string => {
   return new Intl.NumberFormat('pt-BR', {
