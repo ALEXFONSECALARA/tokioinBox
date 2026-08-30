@@ -428,6 +428,7 @@ export const AdminPortal: React.FC = () => {
         key={selectedSlug}
         slug={selectedSlug}
         token={token}
+        otherRestaurants={restaurants.filter((r) => r.slug !== selectedSlug)}
         orders={orders}
         onUpdateOrderStatus={handleUpdateOrderStatus}
         menuItems={menuItems}

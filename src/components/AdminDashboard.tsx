@@ -7,9 +7,11 @@ import {
   RestaurantConfig, 
   DietaryTag,
   DeliveryZone,
-  DriverInfo
+  DriverInfo,
+  PromoBadge
 } from '../types';
 import { formatCurrency, playSoundEffect, normalizeSplashImage } from '../utils/helpers';
+import { fetchMenu } from '../utils/api';
 import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
 import { ReceiptPrintModal } from './ReceiptPrintModal';
@@ -52,7 +54,8 @@ import {
   LayoutGrid,
   Move,
   ChevronUp,
-  ChevronDown
+  ChevronDown,
+  Copy
 } from 'lucide-react';
 
 interface AdminDashboardProps {
@@ -60,6 +63,10 @@ interface AdminDashboardProps {
   // pra fazer upload de fotos (POST /api/:slug/upload) direto do painel.
   slug: string;
   token: string;
+  // Lista dos demais restaurantes (slug + nome) — usada só pra oferecer
+  // "copiar de outro restaurante" em Bairros&Taxas e Entregadores. Nunca
+  // grava nada nesses restaurantes, só lê pra copiar.
+  otherRestaurants?: { slug: string; name: string }[];
   orders: Order[];
   onUpdateOrderStatus: (orderId: string, status: OrderStatus, driver?: DriverInfo, cancelReason?: string) => void;
   menuItems: MenuItem[];
@@ -82,6 +89,7 @@ interface AdminDashboardProps {
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   slug,
   token,
+  otherRestaurants,
   orders,
   onUpdateOrderStatus,
   menuItems,
@@ -97,7 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onCloseAdmin,
   onDirtyChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'identity' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null);
   // Pedidos já impressos nesta sessão do painel (troca o botão pra
@@ -311,6 +319,45 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     onUpdateConfig(updatedConfig);
   };
 
+  // Item pedido: "Bairros e taxas pode ser copiado de um restaurante para o
+  // outro" — busca o config PÚBLICO (GET /api/:slug/menu, sem autenticação,
+  // igual o cardápio do cliente carrega) de outro restaurante já cadastrado
+  // e importa os bairros dele pra este. Gera IDs novos pra não colidir com
+  // os já existentes aqui. Não apaga os bairros já cadastrados — soma.
+  const [isCopyZonesOpen, setIsCopyZonesOpen] = useState(false);
+  const [copyZonesSourceSlug, setCopyZonesSourceSlug] = useState('');
+  const [copyZonesLoading, setCopyZonesLoading] = useState(false);
+  const [copyZonesError, setCopyZonesError] = useState<string | null>(null);
+
+  const handleCopyZonesFromRestaurant = async () => {
+    if (!copyZonesSourceSlug) return;
+    setCopyZonesLoading(true);
+    setCopyZonesError(null);
+    try {
+      const data = await fetchMenu(copyZonesSourceSlug);
+      const sourceZones = data.restaurantConfig.deliveryZones || [];
+      if (sourceZones.length === 0) {
+        setCopyZonesError('Esse restaurante ainda não tem bairros cadastrados.');
+        return;
+      }
+      const currentZones = localConfig.deliveryZones || [];
+      const importedZones: DeliveryZone[] = sourceZones.map((z, idx) => ({
+        ...z,
+        id: `zone-${Date.now()}-${idx}`,
+      }));
+      const updatedConfig = { ...localConfig, deliveryZones: [...currentZones, ...importedZones] };
+      setLocalConfig(updatedConfig);
+      onUpdateConfig(updatedConfig);
+      setIsCopyZonesOpen(false);
+      setCopyZonesSourceSlug('');
+      playSoundEffect('success');
+    } catch (err) {
+      setCopyZonesError('Não foi possível carregar os bairros desse restaurante.');
+    } finally {
+      setCopyZonesLoading(false);
+    }
+  };
+
   // Driver CRUD
   const handleOpenDriverModal = (driver?: DriverInfo) => {
     if (driver) {
@@ -393,6 +440,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const updatedConfig = { ...localConfig, drivers: updatedDrivers };
     setLocalConfig(updatedConfig);
     onUpdateConfig(updatedConfig);
+    playSoundEffect('beep');
+  };
+
+  // Item pedido: "entregadores pode ser copiado de outro restaurante" — mesma
+  // lógica da cópia de bairros, mas pra frota de motoboys.
+  const [isCopyDriversOpen, setIsCopyDriversOpen] = useState(false);
+  const [copyDriversSourceSlug, setCopyDriversSourceSlug] = useState('');
+  const [copyDriversLoading, setCopyDriversLoading] = useState(false);
+  const [copyDriversError, setCopyDriversError] = useState<string | null>(null);
+
+  const handleCopyDriversFromRestaurant = async () => {
+    if (!copyDriversSourceSlug) return;
+    setCopyDriversLoading(true);
+    setCopyDriversError(null);
+    try {
+      const data = await fetchMenu(copyDriversSourceSlug);
+      const sourceDrivers = data.restaurantConfig.drivers || [];
+      if (sourceDrivers.length === 0) {
+        setCopyDriversError('Esse restaurante ainda não tem entregadores cadastrados.');
+        return;
+      }
+      const currentDrivers = localConfig.drivers || [];
+      const importedDrivers: DriverInfo[] = sourceDrivers.map((d, idx) => ({
+        ...d,
+        id: `driver-${Date.now()}-${idx}`,
+        status: 'offline' as const,
+      }));
+      const updatedConfig = { ...localConfig, drivers: [...currentDrivers, ...importedDrivers] };
+      setLocalConfig(updatedConfig);
+      onUpdateConfig(updatedConfig);
+      setIsCopyDriversOpen(false);
+      setCopyDriversSourceSlug('');
+      playSoundEffect('success');
+    } catch (err) {
+      setCopyDriversError('Não foi possível carregar os entregadores desse restaurante.');
+    } finally {
+      setCopyDriversLoading(false);
+    }
+  };
+
+  // Item pedido: banner de promoções configurável — adiciona/remove/edita
+  // badges (título, subtítulo, ícone, cupom opcional), sem nenhum texto fixo.
+  const handleAddPromoBadge = () => {
+    const newBadge: PromoBadge = {
+      id: `promo-${Date.now()}`,
+      icon: '🎉',
+      title: 'Nova promoção',
+      subtitle: '',
+    };
+    const updated = { ...localConfig, promoBadges: [...(localConfig.promoBadges || []), newBadge] };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+  };
+
+  const handleUpdatePromoBadge = (id: string, patch: Partial<PromoBadge>) => {
+    const updated = {
+      ...localConfig,
+      promoBadges: (localConfig.promoBadges || []).map((b) => (b.id === id ? { ...b, ...patch } : b)),
+    };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+  };
+
+  const handleDeletePromoBadge = (id: string) => {
+    const updated = { ...localConfig, promoBadges: (localConfig.promoBadges || []).filter((b) => b.id !== id) };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+    playSoundEffect('beep');
   };
 
   // Dispatch Order with Driver
@@ -531,6 +646,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           </button>
 
           <button
+            id="tab-admin-identity"
+            onClick={() => setActiveTab('identity')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'identity'
+                ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                : 'text-stone-300 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Settings className="w-4 h-4" />
+            <span>Dados do Restaurante</span>
+          </button>
+
+          <button
             id="tab-admin-zones"
             onClick={() => setActiveTab('zones')}
             className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
@@ -565,8 +693,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 : 'text-stone-300 hover:bg-stone-800 hover:text-white'
             }`}
           >
-            <Settings className="w-4 h-4" />
-            <span>Configurações</span>
+            <Palette className="w-4 h-4" />
+            <span>Aparência</span>
           </button>
 
           <button
@@ -1055,6 +1183,252 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         )}
 
         {/* ========================================================================= */}
+        {/* TAB: DADOS DO RESTAURANTE (nome, contato, endereço, pedido mínimo, frete) */}
+        {/* ========================================================================= */}
+        {activeTab === 'identity' && (
+          <div className="max-w-3xl mx-auto space-y-4">
+            <div>
+              <h2 className="text-lg font-black text-stone-900">Dados do Restaurante</h2>
+              <p className="text-xs text-stone-500">
+                Nome, contato, endereço, pedido mínimo, frete grátis e horário — separado da
+                Aparência pra você achar rápido o que precisa
+              </p>
+            </div>
+
+            {configSaved && (
+              <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-3 rounded-xl flex items-center gap-2 text-xs font-bold">
+                <Check className="w-4 h-4" />
+                <span>Configurações salvas com sucesso!</span>
+              </div>
+            )}
+
+            <form onSubmit={handleSaveConfig} className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Nome do Estabelecimento</label>
+                  <input
+                    type="text"
+                    value={localConfig.name}
+                    onChange={(e) => setLocalConfig({ ...localConfig, name: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Slogan / Descrição Curta</label>
+                  <input
+                    type="text"
+                    value={localConfig.tagline}
+                    onChange={(e) => setLocalConfig({ ...localConfig, tagline: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Número do WhatsApp (com DDD)</label>
+                  <input
+                    type="text"
+                    value={localConfig.whatsapp}
+                    onChange={(e) => setLocalConfig({ ...localConfig, whatsapp: e.target.value })}
+                    placeholder="5511987654321"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Endereço da Cozinha / Loja</label>
+                  <input
+                    type="text"
+                    value={localConfig.address}
+                    onChange={(e) => setLocalConfig({ ...localConfig, address: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Pedido Mínimo Delivery (R$)</label>
+                  <input
+                    type="number"
+                    step="1"
+                    value={localConfig.minimumOrder || 25}
+                    onChange={(e) => setLocalConfig({ ...localConfig, minimumOrder: parseFloat(e.target.value) || 0 })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="flex items-center justify-between gap-2 mb-1">
+                    <span className="font-bold text-stone-700">Frete Grátis a partir de (R$)</span>
+                    {/* Item pedido: botão pra desativar a promoção de frete grátis sem
+                        precisar zerar/apagar o valor configurado */}
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setLocalConfig({ ...localConfig, freeDeliveryEnabled: !(localConfig.freeDeliveryEnabled ?? true) })
+                      }
+                      className={`px-2 py-0.5 rounded-full text-[10px] font-black transition-colors ${
+                        (localConfig.freeDeliveryEnabled ?? true)
+                          ? 'bg-emerald-100 text-emerald-800'
+                          : 'bg-stone-200 text-stone-500'
+                      }`}
+                    >
+                      {(localConfig.freeDeliveryEnabled ?? true) ? 'Ativado' : 'Desativado'}
+                    </button>
+                  </label>
+                  <input
+                    type="number"
+                    step="5"
+                    disabled={!(localConfig.freeDeliveryEnabled ?? true)}
+                    value={localConfig.freeDeliveryThreshold || 80}
+                    onChange={(e) => setLocalConfig({ ...localConfig, freeDeliveryThreshold: parseFloat(e.target.value) || 80 })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 disabled:opacity-40 disabled:cursor-not-allowed"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Tempo Médio Estimado</label>
+                  <input
+                    type="text"
+                    value={localConfig.estimatedDeliveryTime}
+                    onChange={(e) => setLocalConfig({ ...localConfig, estimatedDeliveryTime: e.target.value })}
+                    placeholder="30 - 45 min"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Chave Pix para Recebimentos</label>
+                  <input
+                    type="text"
+                    value={localConfig.pixKey}
+                    onChange={(e) => setLocalConfig({ ...localConfig, pixKey: e.target.value })}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block font-bold text-stone-700 mb-1">Horário de Funcionamento</label>
+                  <input
+                    type="text"
+                    value={localConfig.openingHours}
+                    onChange={(e) => setLocalConfig({ ...localConfig, openingHours: e.target.value })}
+                    placeholder="Ter a Dom: 11:30 às 23:30"
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 border-t border-stone-200 flex items-center justify-between">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={localConfig.isOpen}
+                    onChange={(e) => setLocalConfig({ ...localConfig, isOpen: e.target.checked })}
+                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
+                  />
+                  <span className="font-bold text-stone-800">
+                    Restaurante Aberto para Pedidos Delivery no Momento
+                  </span>
+                </label>
+
+                <button
+                  type="submit"
+                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Salvar Alterações</span>
+                </button>
+              </div>
+            </form>
+
+            {/* Item pedido: banner de promoções configurável — substitui o
+                texto fixo "Entrega Rápida..." + cupom BEMVINDO10 que ficava
+                hardcoded acima do cardápio. Sem nenhuma promoção cadastrada
+                aqui, o banner simplesmente não aparece pro cliente. */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                    <Percent className="w-4 h-4" />
+                    Banner de Promoções
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Aparece acima do cardápio pro cliente. Sem nenhuma promoção aqui, o banner
+                    fica oculto — nada de texto fixo.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddPromoBadge}
+                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar promoção</span>
+                </button>
+              </div>
+
+              {(localConfig.promoBadges || []).length === 0 ? (
+                <p className="text-stone-400 text-center py-4">Nenhuma promoção cadastrada ainda.</p>
+              ) : (
+                <div className="space-y-3">
+                  {(localConfig.promoBadges || []).map((badge) => (
+                    <div key={badge.id} className="bg-stone-50 p-3 rounded-xl border border-stone-200 space-y-2">
+                      <div className="grid grid-cols-1 sm:grid-cols-[64px_1fr] gap-2">
+                        <input
+                          type="text"
+                          value={badge.icon || ''}
+                          onChange={(e) => handleUpdatePromoBadge(badge.id, { icon: e.target.value })}
+                          placeholder="🎉"
+                          maxLength={4}
+                          className="w-full px-2 py-2 bg-white border border-stone-200 rounded-xl text-center text-base focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <input
+                          type="text"
+                          value={badge.title}
+                          onChange={(e) => handleUpdatePromoBadge(badge.id, { title: e.target.value })}
+                          placeholder="Título (ex: Frete grátis hoje!)"
+                          className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl font-bold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <input
+                        type="text"
+                        value={badge.subtitle || ''}
+                        onChange={(e) => handleUpdatePromoBadge(badge.id, { subtitle: e.target.value })}
+                        placeholder="Subtítulo opcional (ex: Pedidos acima de R$ 80)"
+                        className="w-full px-3 py-2 bg-white border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                      />
+                      <div className="flex items-center gap-2">
+                        <input
+                          type="text"
+                          value={badge.couponCode || ''}
+                          onChange={(e) => handleUpdatePromoBadge(badge.id, { couponCode: e.target.value.toUpperCase() || undefined })}
+                          placeholder="Código do cupom (opcional)"
+                          className="flex-1 px-3 py-2 bg-white border border-stone-200 rounded-xl uppercase focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => handleDeletePromoBadge(badge.id)}
+                          className="p-2 rounded-xl text-stone-400 hover:text-rose-600 hover:bg-rose-50"
+                          title="Remover promoção"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* ========================================================================= */}
         {/* TAB 3: DELIVERY ZONES & FEES */}
         {/* ========================================================================= */}
         {activeTab === 'zones' && (
@@ -1066,15 +1440,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Configure as taxas de frete e prazos médios de entrega por bairro atendido
                 </p>
               </div>
-              <button
-                id="add-zone-btn"
-                onClick={() => handleOpenZoneModal()}
-                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Adicionar Novo Bairro</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {otherRestaurants && otherRestaurants.length > 0 && (
+                  <button
+                    id="copy-zones-btn"
+                    onClick={() => setIsCopyZonesOpen(true)}
+                    className="px-4 py-2.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span>Copiar de outro restaurante</span>
+                  </button>
+                )}
+                <button
+                  id="add-zone-btn"
+                  onClick={() => handleOpenZoneModal()}
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar Novo Bairro</span>
+                </button>
+              </div>
             </div>
+
+            {isCopyZonesOpen && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setIsCopyZonesOpen(false)}>
+                <div
+                  className="bg-white rounded-2xl p-5 w-full max-w-sm space-y-3 text-xs sm:text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="font-black text-stone-900 text-sm">Copiar bairros de outro restaurante</h3>
+                  <p className="text-stone-500 text-[11px]">
+                    Os bairros do restaurante escolhido serão adicionados aos já cadastrados aqui
+                    (nada é apagado).
+                  </p>
+                  <select
+                    value={copyZonesSourceSlug}
+                    onChange={(e) => setCopyZonesSourceSlug(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Selecione um restaurante...</option>
+                    {(otherRestaurants || []).map((r) => (
+                      <option key={r.slug} value={r.slug}>{r.name}</option>
+                    ))}
+                  </select>
+                  {copyZonesError && <p className="text-rose-600 font-semibold">{copyZonesError}</p>}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsCopyZonesOpen(false)}
+                      className="flex-1 py-2 rounded-xl bg-stone-100 text-stone-700 font-bold"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!copyZonesSourceSlug || copyZonesLoading}
+                      onClick={handleCopyZonesFromRestaurant}
+                      className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50"
+                    >
+                      {copyZonesLoading ? 'Copiando...' : 'Copiar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {(localConfig.deliveryZones || []).map((zone) => (
@@ -1142,15 +1571,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   Cadastre os motoboys da sua frota e acompanhe disponibilidade em tempo real
                 </p>
               </div>
-              <button
-                id="add-driver-btn"
-                onClick={() => handleOpenDriverModal()}
-                className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
-              >
-                <Plus className="w-4 h-4" />
-                <span>Adicionar Entregador</span>
-              </button>
+              <div className="flex items-center gap-2">
+                {otherRestaurants && otherRestaurants.length > 0 && (
+                  <button
+                    id="copy-drivers-btn"
+                    onClick={() => setIsCopyDriversOpen(true)}
+                    className="px-4 py-2.5 bg-white border border-stone-300 hover:bg-stone-50 text-stone-700 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-2xs"
+                  >
+                    <Copy className="w-4 h-4" />
+                    <span>Copiar de outro restaurante</span>
+                  </button>
+                )}
+                <button
+                  id="add-driver-btn"
+                  onClick={() => handleOpenDriverModal()}
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Adicionar Entregador</span>
+                </button>
+              </div>
             </div>
+
+            {isCopyDriversOpen && (
+              <div className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center p-4" onClick={() => setIsCopyDriversOpen(false)}>
+                <div
+                  className="bg-white rounded-2xl p-5 w-full max-w-sm space-y-3 text-xs sm:text-sm"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3 className="font-black text-stone-900 text-sm">Copiar entregadores de outro restaurante</h3>
+                  <p className="text-stone-500 text-[11px]">
+                    Os motoboys do restaurante escolhido serão adicionados à sua frota, todos como
+                    "Offline" até você confirmar disponibilidade (nada é apagado daqui).
+                  </p>
+                  <select
+                    value={copyDriversSourceSlug}
+                    onChange={(e) => setCopyDriversSourceSlug(e.target.value)}
+                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="">Selecione um restaurante...</option>
+                    {(otherRestaurants || []).map((r) => (
+                      <option key={r.slug} value={r.slug}>{r.name}</option>
+                    ))}
+                  </select>
+                  {copyDriversError && <p className="text-rose-600 font-semibold">{copyDriversError}</p>}
+                  <div className="flex gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={() => setIsCopyDriversOpen(false)}
+                      className="flex-1 py-2 rounded-xl bg-stone-100 text-stone-700 font-bold"
+                    >
+                      Cancelar
+                    </button>
+                    <button
+                      type="button"
+                      disabled={!copyDriversSourceSlug || copyDriversLoading}
+                      onClick={handleCopyDriversFromRestaurant}
+                      className="flex-1 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold disabled:opacity-50"
+                    >
+                      {copyDriversLoading ? 'Copiando...' : 'Copiar'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
               {(localConfig.drivers || []).map((driver) => (
@@ -1368,13 +1852,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       type="range"
                       min={0}
                       max={70}
-                      value={localConfig.bannerOverlay ?? 0}
+                      value={localConfig.bannerOverlay ?? 60}
                       onChange={(e) => {
                         const updated = { ...localConfig, bannerOverlay: parseInt(e.target.value) };
                         setLocalConfig(updated);
                         onUpdateConfig(updated);
                       }}
                       className="w-full"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block font-bold text-stone-700 mb-1">Texto sobre a capa (opcional)</label>
+                    <input
+                      type="text"
+                      placeholder="Ex: Frete grátis hoje, Novidade no cardápio..."
+                      maxLength={80}
+                      value={localConfig.bannerText ?? ''}
+                      onChange={(e) => {
+                        const updated = { ...localConfig, bannerText: e.target.value };
+                        setLocalConfig(updated);
+                        onUpdateConfig(updated);
+                      }}
+                      className="w-full px-3 py-2 rounded-lg border border-stone-300 focus:ring-2 focus:ring-amber-500 focus:border-amber-500"
                     />
                   </div>
                 </div>
@@ -1759,133 +2258,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </span>
               </label>
             </div>
-
-            <form onSubmit={handleSaveConfig} className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Nome do Estabelecimento</label>
-                  <input
-                    type="text"
-                    value={localConfig.name}
-                    onChange={(e) => setLocalConfig({ ...localConfig, name: e.target.value })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Slogan / Descrição Curta</label>
-                  <input
-                    type="text"
-                    value={localConfig.tagline}
-                    onChange={(e) => setLocalConfig({ ...localConfig, tagline: e.target.value })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Número do WhatsApp (com DDD)</label>
-                  <input
-                    type="text"
-                    value={localConfig.whatsapp}
-                    onChange={(e) => setLocalConfig({ ...localConfig, whatsapp: e.target.value })}
-                    placeholder="5511987654321"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Endereço da Cozinha / Loja</label>
-                  <input
-                    type="text"
-                    value={localConfig.address}
-                    onChange={(e) => setLocalConfig({ ...localConfig, address: e.target.value })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Pedido Mínimo Delivery (R$)</label>
-                  <input
-                    type="number"
-                    step="1"
-                    value={localConfig.minimumOrder || 25}
-                    onChange={(e) => setLocalConfig({ ...localConfig, minimumOrder: parseFloat(e.target.value) || 0 })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Frete Grátis a partir de (R$)</label>
-                  <input
-                    type="number"
-                    step="5"
-                    value={localConfig.freeDeliveryThreshold || 80}
-                    onChange={(e) => setLocalConfig({ ...localConfig, freeDeliveryThreshold: parseFloat(e.target.value) || 80 })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Tempo Médio Estimado</label>
-                  <input
-                    type="text"
-                    value={localConfig.estimatedDeliveryTime}
-                    onChange={(e) => setLocalConfig({ ...localConfig, estimatedDeliveryTime: e.target.value })}
-                    placeholder="30 - 45 min"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Chave Pix para Recebimentos</label>
-                  <input
-                    type="text"
-                    value={localConfig.pixKey}
-                    onChange={(e) => setLocalConfig({ ...localConfig, pixKey: e.target.value })}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block font-bold text-stone-700 mb-1">Horário de Funcionamento</label>
-                  <input
-                    type="text"
-                    value={localConfig.openingHours}
-                    onChange={(e) => setLocalConfig({ ...localConfig, openingHours: e.target.value })}
-                    placeholder="Ter a Dom: 11:30 às 23:30"
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
-                  />
-                </div>
-              </div>
-
-              <div className="pt-3 border-t border-stone-200 flex items-center justify-between">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input
-                    type="checkbox"
-                    checked={localConfig.isOpen}
-                    onChange={(e) => setLocalConfig({ ...localConfig, isOpen: e.target.checked })}
-                    className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500"
-                  />
-                  <span className="font-bold text-stone-800">
-                    Restaurante Aberto para Pedidos Delivery no Momento
-                  </span>
-                </label>
-
-                <button
-                  type="submit"
-                  className="px-5 py-2.5 bg-slate-900 hover:bg-slate-800 text-amber-400 font-bold rounded-xl flex items-center gap-1.5 transition-all shadow-xs"
-                >
-                  <Save className="w-4 h-4" />
-                  <span>Salvar Alterações</span>
-                </button>
-              </div>
-            </form>
           </div>
         )}
 

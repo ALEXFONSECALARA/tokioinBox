@@ -188,10 +188,12 @@ export const Header: React.FC<HeaderProps> = ({
                   <Clock className="w-3.5 h-3.5 text-stone-500" />
                   <span>{currentTime}</span>
                 </span>
-                <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md font-bold">
-                  <Percent className="w-3 h-3 text-emerald-600" />
-                  <span>Grátis acima de {formatCurrency(config.freeDeliveryThreshold || 80)}</span>
-                </span>
+                {(config.freeDeliveryEnabled ?? true) && (
+                  <span className="flex items-center gap-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2.5 py-0.5 rounded-md font-bold">
+                    <Percent className="w-3 h-3 text-emerald-600" />
+                    <span>Grátis acima de {formatCurrency(config.freeDeliveryThreshold || 80)}</span>
+                  </span>
+                )}
                 <span className="hidden lg:flex items-center gap-1 text-stone-400">
                   <ShieldCheck className="w-3.5 h-3.5 text-stone-400" />
                   <span>Pedido mín: {formatCurrency(config.minimumOrder || 25)}</span>

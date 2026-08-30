@@ -158,8 +158,8 @@ export const CartDrawer: React.FC<CartDrawerProps> = ({
           </div>
         </div>
 
-        {/* Free Shipping Meter */}
-        {items.length > 0 && (
+        {/* Free Shipping Meter — só aparece se o restaurante ativou a promoção */}
+        {items.length > 0 && (restaurantConfig.freeDeliveryEnabled ?? true) && (
           <div className="bg-[var(--brand-tint)] px-4 py-2.5 border-b border-[var(--brand-tint)] flex flex-col gap-1.5">
             <div className="flex items-center justify-between text-xs">
               <span className="font-semibold text-amber-900 flex items-center gap-1.5">

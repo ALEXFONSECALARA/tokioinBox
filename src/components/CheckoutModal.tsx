@@ -74,6 +74,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   // General notes
   const [generalNotes, setGeneralNotes] = useState('');
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // Item pedido: CEP no próprio checkout, preenchendo rua/bairro/cidade
+  // automaticamente (mesmo padrão do DeliveryAddressModal, via ViaCEP)
+  const [isLoadingCep, setIsLoadingCep] = useState(false);
+  const [cepError, setCepError] = useState<string | null>(null);
+  // Item pedido: todos os campos obrigatórios com aviso visual — só passa a
+  // mostrar borda/mensagem vermelha depois da primeira tentativa de enviar
+  const [triedSubmit, setTriedSubmit] = useState(false);
 
   // Sync address prop
   useEffect(() => {
@@ -91,7 +98,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   if (!isOpen) return null;
 
   const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
-  const isFreeDelivery = subtotal >= (restaurantConfig.freeDeliveryThreshold || 80);
+  const isFreeDelivery = (restaurantConfig.freeDeliveryEnabled ?? true) && subtotal >= (restaurantConfig.freeDeliveryThreshold || 80);
 
   // Find fee based on selected neighborhood
   const activeZone = restaurantConfig.deliveryZones.find(
@@ -108,25 +115,69 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setTimeout(() => setCopiedPix(false), 2500);
   };
 
+  // Busca o endereço pelo CEP (ViaCEP) e preenche rua, bairro e cidade
+  // automaticamente. Se o bairro devolvido bater com um dos atendidos pelo
+  // restaurante, já seleciona ele pra calcular a taxa certa.
+  const handleCepLookup = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, '');
+    if (cleanCep.length !== 8) {
+      setCepError('O CEP deve conter 8 dígitos.');
+      return;
+    }
+    setIsLoadingCep(true);
+    setCepError(null);
+    try {
+      const response = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await response.json();
+      if (data.erro) {
+        setCepError('CEP não encontrado. Preencha o endereço manualmente.');
+      } else {
+        setStreet(data.logradouro || street);
+        setCity(`${data.localidade || 'São Paulo'} - ${data.uf || 'SP'}`);
+        const foundZone = restaurantConfig.deliveryZones.find(
+          (z) => data.bairro && (z.name.toLowerCase().includes(data.bairro.toLowerCase()) || data.bairro.toLowerCase().includes(z.name.toLowerCase()))
+        );
+        setNeighborhood(foundZone ? foundZone.name : data.bairro || neighborhood);
+        if (data.complemento && !complement) {
+          setComplement(data.complemento);
+        }
+        playSoundEffect('beep');
+      }
+    } catch {
+      setCepError('Erro ao consultar CEP. Preencha o endereço manualmente.');
+    } finally {
+      setIsLoadingCep(false);
+    }
+  };
+
+  // Item pedido: todos os campos obrigatórios (delivery) com aviso — usado
+  // tanto pra bloquear o envio quanto pra pintar a borda vermelha no campo
+  const fieldErrors: Record<string, string> = {};
+  if (!name.trim()) fieldErrors.name = 'Informe seu nome';
+  if (!phone.trim()) fieldErrors.phone = 'Informe seu telefone';
+  if (orderType === 'delivery') {
+    if (!cep.trim()) fieldErrors.cep = 'Informe o CEP';
+    if (!street.trim()) fieldErrors.street = 'Informe a rua';
+    if (!number.trim()) fieldErrors.number = 'Informe o número';
+    if (!neighborhood.trim()) fieldErrors.neighborhood = 'Selecione o bairro';
+    if (!reference.trim()) fieldErrors.reference = 'Informe um ponto de referência';
+  }
+  const fieldClass = (field: string) =>
+    `w-full px-3 py-2.5 bg-white border rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] ${
+      triedSubmit && fieldErrors[field] ? 'border-rose-400 ring-1 ring-rose-200' : 'border-stone-200'
+    }`;
+
   const handleCompleteOrder = (openWhatsApp: boolean) => {
     setErrorMsg(null);
+    setTriedSubmit(true);
 
-    // Validation
-    if (!name.trim()) {
-      setErrorMsg('Por favor, informe o seu nome.');
+    // Validation — todos os campos obrigatórios listados em fieldErrors
+    const firstErrorField = Object.keys(fieldErrors)[0];
+    if (firstErrorField) {
+      setErrorMsg(`Por favor, preencha todos os campos obrigatórios (${fieldErrors[firstErrorField]}).`);
+      // Rola até o primeiro campo com problema pra facilitar corrigir no celular
+      document.getElementById(`checkout-${firstErrorField}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' });
       return;
-    }
-
-    if (!phone.trim()) {
-      setErrorMsg('Por favor, informe seu telefone / WhatsApp para contato.');
-      return;
-    }
-
-    if (orderType === 'delivery') {
-      if (!street.trim() || !number.trim() || !neighborhood.trim()) {
-        setErrorMsg('Por favor, preencha a rua, número e bairro para a entrega.');
-        return;
-      }
     }
 
     if (paymentMethod === 'cash' && needCashChange) {
@@ -304,8 +355,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Ex: Carlos Silva"
-                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                  className={fieldClass('name')}
                 />
+                {triedSubmit && fieldErrors.name && (
+                  <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.name}</p>
+                )}
               </div>
 
               <div>
@@ -318,24 +372,59 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                   placeholder="(11) 98765-4321"
-                  className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                  className={fieldClass('phone')}
                 />
+                {triedSubmit && fieldErrors.phone && (
+                  <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.phone}</p>
+                )}
               </div>
             </div>
 
             {/* Delivery specific address fields */}
             {orderType === 'delivery' && (
               <div className="space-y-3 pt-2 border-t border-stone-200">
+                {/* CEP com preenchimento automático de rua/bairro/cidade (ViaCEP) */}
+                <div>
+                  <label className="block text-stone-700 font-bold text-xs mb-1">
+                    CEP *
+                  </label>
+                  <div className="flex gap-2">
+                    <input
+                      id="checkout-cep"
+                      type="text"
+                      inputMode="numeric"
+                      value={cep}
+                      onChange={(e) => setCep(e.target.value)}
+                      onBlur={() => cep.trim() && handleCepLookup(cep)}
+                      placeholder="00000-000"
+                      maxLength={9}
+                      className={fieldClass('cep')}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleCepLookup(cep)}
+                      disabled={isLoadingCep}
+                      className="px-3.5 py-2.5 bg-stone-900 hover:bg-stone-800 text-white rounded-xl text-xs font-bold whitespace-nowrap disabled:opacity-50 flex items-center gap-1.5"
+                    >
+                      {isLoadingCep ? 'Buscando...' : 'Buscar'}
+                    </button>
+                  </div>
+                  {cepError && <p className="text-rose-600 text-[11px] mt-1 font-medium">{cepError}</p>}
+                  {triedSubmit && fieldErrors.cep && !cepError && (
+                    <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.cep}</p>
+                  )}
+                </div>
+
                 {/* Bairro Selector with auto fee */}
                 <div>
                   <label className="block text-stone-700 font-bold text-xs mb-1">
                     Bairro para Entrega (Selecione para calcular taxa) *
                   </label>
                   <select
-                    id="checkout-neighborhood-select"
+                    id="checkout-neighborhood"
                     value={neighborhood}
                     onChange={(e) => setNeighborhood(e.target.value)}
-                    className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                    className={`${fieldClass('neighborhood')} font-semibold`}
                   >
                     {restaurantConfig.deliveryZones.map((zone) => (
                       <option key={zone.id} value={zone.name}>
@@ -343,6 +432,9 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       </option>
                     ))}
                   </select>
+                  {triedSubmit && fieldErrors.neighborhood && (
+                    <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.neighborhood}</p>
+                  )}
                 </div>
 
                 <div className="grid grid-cols-3 gap-2">
@@ -356,8 +448,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={street}
                       onChange={(e) => setStreet(e.target.value)}
                       placeholder="Ex: Av. Paulista"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                      className={fieldClass('street')}
                     />
+                    {triedSubmit && fieldErrors.street && (
+                      <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.street}</p>
+                    )}
                   </div>
                   <div>
                     <label className="block text-stone-700 font-bold text-xs mb-1">
@@ -369,8 +464,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={number}
                       onChange={(e) => setNumber(e.target.value)}
                       placeholder="1500"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] font-bold"
+                      className={`${fieldClass('number')} font-bold`}
                     />
+                    {triedSubmit && fieldErrors.number && (
+                      <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.number}</p>
+                    )}
                   </div>
                 </div>
 
@@ -390,7 +488,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </div>
                   <div>
                     <label className="block text-stone-700 font-bold text-xs mb-1">
-                      Ponto de Referência
+                      Ponto de Referência *
                     </label>
                     <input
                       id="checkout-reference"
@@ -398,8 +496,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                       value={reference}
                       onChange={(e) => setReference(e.target.value)}
                       placeholder="Em frente ao parque"
-                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                      className={fieldClass('reference')}
                     />
+                    {triedSubmit && fieldErrors.reference && (
+                      <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.reference}</p>
+                    )}
                   </div>
                 </div>
               </div>

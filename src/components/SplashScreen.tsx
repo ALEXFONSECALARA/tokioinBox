@@ -58,8 +58,37 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ config, onFinish }) 
       aria-label={`Abrindo ${config.name}`}
     >
       {/* Fotos em crossfade com leve zoom contínuo (Ken Burns) — cada uma com
-          seu próprio enquadramento/zoom/escurecimento e legenda opcional */}
-      {images.map((img, idx) => (
+          seu próprio enquadramento/zoom/escurecimento e legenda opcional.
+          Tocar na foto avança pro próximo slide (ou pula pro cardápio na última),
+          do jeito Instagram/WhatsApp Stories — substitui o botão "Pular" fixo. */}
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={() => {
+          setActiveIndex((prev) => {
+            if (prev >= images.length - 1) {
+              finish();
+              return prev;
+            }
+            return prev + 1;
+          });
+        }}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setActiveIndex((prev) => {
+              if (prev >= images.length - 1) {
+                finish();
+                return prev;
+              }
+              return prev + 1;
+            });
+          }
+        }}
+        aria-label="Toque para avançar"
+        className="absolute inset-0 w-full h-full cursor-pointer"
+      >
+        {images.map((img, idx) => (
         <div
           key={img.url + idx}
           className={`absolute inset-0 transition-opacity duration-1000 ease-in-out ${
@@ -84,55 +113,53 @@ export const SplashScreen: React.FC<SplashScreenProps> = ({ config, onFinish }) 
             </div>
           )}
         </div>
-      ))}
-
-      {/* Camada escura para o texto ficar legível */}
-      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-slate-950/60" />
-
-      {/* Conteúdo: logo + nome + slogan */}
-      <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
-        {config.logo && (
-          <img
-            src={config.logo}
-            alt={config.name}
-            className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover shadow-2xl ring-4 ring-white/20 mb-5 animate-splash-pop"
-          />
-        )}
-        <h1 className="text-white text-2xl sm:text-4xl font-black tracking-tight drop-shadow-lg animate-splash-fade-up">
-          {config.name}
-        </h1>
-        {config.tagline && (
-          <p className="text-white/85 text-sm sm:text-base font-medium mt-2 max-w-md drop-shadow animate-splash-fade-up [animation-delay:120ms]">
-            {config.tagline}
-          </p>
-        )}
-      </div>
-
-      {/* Barra de progresso (uma seção por foto) */}
-      <div className="absolute top-0 inset-x-0 flex gap-1.5 p-3 sm:p-4">
-        {images.map((_, idx) => (
-          <div key={idx} className="h-1 flex-1 rounded-full bg-white/25 overflow-hidden">
-            <div
-              className={`h-full bg-white rounded-full ${
-                idx < activeIndex
-                  ? 'w-full'
-                  : idx === activeIndex
-                  ? 'w-full animate-splash-progress'
-                  : 'w-0'
-              }`}
-              style={idx === activeIndex ? { animationDuration: `${secondsPerImage}s` } : undefined}
-            />
-          </div>
         ))}
-      </div>
 
-      {/* Botão pular */}
-      <button
-        onClick={finish}
-        className="absolute bottom-6 right-4 sm:right-6 text-white/90 hover:text-white text-xs sm:text-sm font-bold bg-white/10 hover:bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full border border-white/20 transition-colors"
-      >
-        Pular →
-      </button>
+        {/* Camada escura para o texto ficar legível */}
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-950/20 to-slate-950/60" />
+
+        {/* Conteúdo: logo + nome + slogan */}
+        <div className="absolute inset-0 flex flex-col items-center justify-center px-6 text-center">
+          {config.logo && (
+            <img
+              src={config.logo}
+              alt={config.name}
+              className="w-20 h-20 sm:w-24 sm:h-24 rounded-3xl object-cover shadow-2xl ring-4 ring-white/20 mb-5 animate-splash-pop"
+            />
+          )}
+          <h1 className="text-white text-2xl sm:text-4xl font-black tracking-tight drop-shadow-lg animate-splash-fade-up">
+            {config.name}
+          </h1>
+          {config.tagline && (
+            <p className="text-white/85 text-sm sm:text-base font-medium mt-2 max-w-md drop-shadow animate-splash-fade-up [animation-delay:120ms]">
+              {config.tagline}
+            </p>
+          )}
+        </div>
+
+        {/* Barra de progresso (uma seção por foto) */}
+        <div className="absolute top-0 inset-x-0 flex gap-1.5 p-3 sm:p-4">
+          {images.map((_, idx) => (
+            <div key={idx} className="h-1 flex-1 rounded-full bg-white/25 overflow-hidden">
+              <div
+                className={`h-full bg-white rounded-full ${
+                  idx < activeIndex
+                    ? 'w-full'
+                    : idx === activeIndex
+                    ? 'w-full animate-splash-progress'
+                    : 'w-0'
+                }`}
+                style={idx === activeIndex ? { animationDuration: `${secondsPerImage}s` } : undefined}
+              />
+            </div>
+          ))}
+        </div>
+
+        {/* Dica sutil de que a tela responde ao toque (sem botão de pular) */}
+        <p className="absolute bottom-6 inset-x-0 text-center text-white/60 text-[11px] font-semibold tracking-wide pointer-events-none">
+          Toque para avançar
+        </p>
+      </div>
     </div>
   );
 };
