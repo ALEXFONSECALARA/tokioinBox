@@ -197,6 +197,7 @@ export interface RestaurantConfig {
   openingHours: string;
   deliveryFee: number;
   freeDeliveryThreshold?: number;
+  freeDeliveryEnabled?: boolean; // default true (compat) — desliga a promoção sem apagar o valor
   minimumOrder: number;
   estimatedDeliveryTime: string;
   deliveryZones: DeliveryZone[];
@@ -219,4 +220,17 @@ export interface RestaurantConfig {
   // aqui só guardamos a preferência pra usar quando essa integração existir).
   printPaperWidth?: '58mm' | '80mm';
   printAutoNewOrders?: boolean;
+  // Item pedido: banner de promoções acima do cardápio deixa de ter texto fixo
+  // ("Entrega Rápida...", cupom BEMVINDO10) e vira uma lista configurável.
+  // Sem essa lista (restaurantes antigos), o banner simplesmente não aparece —
+  // nenhum texto fixo é mais mostrado por padrão.
+  promoBadges?: PromoBadge[];
+}
+
+export interface PromoBadge {
+  id: string;
+  icon?: string; // um emoji simples, opcional (ex: "🛵", "🎉")
+  title: string;
+  subtitle?: string;
+  couponCode?: string; // opcional — se preenchido, mostra botão "Aplicar" ligado a um cupom já cadastrado
 }

@@ -175,7 +175,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   const [showOngoingOrderBanner, setShowOngoingOrderBanner] = useState(!!activeOrderId);
 
   // Coupon state
-  const [appliedCoupon, setAppliedCoupon] = useState<string | null>('BEMVINDO10');
+  const [appliedCoupon, setAppliedCoupon] = useState<string | null>(null);
 
   // Carrega o cardápio do backend (GET /api/:slug/menu) na primeira renderização
   // e sempre que o restaurante (slug) mudar.
@@ -535,32 +535,41 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
           categoryItemCounts={categoryItemCounts}
         />
 
-        {/* Promo Delivery Banner */}
-        <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4">
-          <div className="bg-gradient-to-r from-[var(--brand)] via-[var(--brand-light)] to-[var(--brand)] rounded-2xl p-3 sm:p-4 text-slate-950 flex flex-wrap items-center justify-between gap-3 shadow-xs border border-[var(--brand-light)]">
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-xl bg-slate-950 text-[var(--brand-light)] flex items-center justify-center flex-shrink-0">
-                <Bike className="w-5 h-5" />
-              </div>
-              <div>
-                <p className="text-xs sm:text-sm font-black tracking-tight">
-                  🛵 Entrega Rápida com Embalagem Térmica Selada
-                </p>
-                <p className="text-[11px] font-semibold text-slate-800">
-                  Frete Grátis em pedidos acima de {formatCurrency(restaurantConfig.freeDeliveryThreshold || 80)} • Cupom: <span className="underline font-bold">BEMVINDO10</span>
-                </p>
-              </div>
-            </div>
+        {/* Banner de Promoções — 100% configurável pelo painel (Dados do
+            Restaurante), sem nenhum texto fixo. Some completamente se o
+            restaurante não cadastrar nenhuma promoção. */}
+        {(restaurantConfig.promoBadges || []).length > 0 && (
+          <div className="max-w-7xl mx-auto w-full px-4 sm:px-6 pt-4 space-y-2">
+            {(restaurantConfig.promoBadges || []).map((badge) => (
+              <div
+                key={badge.id}
+                className="bg-gradient-to-r from-[var(--brand)] via-[var(--brand-light)] to-[var(--brand)] rounded-2xl p-3 sm:p-4 text-slate-950 flex flex-wrap items-center justify-between gap-3 shadow-xs border border-[var(--brand-light)]"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-slate-950 text-[var(--brand-light)] flex items-center justify-center flex-shrink-0 text-lg">
+                    {badge.icon || <Bike className="w-5 h-5" />}
+                  </div>
+                  <div>
+                    <p className="text-xs sm:text-sm font-black tracking-tight">{badge.title}</p>
+                    {badge.subtitle && (
+                      <p className="text-[11px] font-semibold text-slate-800">{badge.subtitle}</p>
+                    )}
+                  </div>
+                </div>
 
-            <button
-              onClick={() => handleApplyCoupon('BEMVINDO10')}
-              className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 text-[var(--brand-light)] rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5"
-            >
-              <Percent className="w-3.5 h-3.5" />
-              <span>Aplicar 10% OFF</span>
-            </button>
+                {badge.couponCode && (
+                  <button
+                    onClick={() => handleApplyCoupon(badge.couponCode!)}
+                    className="px-3 py-1.5 bg-slate-950 hover:bg-slate-800 text-[var(--brand-light)] rounded-xl text-xs font-black transition-transform active:scale-95 flex items-center gap-1.5"
+                  >
+                    <Percent className="w-3.5 h-3.5" />
+                    <span>Aplicar Cupom</span>
+                  </button>
+                )}
+              </div>
+            ))}
           </div>
-        </div>
+        )}
 
         {/* Main Menu Grid Content */}
         <main className="max-w-7xl mx-auto w-full px-4 sm:px-6 py-6 flex-1 space-y-6">
