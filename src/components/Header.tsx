@@ -103,10 +103,25 @@ export const Header: React.FC<HeaderProps> = ({
         <img
           src={config.bannerImage}
           alt={config.name}
-          className="w-full h-full object-cover opacity-60 scale-105 transition-transform duration-700"
+          className="w-full h-full object-cover transition-transform duration-700"
+          style={{
+            objectPosition: `${config.bannerPositionX ?? 50}% ${config.bannerPositionY ?? 50}%`,
+            transform: `scale(${(config.bannerZoom ?? 105) / 100})`,
+          }}
           referrerPolicy="no-referrer"
         />
+        {/* Overlay escuro configurável (padrão 60%, igual ao valor fixo anterior) somado
+            ao degradê de legibilidade de baixo pra cima — nunca deforma a imagem. */}
+        <div
+          className="absolute inset-0 bg-stone-950"
+          style={{ opacity: (config.bannerOverlay ?? 60) / 100 }}
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-stone-950/90 via-stone-950/40 to-transparent" />
+        {config.bannerText && (
+          <p className="absolute bottom-3 left-3 right-3 text-white/90 text-xs sm:text-sm font-semibold drop-shadow-lg line-clamp-2">
+            {config.bannerText}
+          </p>
+        )}
 
         {/* Top Floating Badges */}
         <div className="absolute top-3 left-3 right-3 flex items-center justify-between pointer-events-none">

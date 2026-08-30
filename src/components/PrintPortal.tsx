@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 
 // Por que um portal e não só "position:absolute + visibility:hidden" no resto
@@ -9,7 +9,7 @@ import { createPortal } from 'react-dom';
 // foi exatamente esse tipo de ancestral problemático que causava impressões
 // em branco/cortadas aqui. Renderizando o conteúdo como IRMÃO da raiz do app
 // (direto em <body>), ele fica isento de qualquer CSS problemático do modal.
-export const PrintPortal: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const PrintPortal = ({ children }: { children: ReactNode }) => {
   const [container] = useState(() => {
     const el = document.createElement('div');
     el.id = 'print-portal-root';
