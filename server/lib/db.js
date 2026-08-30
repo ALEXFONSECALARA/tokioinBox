@@ -25,3 +25,5 @@ export const updateOrder = impl.updateOrder;
 export const updateMenuItems = impl.updateMenuItems;
 export const updateCategories = impl.updateCategories;
 export const updateConfig = impl.updateConfig;
+export const getPlatformSettings = impl.getPlatformSettings;
+export const updatePlatformSettings = impl.updatePlatformSettings;

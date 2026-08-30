@@ -9,6 +9,13 @@ import { readFile, writeFile, mkdir } from 'fs/promises';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const RESTAURANTS_FILE = path.join(DATA_DIR, 'restaurants.json');
+const PLATFORM_FILE = path.join(DATA_DIR, 'platform.json');
+
+const DEFAULT_PLATFORM_SETTINGS = {
+  landingTitle: 'Escolha seu restaurante',
+  landingSubtitle: 'Cada loja tem seu próprio cardápio e pedidos',
+  landingLayout: 'galeria-gourmet',
+};
 
 async function readJson(filePath, fallback) {
   try {
@@ -36,7 +43,31 @@ function ordersPath(slug) {
 }
 
 export async function getRestaurants() {
-  return readJson(RESTAURANTS_FILE, []);
+  const list = await readJson(RESTAURANTS_FILE, []);
+  // Enriquece a lista básica (slug/name/emoji/color) com os campos de
+  // identidade visual que já moram no config.json de cada restaurante
+  // (tagline, logo, bannerImage, cores, layout) — sem duplicar arquivos nem
+  // exigir uma segunda chamada de rede do frontend pra montar a vitrine "/".
+  return Promise.all(
+    list.map(async (r) => {
+      const config = await readJson(configPath(r.slug), null);
+      if (!config) return r;
+      return {
+        slug: r.slug,
+        name: config.name || r.name,
+        emoji: r.emoji,
+        color: config.color || r.color,
+        secondaryColor: config.secondaryColor,
+        tagline: config.tagline,
+        logo: config.logo,
+        bannerImage: config.bannerImage,
+        bannerPositionX: config.bannerPositionX,
+        bannerPositionY: config.bannerPositionY,
+        bannerZoom: config.bannerZoom,
+        layout: config.layout,
+      };
+    })
+  );
 }
 
 export async function restaurantExists(slug) {
@@ -93,6 +124,20 @@ export async function updateCategories(slug, categories) {
   menu.categories = categories;
   await writeJson(menuPath(slug), menu);
   return categories;
+}
+
+// ---------- Vitrine principal "/" (config global, não por restaurante) ----------
+
+export async function getPlatformSettings() {
+  const saved = await readJson(PLATFORM_FILE, {});
+  return { ...DEFAULT_PLATFORM_SETTINGS, ...saved };
+}
+
+export async function updatePlatformSettings(incoming) {
+  const existing = await readJson(PLATFORM_FILE, DEFAULT_PLATFORM_SETTINGS);
+  const merged = { ...existing, ...incoming };
+  await writeJson(PLATFORM_FILE, merged);
+  return merged;
 }
 
 export async function updateConfig(slug, incoming) {

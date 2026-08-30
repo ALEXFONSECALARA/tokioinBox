@@ -35,6 +35,13 @@ function configRowToApi(restaurantRow, configRow) {
     tagline: configRow.tagline,
     logo: configRow.logo,
     bannerImage: configRow.banner_image,
+    bannerPositionX: configRow.banner_position_x ?? undefined,
+    bannerPositionY: configRow.banner_position_y ?? undefined,
+    bannerZoom: configRow.banner_zoom ?? undefined,
+    bannerOverlay: configRow.banner_overlay ?? undefined,
+    color: configRow.color || restaurantRow?.color,
+    secondaryColor: configRow.secondary_color ?? undefined,
+    layout: configRow.layout ?? undefined,
     phone: configRow.phone,
     whatsapp: configRow.whatsapp,
     address: configRow.address,
@@ -66,6 +73,13 @@ function configApiToRow(incoming) {
     tagline: 'tagline',
     logo: 'logo',
     bannerImage: 'banner_image',
+    bannerPositionX: 'banner_position_x',
+    bannerPositionY: 'banner_position_y',
+    bannerZoom: 'banner_zoom',
+    bannerOverlay: 'banner_overlay',
+    color: 'color',
+    secondaryColor: 'secondary_color',
+    layout: 'layout',
     phone: 'phone',
     whatsapp: 'whatsapp',
     address: 'address',
@@ -187,12 +201,33 @@ function orderRowToApi(orderRow, itemRows) {
 // ---------- interface pública (espelha db.json.js) ----------
 
 export async function getRestaurants() {
+  // Uma única query (embed via FK restaurant_configs.restaurant_id ->
+  // restaurants.id) já traz tudo que a vitrine "/" precisa — nada de N+1
+  // nem de carregar cardápio/pedidos, só os campos de identidade visual.
   const { data, error } = await supabase
     .from('restaurants')
-    .select('slug, name, emoji, color')
+    .select(
+      'slug, name, emoji, color, restaurant_configs(tagline, logo, banner_image, banner_position_x, banner_position_y, banner_zoom, color, secondary_color, layout)'
+    )
     .order('name', { ascending: true });
   if (error) throw error;
-  return data;
+  return (data || []).map((r) => {
+    const cfg = Array.isArray(r.restaurant_configs) ? r.restaurant_configs[0] : r.restaurant_configs;
+    return {
+      slug: r.slug,
+      name: r.name,
+      emoji: r.emoji,
+      color: cfg?.color || r.color,
+      secondaryColor: cfg?.secondary_color ?? undefined,
+      tagline: cfg?.tagline ?? undefined,
+      logo: cfg?.logo ?? undefined,
+      bannerImage: cfg?.banner_image ?? undefined,
+      bannerPositionX: cfg?.banner_position_x ?? undefined,
+      bannerPositionY: cfg?.banner_position_y ?? undefined,
+      bannerZoom: cfg?.banner_zoom ?? undefined,
+      layout: cfg?.layout ?? undefined,
+    };
+  });
 }
 
 export async function restaurantExists(slug) {
@@ -406,6 +441,35 @@ export async function updateCategories(slug, categories) {
   const { error } = await supabase.from('menu_categories').upsert(rows, { onConflict: 'restaurant_id,id' });
   if (error) throw error;
   return categories;
+}
+
+// ---------- Vitrine principal "/" (config global, não por restaurante) ----------
+
+const DEFAULT_PLATFORM_SETTINGS = {
+  landingTitle: 'Escolha seu restaurante',
+  landingSubtitle: 'Cada loja tem seu próprio cardápio e pedidos',
+  landingLayout: 'galeria-gourmet',
+};
+
+export async function getPlatformSettings() {
+  const { data, error } = await supabase.from('platform_settings').select('*').eq('id', true).maybeSingle();
+  if (error) throw error;
+  if (!data) return DEFAULT_PLATFORM_SETTINGS;
+  return {
+    landingTitle: data.landing_title,
+    landingSubtitle: data.landing_subtitle,
+    landingLayout: data.landing_layout,
+  };
+}
+
+export async function updatePlatformSettings(incoming) {
+  const row = { id: true };
+  if (incoming.landingTitle !== undefined) row.landing_title = incoming.landingTitle;
+  if (incoming.landingSubtitle !== undefined) row.landing_subtitle = incoming.landingSubtitle;
+  if (incoming.landingLayout !== undefined) row.landing_layout = incoming.landingLayout;
+  const { error } = await supabase.from('platform_settings').upsert(row, { onConflict: 'id' });
+  if (error) throw error;
+  return getPlatformSettings();
 }
 
 export async function updateConfig(slug, incoming) {
