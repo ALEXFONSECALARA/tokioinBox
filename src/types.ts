@@ -142,11 +142,53 @@ export interface Order {
   notes?: string;
 }
 
+// Os 10 estilos visuais que o restaurante pode escolher para a própria
+// identidade (aplicado ao card dele na vitrine multi-restaurantes "/" e,
+// futuramente, ao cabeçalho do próprio cardápio). Ver src/utils/layouts.ts
+// para a definição visual de cada um.
+export type LayoutId =
+  | 'moderno-premium'
+  | 'rustico-acolhedor'
+  | 'clean-minimalista'
+  | 'dark-elegante'
+  | 'hero-food'
+  | 'soft-moderno'
+  | 'vibrante-food'
+  | 'natural-organico'
+  | 'neon-urbano'
+  | 'galeria-gourmet';
+
+// Uma foto da sequência de abertura (Splash), com ajuste individual de
+// enquadramento. Substitui gradualmente o formato antigo (string[] de URLs) —
+// ver normalizeSplashImage() em utils/helpers.ts, que aceita os dois formatos
+// pra nunca quebrar restaurantes já cadastrados.
+export interface SplashImageConfig {
+  url: string;
+  positionX?: number; // 0-100, posição horizontal do enquadramento (object-position)
+  positionY?: number; // 0-100, posição vertical do enquadramento
+  zoom?: number; // 100 = sem zoom, 100-200 = aproxima a imagem
+  overlay?: number; // 0-100, escurecimento adicional sobre a foto
+  text?: string; // legenda opcional exibida sobre a foto
+  enabled?: boolean; // permite desativar uma foto sem removê-la da lista
+}
+
 export interface RestaurantConfig {
   name: string;
   tagline: string;
   logo: string;
   bannerImage: string;
+  // Ajuste fino da capa (banner) — evita que a foto fique deformada ou corte
+  // a parte importante da comida/identidade em telas de proporções diferentes.
+  bannerPositionX?: number; // 0-100
+  bannerPositionY?: number; // 0-100
+  bannerZoom?: number; // 100-200
+  bannerOverlay?: number; // 0-100
+  // Identidade visual: cor principal e secundária do restaurante, usadas nos
+  // cards da vitrine multi-restaurantes (nunca fixas/douradas por padrão).
+  color?: string;
+  secondaryColor?: string;
+  // Estilo visual escolhido pelo restaurante entre os 10 disponíveis.
+  layout?: LayoutId;
   phone: string;
   whatsapp: string;
   address: string;
@@ -166,7 +208,9 @@ export interface RestaurantConfig {
   // Tela de abertura em tela cheia (fotos de pratos/ambiente/promoções) exibida
   // por alguns segundos antes do cardápio, estilo iFood/Uber Eats/Airbnb.
   splashEnabled?: boolean;
-  splashImages?: string[];
+  // Aceita o formato novo (objetos com ajuste individual) e o antigo
+  // (string[] de URLs) ao mesmo tempo — ver normalizeSplashImage().
+  splashImages?: (string | SplashImageConfig)[];
   splashDurationSeconds?: number;
   // Configurações → Impressão: tamanho do papel da impressora térmica e
   // impressão automática de novos pedidos (a automação de fato — sem clique

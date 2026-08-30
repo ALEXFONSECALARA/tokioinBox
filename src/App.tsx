@@ -35,9 +35,11 @@ import {
   X
 } from 'lucide-react';
 
-// Tema visual por restaurante. O padrão (dourado/âmbar genérico) é o mesmo de
-// sempre — só o "japones" (Sakura Sushi House) recebe o tema tradicional
-// japonês (vermelho + preto + dourado). Os outros restaurantes não mudam.
+// Tema visual por restaurante. Prioridade: cor cadastrada pelo próprio
+// restaurante em Configurações → Aparência (config.color/secondaryColor) —
+// vem primeiro, é a identidade real dele. Sem isso, cai no mapa fixo antigo
+// (hoje só o "japones" tem tema próprio) e, por fim, no dourado padrão.
+// Isso é só a cor — nenhuma lógica de cardápio/checkout/pedido muda aqui.
 const DEFAULT_THEME = {
   brand: '#F59E0B',
   brandLight: '#FBBF24',
@@ -56,8 +58,33 @@ const RESTAURANT_THEMES: Record<string, typeof DEFAULT_THEME> = {
   },
 };
 
-function getThemeStyle(slug: string): React.CSSProperties {
-  const theme = RESTAURANT_THEMES[slug] || DEFAULT_THEME;
+// Clareia/escurece um hex simples (sem libs extras) pra derivar brandLight/
+// brandDark a partir da única cor que o restaurante configurou.
+function shadeHex(hex: string, percent: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const amt = Math.round(2.55 * percent);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amt));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00ff) + amt));
+  const b = Math.min(255, Math.max(0, (num & 0x0000ff) + amt));
+  return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+}
+
+function getThemeStyle(slug: string, config?: RestaurantConfig | null): React.CSSProperties {
+  let theme = RESTAURANT_THEMES[slug] || DEFAULT_THEME;
+  if (config?.color) {
+    try {
+      theme = {
+        brand: config.color,
+        brandLight: shadeHex(config.color, 18),
+        brandDark: shadeHex(config.color, -18),
+        brandTint: shadeHex(config.color, 92),
+        accentRed: config.secondaryColor || theme.accentRed,
+      };
+    } catch {
+      // hex inválido (raro, ex. campo salvo de forma inesperada) — mantém o tema padrão
+      theme = RESTAURANT_THEMES[slug] || DEFAULT_THEME;
+    }
+  }
   return {
     ['--brand' as any]: theme.brand,
     ['--brand-light' as any]: theme.brandLight,
@@ -420,7 +447,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
 
   // Customer Delivery View
   return (
-    <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans" style={getThemeStyle(restaurantSlug)}>
+    <div className="min-h-screen bg-stone-100 text-stone-900 flex flex-col font-sans" style={getThemeStyle(restaurantSlug, restaurantConfig)}>
       {showSplash && (
         <SplashScreen config={restaurantConfig} onFinish={() => setShowSplash(false)} />
       )}
