@@ -160,7 +160,8 @@ export async function saveCategories(slug: string, token: string, categories: Ca
 }
 
 // Envia uma foto (logo, banner, splash, prato, entregador) do computador do
-// restaurante para o backend, que salva localmente e devolve a URL pública.
+// restaurante para o backend, que sobe pro Cloudinary (produção) ou salva
+// localmente como fallback, e devolve a URL pública já pronta pra usar.
 export async function uploadImage(slug: string, token: string, file: File): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
@@ -170,9 +171,12 @@ export async function uploadImage(slug: string, token: string, file: File): Prom
     body: formData,
   });
   const data = await handleResponse<{ url: string }>(res);
-  // Se o front e o back estiverem em domínios separados (VITE_API_URL definido),
-  // a URL relativa devolvida pelo backend precisa do prefixo pra funcionar.
-  return API_BASE ? `${API_BASE}${data.url}` : data.url;
+  // URL do Cloudinary já vem absoluta (https://res.cloudinary.com/...) — só
+  // o fallback local devolve um caminho relativo (/uploads/...), que aí sim
+  // precisa do prefixo do backend quando front e back estão em domínios
+  // separados (VITE_API_URL definido).
+  const isAbsolute = /^https?:\/\//i.test(data.url);
+  return isAbsolute || !API_BASE ? data.url : `${API_BASE}${data.url}`;
 }
 
 export async function savePlatformSettings(token: string, settings: PlatformSettings): Promise<PlatformSettings> {
