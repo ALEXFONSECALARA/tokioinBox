@@ -123,8 +123,15 @@ export interface DeliveryAddress {
   neighborhood: string;
   city: string;
   state?: string;
+  // Apto/Bloco/Casa/Sala — campo próprio, separado do Complemento livre
+  // (Fase 4, item 7). Antes só existia "complement", misturando os dois.
+  unit?: string;
   complement?: string;
   reference?: string;
+  // Preenchidos por geocodificação best-effort a partir do CEP (Fase 4, item
+  // 8) — ausentes quando a busca falha ou não roda; nunca bloqueiam o pedido.
+  lat?: number;
+  lng?: number;
 }
 
 export interface DriverInfo {
