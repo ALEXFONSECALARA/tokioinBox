@@ -4,9 +4,10 @@ import multer from 'multer';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
-import { mkdir } from 'fs/promises';
+import { mkdir, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import * as db from './lib/db.js';
+import { isCloudinaryConfigured, uploadImageBuffer } from './lib/cloudinary.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
@@ -52,28 +53,19 @@ const app = express();
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
-// ---------- Upload local de fotos (logo, banner, splash, pratos, entregadores) ----------
-// Continua em disco local mesmo com o Supabase ligado: isto é sobre ARQUIVOS
-// (imagens), não sobre os dados estruturados que migraram na Fase 2. Migrar
-// uploads para o Supabase Storage é trabalho separado, ainda não feito —
-// ver docs/SUPABASE_SETUP.md, seção "O que NÃO mudou nesta fase".
+// ---------- Upload de fotos (logo, banner, splash, pratos, entregadores) ----------
+// Fica em memória (multer.memoryStorage) em vez de ir direto pro disco — o
+// arquivo só é gravado em algum lugar DEPOIS de decidirmos o destino:
+//   • CLOUDINARY_* configurado (produção/Render): sobe pro Cloudinary,
+//     nunca toca o disco local, URL retornada é https permanente.
+//   • Sem Cloudinary configurado (dev local sem conta): cai automaticamente
+//     pro disco local de sempre (server/data/uploads/<slug>/...), exatamente
+//     como funcionava antes — mesmo padrão de fallback automático já usado
+//     pro Supabase neste projeto (server/lib/db.js).
+// Isso preserva 100% do comportamento pra quem não configurar Cloudinary,
+// e resolve o disco efêmero do Render pra quem configurar.
 const imageUpload = multer({
-  storage: multer.diskStorage({
-    destination: async (req, file, cb) => {
-      try {
-        const dir = path.join(UPLOADS_DIR, req.params.slug);
-        await mkdir(dir, { recursive: true });
-        cb(null, dir);
-      } catch (err) {
-        cb(err);
-      }
-    },
-    filename: (req, file, cb) => {
-      const ext = path.extname(file.originalname || '').toLowerCase().replace(/[^a-z0-9.]/g, '');
-      const safeExt = /^\.(jpg|jpeg|png|webp|gif|avif)$/.test(ext) ? ext : '.jpg';
-      cb(null, `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${safeExt}`);
-    },
-  }),
+  storage: multer.memoryStorage(),
   limits: { fileSize: 8 * 1024 * 1024 }, // 8MB por foto
   fileFilter: (req, file, cb) => {
     if (!/^image\//.test(file.mimetype)) {
@@ -83,7 +75,23 @@ const imageUpload = multer({
   },
 });
 
-// Serve as fotos enviadas publicamente (o cardápio do cliente precisa exibi-las)
+function safeImageExt(originalname) {
+  const ext = path.extname(originalname || '').toLowerCase().replace(/[^a-z0-9.]/g, '');
+  return /^\.(jpg|jpeg|png|webp|gif|avif)$/.test(ext) ? ext : '.jpg';
+}
+
+// Fallback local (sem Cloudinary configurado): grava o buffer em disco e
+// devolve a mesma URL relativa /uploads/... de sempre.
+async function saveImageToDisk(file, slug) {
+  const dir = path.join(UPLOADS_DIR, slug);
+  await mkdir(dir, { recursive: true });
+  const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}${safeImageExt(file.originalname)}`;
+  await writeFile(path.join(dir, filename), file.buffer);
+  return `/uploads/${slug}/${filename}`;
+}
+
+// Serve as fotos enviadas localmente (fallback sem Cloudinary, e qualquer
+// URL /uploads/... antiga já salva antes desta migração continua funcionando).
 app.use('/uploads', express.static(UPLOADS_DIR));
 
 // ---------- Rotas públicas ----------
@@ -218,7 +226,9 @@ app.patch('/api/admin/restaurants/:slug/active', requireAdmin, async (req, res) 
 });
 
 // Admin envia uma foto (logo, banner, splash, prato ou entregador) do computador
-// do restaurante. Retorna a URL pública já pronta pra salvar no cardápio/config.
+// do restaurante. Retorna a URL pública já pronta pra salvar no cardápio/config
+// — https permanente do Cloudinary quando configurado, ou /uploads/... local
+// como fallback (ver comentário acima do multer).
 app.post('/api/:slug/upload', requireAdmin, (req, res) => {
   const { slug } = req.params;
   imageUpload.single('image')(req, res, async (err) => {
@@ -234,7 +244,15 @@ app.post('/api/:slug/upload', requireAdmin, (req, res) => {
     if (!req.file) {
       return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
     }
-    res.status(201).json({ ok: true, url: `/uploads/${slug}/${req.file.filename}` });
+    try {
+      const url = isCloudinaryConfigured()
+        ? await uploadImageBuffer(req.file.buffer, slug)
+        : await saveImageToDisk(req.file, slug);
+      res.status(201).json({ ok: true, url });
+    } catch (uploadErr) {
+      console.error(`Erro ao enviar imagem (${slug}):`, uploadErr);
+      res.status(500).json({ error: 'Não foi possível salvar a imagem. Tente novamente.' });
+    }
   });
 });
 
