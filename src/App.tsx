@@ -410,6 +410,11 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
     return counts;
   }, [categories, menuItems]);
 
+  // Categoria oculta pelo admin (Categorias → ocultar, Fase 4) não aparece na
+  // navegação nem na listagem agrupada do cliente — mas os produtos dela
+  // continuam existindo no cardápio, só sem uma seção visível enquanto isso.
+  const visibleCategories = useMemo(() => categories.filter((c) => c.active !== false), [categories]);
+
   // Cart total math
   const cartSubtotal = cartItems.reduce((acc, item) => acc + item.totalPrice, 0);
   const cartItemCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
@@ -444,6 +449,23 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
   // Render Admin Dashboard
   // (removido: o painel de administração só é acessível de forma protegida
   // por senha em /admin — ver AdminPortal.tsx. O cliente nunca tem esse acesso.)
+
+  // Restaurante desativado pelo super-admin (Fase 4): não aparece mais na
+  // vitrine "/", e quem tiver o link direto do cardápio vê este aviso em vez
+  // do cardápio — pedidos continuam bloqueados no backend de qualquer forma
+  // (ver POST /api/:slug/orders), isto aqui é só a experiência do cliente.
+  if (restaurantConfig.active === false) {
+    return (
+      <div className="min-h-screen bg-stone-100 flex flex-col items-center justify-center gap-3 text-center px-6">
+        <span className="text-4xl">😴</span>
+        <p className="font-semibold text-stone-800 text-lg">{restaurantConfig.name || 'Este restaurante'} está temporariamente indisponível</p>
+        <p className="text-sm text-stone-500 max-w-xs">Não estamos recebendo pedidos por aqui no momento. Volte mais tarde.</p>
+        <a href="/" className="mt-2 text-sm font-medium text-orange-600 hover:underline">
+          ← Ver outros restaurantes
+        </a>
+      </div>
+    );
+  }
 
   // Customer Delivery View
   return (
@@ -529,7 +551,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
 
         {/* Category Navigation Bar */}
         <CategoryNav
-          categories={categories}
+          categories={visibleCategories}
           activeCategoryId={activeCategoryId}
           onSelectCategory={setActiveCategoryId}
           categoryItemCounts={categoryItemCounts}
@@ -604,7 +626,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
           {/* Group by category or flat list */}
           {activeCategoryId === 'all' && !searchQuery && !selectedTag ? (
             <div className="space-y-10">
-              {categories.map((cat) => {
+              {visibleCategories.map((cat) => {
                 const itemsInCat = menuItems.filter((i) => i.categoryId === cat.id);
                 if (itemsInCat.length === 0) return null;
 
@@ -632,6 +654,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
                           onSelect={(dish) => setSelectedProduct(dish)}
                           isFavorite={favorites.includes(item.id)}
                           onToggleFavorite={handleToggleFavorite}
+                          restaurantConfig={restaurantConfig}
                         />
                       ))}
                     </div>
@@ -670,6 +693,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
                       onSelect={(dish) => setSelectedProduct(dish)}
                       isFavorite={favorites.includes(item.id)}
                       onToggleFavorite={handleToggleFavorite}
+                      restaurantConfig={restaurantConfig}
                     />
                   ))}
                 </div>
@@ -741,6 +765,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
         isOpen={!!selectedProduct}
         onClose={() => setSelectedProduct(null)}
         onAddToCart={handleAddToCart}
+        restaurantConfig={restaurantConfig}
       />
 
       {/* Cart Drawer */}

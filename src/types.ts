@@ -1,4 +1,27 @@
-export type DietaryTag = 'vegetariano' | 'vegano' | 'sem_gluten' | 'sem_lactose' | 'picante' | 'mais_vendido' | 'destaque' | 'novidade' | 'organico';
+// `DietaryTag` continua existindo por compatibilidade de import (nada mais
+// restringe MenuItem.tags a esses 9 valores fixos) — na prática agora é só
+// um alias de string: um item.tags guarda IDs de badges da biblioteca
+// editável do restaurante (RestaurantConfig.badges, Fase 4 itens 5/6),
+// resolvidos via getBadgeInfo(). Os 9 valores antigos continuam funcionando
+// sem migração porque viraram os IDs dos badges padrão (DEFAULT_BADGES).
+export type DietaryTag = string;
+
+// Badge/etiqueta de prato, totalmente editável por restaurante (Fase 4,
+// itens 5 e 6) — cada restaurante tem sua própria lista em
+// RestaurantConfig.badges, nunca compartilhada com outro restaurante.
+export interface RestaurantBadge {
+  id: string;
+  label: string;
+  emoji?: string;
+  // Cor em hex (ex: "#ea580c") — aplicada via estilo inline no card/modal,
+  // não depende de classes Tailwind pré-compiladas (que não existiriam pra
+  // uma cor escolhida livremente pelo restaurante).
+  color: string;
+  // Badge oculta não aparece mais pra seleção em pratos nem é exibida, mas
+  // continua na lista (pratos que já usavam ela simplesmente deixam de
+  // mostrá-la, sem apagar nada do prato). Ausente = ativa (default).
+  active?: boolean;
+}
 
 export interface ExtraOption {
   id: string;
@@ -43,6 +66,13 @@ export interface Category {
   name: string;
   icon: string;
   description?: string;
+  // Imagem opcional (mostrada em vez do ícone/emoji em cardápios com layout
+  // mais visual). URL de upload, igual às demais fotos do sistema.
+  image?: string;
+  // Categoria oculta não aparece no cardápio do cliente nem na navegação,
+  // mas continua existindo (produtos dela não somem, só ficam sem uma seção
+  // visível até a categoria voltar a ficar ativa). Ausente = ativa (default).
+  active?: boolean;
 }
 
 export interface SelectedChoice {
@@ -173,6 +203,10 @@ export interface SplashImageConfig {
 }
 
 export interface RestaurantConfig {
+  // Ativo/inativo no super-admin (Fase 4) — injetado pelo backend a partir da
+  // lista mestre de restaurantes, não é um campo editável nas Configurações
+  // do próprio restaurante. Ausente/undefined é tratado como ativo (default).
+  active?: boolean;
   name: string;
   tagline: string;
   logo: string;
@@ -225,6 +259,11 @@ export interface RestaurantConfig {
   // Sem essa lista (restaurantes antigos), o banner simplesmente não aparece —
   // nenhum texto fixo é mais mostrado por padrão.
   promoBadges?: PromoBadge[];
+  // Biblioteca de badges/etiquetas de pratos deste restaurante (Fase 4, itens
+  // 5/6) — ausente/undefined usa DEFAULT_BADGES (8 badges padrão) como
+  // fallback, então restaurantes que nunca abriram essa tela continuam
+  // exibindo os mesmos badges de sempre sem precisar de nenhuma migração.
+  badges?: RestaurantBadge[];
 }
 
 export interface PromoBadge {
