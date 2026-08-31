@@ -1,6 +1,6 @@
 import React from 'react';
 import { RestaurantConfig, DietaryTag, DeliveryAddress } from '../types';
-import { getDietaryTagInfo, formatCurrency } from '../utils/helpers';
+import { getBadgeInfo, formatCurrency, DEFAULT_BADGES } from '../utils/helpers';
 import { 
   Search, 
   Clock, 
@@ -27,17 +27,6 @@ interface HeaderProps {
   favoritesCount: number;
   onOpenFavorites: () => void;
 }
-
-const AVAILABLE_TAGS: DietaryTag[] = [
-  'mais_vendido',
-  'destaque',
-  'novidade',
-  'vegetariano',
-  'vegano',
-  'sem_gluten',
-  'sem_lactose',
-  'picante',
-];
 
 export const Header: React.FC<HeaderProps> = ({
   config,
@@ -265,24 +254,31 @@ export const Header: React.FC<HeaderProps> = ({
               Todos os Itens
             </button>
 
-            {AVAILABLE_TAGS.map((tag) => {
-              const info = getDietaryTagInfo(tag);
-              const isSelected = selectedTag === tag;
-              return (
-                <button
-                  key={tag}
-                  id={`filter-tag-${tag}`}
-                  onClick={() => onTagSelect(isSelected ? null : tag)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all flex items-center gap-1 ${
-                    isSelected
-                      ? 'bg-[var(--brand)] text-slate-950 border-[var(--brand)] font-bold shadow-xs'
-                      : `${info.bg} ${info.color} hover:opacity-80`
-                  }`}
-                >
-                  <span>{info.label}</span>
-                </button>
-              );
-            })}
+            {(config.badges && config.badges.length > 0 ? config.badges : DEFAULT_BADGES)
+              .filter((b) => b.active !== false)
+              .map((badge) => {
+                const tag = badge.id;
+                const info = getBadgeInfo(tag, config);
+                const isSelected = selectedTag === tag;
+                return (
+                  <button
+                    key={tag}
+                    id={`filter-tag-${tag}`}
+                    onClick={() => onTagSelect(isSelected ? null : tag)}
+                    className="px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap border transition-all flex items-center gap-1"
+                    style={
+                      isSelected
+                        ? { backgroundColor: info.color, color: '#fff', borderColor: info.color }
+                        : { backgroundColor: `${info.color}14`, color: info.color, borderColor: `${info.color}40` }
+                    }
+                  >
+                    <span>
+                      {info.emoji ? `${info.emoji} ` : ''}
+                      {info.label}
+                    </span>
+                  </button>
+                );
+              })}
           </div>
         </div>
       </div>

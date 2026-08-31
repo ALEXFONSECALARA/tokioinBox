@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { MenuItem, SelectedChoice, SelectedExtra, CartItem } from '../types';
-import { formatCurrency, getDietaryTagInfo, playSoundEffect } from '../utils/helpers';
+import { MenuItem, SelectedChoice, SelectedExtra, CartItem, RestaurantConfig } from '../types';
+import { formatCurrency, getBadgeInfo, playSoundEffect } from '../utils/helpers';
 import { X, Plus, Minus, Check, Clock, Users, Flame, ShoppingBag } from 'lucide-react';
 
 interface ProductModalProps {
@@ -8,6 +8,7 @@ interface ProductModalProps {
   isOpen: boolean;
   onClose: () => void;
   onAddToCart: (cartItem: CartItem) => void;
+  restaurantConfig?: Pick<RestaurantConfig, 'badges'>;
 }
 
 export const ProductModal: React.FC<ProductModalProps> = ({
@@ -15,6 +16,7 @@ export const ProductModal: React.FC<ProductModalProps> = ({
   isOpen,
   onClose,
   onAddToCart,
+  restaurantConfig,
 }) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedChoices, setSelectedChoices] = useState<SelectedChoice[]>([]);
@@ -142,12 +144,14 @@ export const ProductModal: React.FC<ProductModalProps> = ({
 
           <div className="absolute bottom-3 left-3 right-3 flex flex-wrap gap-1.5">
             {item.tags.map((tag) => {
-              const info = getDietaryTagInfo(tag);
+              const info = getBadgeInfo(tag, restaurantConfig);
               return (
                 <span
                   key={tag}
-                  className="bg-stone-950/80 backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-lg"
+                  className="backdrop-blur-md text-white text-[11px] font-semibold px-2.5 py-0.5 rounded-lg"
+                  style={{ backgroundColor: `${info.color}cc` }}
                 >
+                  {info.emoji ? `${info.emoji} ` : ''}
                   {info.label}
                 </span>
               );

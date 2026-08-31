@@ -8,9 +8,10 @@ import {
   DietaryTag,
   DeliveryZone,
   DriverInfo,
-  PromoBadge
+  PromoBadge,
+  RestaurantBadge
 } from '../types';
-import { formatCurrency, playSoundEffect, normalizeSplashImage } from '../utils/helpers';
+import { formatCurrency, playSoundEffect, normalizeSplashImage, DEFAULT_BADGES, getBadgeInfo } from '../utils/helpers';
 import { fetchMenu } from '../utils/api';
 import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
@@ -57,6 +58,7 @@ import {
   ChevronDown,
   Copy
 } from 'lucide-react';
+import { Tag } from 'lucide-react';
 
 interface AdminDashboardProps {
   // Restaurante sendo administrado e token de sessão do admin — necessários
@@ -77,6 +79,9 @@ interface AdminDashboardProps {
   onToggleAvailability: (id: string) => void;
   onInjectDemoOrder?: (order: Order) => void;
   onUpdateMenuItems?: (items: MenuItem[]) => void;
+  // Salva a lista de categorias (Fase 4 — Categorias por restaurante). Opcional
+  // por compatibilidade, mas sempre presente na prática (AdminPortal já passa).
+  onUpdateCategories?: (categories: Category[]) => void;
   restaurantConfig: RestaurantConfig;
   onUpdateConfig: (config: RestaurantConfig) => void;
   onCloseAdmin: () => void;
@@ -100,6 +105,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onToggleAvailability,
   onInjectDemoOrder,
   onUpdateMenuItems,
+  onUpdateCategories,
   restaurantConfig,
   onUpdateConfig,
   onCloseAdmin,
@@ -107,6 +113,102 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'identity' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
   const [soundEnabled, setSoundEnabled] = useState(true);
+
+  // ---------- Categorias do cardápio (Fase 4) ----------
+  const [showCategoryPanel, setShowCategoryPanel] = useState(false);
+  const [editingCategoryId, setEditingCategoryId] = useState<string | 'new' | null>(null);
+  const [categoryDraftName, setCategoryDraftName] = useState('');
+  const [categoryDraftIcon, setCategoryDraftIcon] = useState('');
+  const [categoryDraftImage, setCategoryDraftImage] = useState('');
+  // Categoria que o admin tentou excluir mas ainda tem produtos — pede pra
+  // escolher outra categoria de destino antes de seguir com a exclusão
+  // (nunca apaga produto junto com a categoria).
+  const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
+  const [moveProductsTargetId, setMoveProductsTargetId] = useState('');
+
+  const persistCategories = (next: Category[]) => onUpdateCategories?.(next);
+
+  const openNewCategoryForm = () => {
+    setEditingCategoryId('new');
+    setCategoryDraftName('');
+    setCategoryDraftIcon('');
+    setCategoryDraftImage('');
+  };
+  const openEditCategoryForm = (cat: Category) => {
+    setEditingCategoryId(cat.id);
+    setCategoryDraftName(cat.name);
+    setCategoryDraftIcon(cat.icon || '');
+    setCategoryDraftImage(cat.image || '');
+  };
+  const closeCategoryForm = () => setEditingCategoryId(null);
+
+  const saveCategoryForm = () => {
+    const name = categoryDraftName.trim();
+    if (!name) return;
+    if (editingCategoryId === 'new') {
+      const id = name
+        .toLowerCase()
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/(^-|-$)/g, '') || `categoria-${Date.now()}`;
+      const uniqueId = categories.some((c) => c.id === id) ? `${id}-${Date.now().toString().slice(-4)}` : id;
+      const newCategory: Category = {
+        id: uniqueId,
+        name,
+        icon: categoryDraftIcon.trim() || 'Layers',
+        image: categoryDraftImage || undefined,
+        active: true,
+      };
+      persistCategories([...categories, newCategory]);
+    } else if (editingCategoryId) {
+      persistCategories(
+        categories.map((c) =>
+          c.id === editingCategoryId
+            ? { ...c, name, icon: categoryDraftIcon.trim() || c.icon, image: categoryDraftImage || undefined }
+            : c
+        )
+      );
+    }
+    closeCategoryForm();
+  };
+
+  const moveCategory = (id: string, direction: -1 | 1) => {
+    const idx = categories.findIndex((c) => c.id === id);
+    const targetIdx = idx + direction;
+    if (idx === -1 || targetIdx < 0 || targetIdx >= categories.length) return;
+    const next = [...categories];
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    persistCategories(next);
+  };
+
+  const toggleCategoryActive = (cat: Category) => {
+    persistCategories(categories.map((c) => (c.id === cat.id ? { ...c, active: c.active === false } : c)));
+  };
+
+  const requestDeleteCategory = (cat: Category) => {
+    const productCount = menuItems.filter((i) => i.categoryId === cat.id).length;
+    if (productCount > 0) {
+      // Não apaga produtos junto — pede pra escolher outra categoria antes.
+      setCategoryPendingDelete(cat);
+      setMoveProductsTargetId(categories.find((c) => c.id !== cat.id)?.id || '');
+      return;
+    }
+    if (!confirm(`Excluir a categoria "${cat.name}"? Ela não tem produtos, então nada mais é afetado.`)) return;
+    persistCategories(categories.filter((c) => c.id !== cat.id));
+  };
+
+  const confirmMoveProductsAndDelete = () => {
+    if (!categoryPendingDelete || !moveProductsTargetId) return;
+    const updatedItems = menuItems.map((i) =>
+      i.categoryId === categoryPendingDelete.id ? { ...i, categoryId: moveProductsTargetId } : i
+    );
+    onUpdateMenuItems?.(updatedItems);
+    persistCategories(categories.filter((c) => c.id !== categoryPendingDelete.id));
+    setCategoryPendingDelete(null);
+    setMoveProductsTargetId('');
+  };
+
   const [selectedReceiptOrder, setSelectedReceiptOrder] = useState<Order | null>(null);
   // Pedidos já impressos nesta sessão do painel (troca o botão pra
   // "Reimprimir" e deixa claro que os dados usados são os mesmos salvos).
@@ -508,6 +610,59 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setLocalConfig(updated);
     onUpdateConfig(updated);
     playSoundEffect('beep');
+  };
+
+  // Biblioteca de badges/etiquetas de pratos (Fase 4, itens 5/6) — totalmente
+  // editável por restaurante, nunca compartilhada com outro restaurante.
+  // Sem nenhum badge cadastrado aqui, o sistema usa DEFAULT_BADGES (8
+  // padrões) como se nada tivesse mudado — ver getBadgeInfo() em helpers.ts.
+  const effectiveBadges = localConfig.badges && localConfig.badges.length > 0 ? localConfig.badges : DEFAULT_BADGES;
+
+  const handleAddBadge = () => {
+    const newBadge: RestaurantBadge = {
+      id: `badge-${Date.now()}`,
+      label: 'Novo badge',
+      emoji: '🏷️',
+      color: '#f59e0b',
+      active: true,
+    };
+    // Na primeira personalização, parte da biblioteca padrão (não de uma
+    // lista vazia) — assim o restaurante não perde os badges que já via.
+    const base = localConfig.badges && localConfig.badges.length > 0 ? localConfig.badges : DEFAULT_BADGES;
+    const updated = { ...localConfig, badges: [...base, newBadge] };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+  };
+
+  const handleUpdateBadge = (id: string, patch: Partial<RestaurantBadge>) => {
+    const base = localConfig.badges && localConfig.badges.length > 0 ? localConfig.badges : DEFAULT_BADGES;
+    const updated = { ...localConfig, badges: base.map((b) => (b.id === id ? { ...b, ...patch } : b)) };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+  };
+
+  const handleDeleteBadge = (id: string) => {
+    const inUse = menuItems.filter((i) => i.tags?.includes(id)).length;
+    if (inUse > 0 && !confirm(`${inUse} prato(s) usam este badge. Excluir mesmo assim? Os pratos deixam de mostrá-lo, mas nada mais é afetado.`)) {
+      return;
+    }
+    const base = localConfig.badges && localConfig.badges.length > 0 ? localConfig.badges : DEFAULT_BADGES;
+    const updated = { ...localConfig, badges: base.filter((b) => b.id !== id) };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+    playSoundEffect('beep');
+  };
+
+  const moveBadge = (id: string, direction: -1 | 1) => {
+    const base = localConfig.badges && localConfig.badges.length > 0 ? localConfig.badges : DEFAULT_BADGES;
+    const idx = base.findIndex((b) => b.id === id);
+    const targetIdx = idx + direction;
+    if (idx === -1 || targetIdx < 0 || targetIdx >= base.length) return;
+    const next = [...base];
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    const updated = { ...localConfig, badges: next };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
   };
 
   // Dispatch Order with Driver
@@ -1096,6 +1251,193 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </div>
 
+            {/* ================= Categorias do Cardápio (Fase 4) ================= */}
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+              <button
+                onClick={() => setShowCategoryPanel((v) => !v)}
+                className="w-full flex items-center justify-between p-4"
+              >
+                <div className="flex items-center gap-2">
+                  <Layers className="w-4 h-4 text-stone-500" />
+                  <span className="font-bold text-stone-900 text-sm">Categorias do Cardápio</span>
+                  <span className="text-xs bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full font-bold">
+                    {categories.length}
+                  </span>
+                </div>
+                {showCategoryPanel ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+              </button>
+
+              {showCategoryPanel && (
+                <div className="border-t border-stone-200 p-4 space-y-2">
+                  <p className="text-xs text-stone-500 -mt-1 mb-2">
+                    Cada restaurante tem sua própria lista — organize do jeito que fizer sentido pro seu cardápio, sem categorias fixas.
+                  </p>
+
+                  {categories.map((cat, idx) => {
+                    const productCount = menuItems.filter((i) => i.categoryId === cat.id).length;
+                    const isEditingThis = editingCategoryId === cat.id;
+                    return (
+                      <div key={cat.id} className="border border-stone-200 rounded-xl overflow-hidden">
+                        <div className={`flex items-center gap-2 p-2.5 ${cat.active === false ? 'opacity-50' : ''}`}>
+                          <div className="flex flex-col">
+                            <button
+                              onClick={() => moveCategory(cat.id, -1)}
+                              disabled={idx === 0}
+                              className="p-0.5 text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                              title="Mover para cima"
+                            >
+                              <ChevronUp className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              onClick={() => moveCategory(cat.id, 1)}
+                              disabled={idx === categories.length - 1}
+                              className="p-0.5 text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                              title="Mover para baixo"
+                            >
+                              <ChevronDown className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+
+                          {cat.image ? (
+                            <img src={cat.image} alt="" className="w-9 h-9 rounded-lg object-cover bg-stone-100 flex-shrink-0" referrerPolicy="no-referrer" />
+                          ) : (
+                            <div className="w-9 h-9 rounded-lg bg-stone-100 flex items-center justify-center text-stone-400 flex-shrink-0 text-xs">
+                              {cat.icon || '—'}
+                            </div>
+                          )}
+
+                          <div className="flex-1 min-w-0">
+                            <p className="font-bold text-stone-900 text-sm truncate">{cat.name}</p>
+                            <p className="text-[11px] text-stone-500">
+                              {productCount} {productCount === 1 ? 'produto' : 'produtos'}
+                              {cat.active === false && ' • oculta'}
+                            </p>
+                          </div>
+
+                          <button
+                            onClick={() => toggleCategoryActive(cat)}
+                            className={`px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                              cat.active === false
+                                ? 'bg-stone-100 text-stone-500 hover:bg-stone-200'
+                                : 'bg-emerald-100 text-emerald-800 hover:bg-emerald-200'
+                            }`}
+                            title={cat.active === false ? 'Categoria oculta — clique pra reativar' : 'Categoria ativa — clique pra ocultar'}
+                          >
+                            {cat.active === false ? 'Oculta' : 'Ativa'}
+                          </button>
+                          <button
+                            onClick={() => openEditCategoryForm(cat)}
+                            className="p-2 rounded-lg hover:bg-stone-100 text-stone-500"
+                            title="Editar"
+                          >
+                            <Edit className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => requestDeleteCategory(cat)}
+                            className="p-2 rounded-lg hover:bg-rose-50 text-stone-400 hover:text-rose-600"
+                            title="Excluir"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
+
+                        {isEditingThis && (
+                          <div className="border-t border-stone-200 bg-stone-50 p-3 space-y-2">
+                            <div className="grid grid-cols-2 gap-2">
+                              <input
+                                type="text"
+                                value={categoryDraftName}
+                                onChange={(e) => setCategoryDraftName(e.target.value)}
+                                placeholder="Nome da categoria"
+                                className="px-3 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                              />
+                              <input
+                                type="text"
+                                value={categoryDraftIcon}
+                                onChange={(e) => setCategoryDraftIcon(e.target.value)}
+                                placeholder="Ícone/emoji (ex: 🍣)"
+                                className="px-3 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                              />
+                            </div>
+                            <ImageUploadField
+                              slug={slug}
+                              token={token}
+                              label="Imagem da categoria (opcional)"
+                              value={categoryDraftImage}
+                              onChange={setCategoryDraftImage}
+                              aspect="wide"
+                            />
+                            <div className="flex justify-end gap-2 pt-1">
+                              <button onClick={closeCategoryForm} className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800">
+                                Cancelar
+                              </button>
+                              <button
+                                onClick={saveCategoryForm}
+                                disabled={!categoryDraftName.trim()}
+                                className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl disabled:opacity-40"
+                              >
+                                Salvar
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {editingCategoryId === 'new' ? (
+                    <div className="border border-amber-300 rounded-xl bg-amber-50 p-3 space-y-2">
+                      <div className="grid grid-cols-2 gap-2">
+                        <input
+                          type="text"
+                          autoFocus
+                          value={categoryDraftName}
+                          onChange={(e) => setCategoryDraftName(e.target.value)}
+                          placeholder="Nome da categoria"
+                          className="px-3 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        <input
+                          type="text"
+                          value={categoryDraftIcon}
+                          onChange={(e) => setCategoryDraftIcon(e.target.value)}
+                          placeholder="Ícone/emoji (ex: 🍰)"
+                          className="px-3 py-2 bg-white border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <ImageUploadField
+                        slug={slug}
+                        token={token}
+                        label="Imagem da categoria (opcional)"
+                        value={categoryDraftImage}
+                        onChange={setCategoryDraftImage}
+                        aspect="wide"
+                      />
+                      <div className="flex justify-end gap-2 pt-1">
+                        <button onClick={closeCategoryForm} className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800">
+                          Cancelar
+                        </button>
+                        <button
+                          onClick={saveCategoryForm}
+                          disabled={!categoryDraftName.trim()}
+                          className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl disabled:opacity-40"
+                        >
+                          Criar categoria
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <button
+                      onClick={openNewCategoryForm}
+                      className="w-full flex items-center justify-center gap-1.5 py-2.5 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 hover:border-amber-400 hover:text-amber-600 text-xs font-bold transition-colors"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      Nova categoria
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+
             {/* Menu Items Table */}
             <div className="bg-white rounded-2xl border border-stone-200 overflow-hidden shadow-xs">
               <div className="overflow-x-auto">
@@ -1424,6 +1766,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   ))}
                 </div>
               )}
+            </div>
+
+            {/* Biblioteca de badges/etiquetas de pratos (Fase 4, itens 5/6) —
+                cada restaurante edita a sua própria, sem afetar outros. */}
+            <div className="bg-white p-5 sm:p-6 rounded-2xl border border-stone-200 shadow-xs space-y-4 text-xs sm:text-sm">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-black text-stone-900 flex items-center gap-1.5">
+                    <Tag className="w-4 h-4" />
+                    Badges de Pratos
+                  </h3>
+                  <p className="text-[11px] text-stone-500">
+                    Etiquetas que aparecem nos pratos (ex: Vegano, Picante, Mais Pedido). Crie, edite a cor e
+                    oculte as que não usa — mostramos no máximo ~3 por prato pra não poluir o card.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleAddBadge}
+                  className="px-3.5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl flex items-center gap-1.5 transition-all shadow-xs whitespace-nowrap"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span>Novo badge</span>
+                </button>
+              </div>
+
+              <div className="space-y-2">
+                {effectiveBadges.map((badge, idx) => (
+                  <div
+                    key={badge.id}
+                    className={`flex items-center gap-2 bg-stone-50 p-2.5 rounded-xl border border-stone-200 ${
+                      badge.active === false ? 'opacity-50' : ''
+                    }`}
+                  >
+                    <div className="flex flex-col">
+                      <button
+                        type="button"
+                        onClick={() => moveBadge(badge.id, -1)}
+                        disabled={idx === 0}
+                        className="p-0.5 text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                        title="Mover para cima"
+                      >
+                        <ChevronUp className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => moveBadge(badge.id, 1)}
+                        disabled={idx === effectiveBadges.length - 1}
+                        className="p-0.5 text-stone-400 hover:text-stone-700 disabled:opacity-20"
+                        title="Mover para baixo"
+                      >
+                        <ChevronDown className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={badge.emoji || ''}
+                      onChange={(e) => handleUpdateBadge(badge.id, { emoji: e.target.value })}
+                      placeholder="🏷️"
+                      maxLength={4}
+                      className="w-12 px-1 py-2 bg-white border border-stone-200 rounded-lg text-center text-base focus:outline-none focus:ring-2 focus:ring-amber-500 shrink-0"
+                    />
+                    <input
+                      type="text"
+                      value={badge.label}
+                      onChange={(e) => handleUpdateBadge(badge.id, { label: e.target.value })}
+                      placeholder="Nome do badge"
+                      className="flex-1 min-w-0 px-3 py-2 bg-white border border-stone-200 rounded-lg font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <input
+                      type="color"
+                      value={badge.color}
+                      onChange={(e) => handleUpdateBadge(badge.id, { color: e.target.value })}
+                      title="Cor do badge"
+                      className="w-9 h-9 rounded-lg border border-stone-200 shrink-0 cursor-pointer bg-white"
+                    />
+                    <span
+                      className="hidden sm:inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-bold shrink-0"
+                      style={{ backgroundColor: `${badge.color}1a`, color: badge.color, border: `1px solid ${badge.color}55` }}
+                    >
+                      {badge.emoji} {badge.label || 'Prévia'}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => handleUpdateBadge(badge.id, { active: badge.active === false })}
+                      className={`px-2 py-1.5 rounded-lg text-[11px] font-bold shrink-0 ${
+                        badge.active === false ? 'bg-stone-200 text-stone-500' : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                      title={badge.active === false ? 'Oculto — clique pra reativar' : 'Ativo — clique pra ocultar'}
+                    >
+                      {badge.active === false ? 'Oculto' : 'Ativo'}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleDeleteBadge(badge.id)}
+                      className="p-2 rounded-lg text-stone-400 hover:text-rose-600 hover:bg-rose-50 shrink-0"
+                      title="Excluir badge"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         )}
@@ -2773,6 +3218,44 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
+              <div>
+                <label className="block font-bold text-stone-700 mb-1.5">
+                  Badges <span className="font-normal text-stone-400">(mostramos no máximo ~3 no card, pra não poluir)</span>
+                </label>
+                <div className="flex flex-wrap gap-1.5">
+                  {(localConfig.badges && localConfig.badges.length > 0
+                    ? localConfig.badges
+                    : DEFAULT_BADGES
+                  )
+                    .filter((b) => b.active !== false)
+                    .map((b) => {
+                      const isChecked = dishTags.includes(b.id);
+                      return (
+                        <button
+                          key={b.id}
+                          type="button"
+                          onClick={() =>
+                            setDishTags(isChecked ? dishTags.filter((t) => t !== b.id) : [...dishTags, b.id])
+                          }
+                          className="px-2.5 py-1.5 rounded-lg text-xs font-bold border transition-colors"
+                          style={
+                            isChecked
+                              ? { backgroundColor: b.color, color: '#fff', borderColor: b.color }
+                              : { backgroundColor: `${b.color}0d`, color: b.color, borderColor: `${b.color}55` }
+                          }
+                        >
+                          {b.emoji} {b.label}
+                        </button>
+                      );
+                    })}
+                  {(!localConfig.badges || localConfig.badges.length === 0) && (
+                    <p className="text-[11px] text-stone-400 w-full mt-1">
+                      Usando os badges padrão — personalize em Identidade → Badges de Pratos.
+                    </p>
+                  )}
+                </div>
+              </div>
+
               <div className="pt-3 border-t border-stone-200 flex justify-end gap-2">
                 <button
                   type="button"
@@ -2805,6 +3288,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           }}
         />
       )}
+
+      {/* Excluir categoria com produtos: pede pra mover os produtos pra outra
+          categoria antes — nunca apaga produto junto com a categoria. */}
+      {categoryPendingDelete && (
+        <div className="fixed inset-0 bg-black/50 z-[70] flex items-center justify-center p-4">
+          <div className="bg-white rounded-2xl max-w-sm w-full p-5 space-y-4">
+            <div>
+              <h3 className="font-black text-stone-900">Esta categoria possui produtos</h3>
+              <p className="text-xs text-stone-500 mt-1">
+                "{categoryPendingDelete.name}" tem {menuItems.filter((i) => i.categoryId === categoryPendingDelete.id).length} produto(s).
+                Escolha pra qual categoria eles devem ir antes de excluir:
+              </p>
+            </div>
+            {categories.filter((c) => c.id !== categoryPendingDelete.id).length === 0 ? (
+              <p className="text-xs text-rose-600 font-semibold">
+                Não há outra categoria pra mover os produtos. Crie outra categoria primeiro.
+              </p>
+            ) : (
+              <select
+                value={moveProductsTargetId}
+                onChange={(e) => setMoveProductsTargetId(e.target.value)}
+                className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500"
+              >
+                {categories
+                  .filter((c) => c.id !== categoryPendingDelete.id)
+                  .map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}
+                    </option>
+                  ))}
+              </select>
+            )}
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => {
+                  setCategoryPendingDelete(null);
+                  setMoveProductsTargetId('');
+                }}
+                className="px-3 py-2 text-xs font-bold text-stone-500 hover:text-stone-800"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={confirmMoveProductsAndDelete}
+                disabled={!moveProductsTargetId}
+                className="px-4 py-2 text-xs font-bold bg-rose-600 hover:bg-rose-500 text-white rounded-xl disabled:opacity-40"
+              >
+                Mover produtos e excluir
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
+
   );
 };

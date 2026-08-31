@@ -2,11 +2,13 @@ import React, { useEffect, useState, useCallback } from 'react';
 import { MenuItem, Category, Order, OrderStatus, RestaurantConfig, DriverInfo } from '../types';
 import {
   adminLogin,
-  fetchRestaurants,
+  fetchRestaurantsAdmin,
+  setRestaurantActive,
   fetchMenu,
   fetchOrdersAdmin,
   updateOrderAdmin,
   saveMenuItems,
+  saveCategories,
   saveRestaurantConfig,
   fetchPlatformSettings,
   savePlatformSettings,
@@ -17,7 +19,7 @@ import { AdminDashboard } from './AdminDashboard';
 import { playSoundEffect } from '../utils/helpers';
 import { LAYOUTS } from '../utils/layouts';
 import { LayoutPreviewModal } from './LayoutPreviewModal';
-import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye } from 'lucide-react';
+import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye, Power } from 'lucide-react';
 
 const TOKEN_KEY = 'super_admin_token';
 
@@ -255,16 +257,40 @@ export const AdminPortal: React.FC = () => {
     [selectedSlug, isDirty]
   );
 
-  // Carrega a lista de restaurantes assim que loga
-  useEffect(() => {
+  // Carrega a lista de TODOS os restaurantes (ativos e inativos) assim que
+  // loga — o super-admin precisa ver e poder reativar os desativados aqui,
+  // diferente da vitrine pública "/" (que só mostra os ativos).
+  const reloadRestaurants = useCallback(() => {
     if (!token) return;
-    fetchRestaurants()
+    fetchRestaurantsAdmin(token)
       .then((list) => {
         setRestaurants(list);
-        if (list.length > 0) setSelectedSlug((prev) => prev || list[0].slug);
+        setSelectedSlug((prev) => prev || (list.length > 0 ? list[0].slug : null));
       })
       .catch(() => {});
   }, [token]);
+
+  useEffect(() => {
+    reloadRestaurants();
+  }, [reloadRestaurants]);
+
+  const handleToggleActive = useCallback(
+    (r: RestaurantSummary) => {
+      if (!token) return;
+      const turningOff = r.active !== false;
+      const confirmMsg = turningOff
+        ? `Desativar "${r.name}"? Ele deixa de aparecer na tela inicial e para de receber novos pedidos, mas nada é apagado — dá pra reativar quando quiser.`
+        : `Reativar "${r.name}"? Ele volta a aparecer na tela inicial e a receber pedidos normalmente.`;
+      if (!window.confirm(confirmMsg)) return;
+      setRestaurants((prev) => prev.map((x) => (x.slug === r.slug ? { ...x, active: !turningOff } : x)));
+      setRestaurantActive(token, r.slug, !turningOff)
+        .catch((err) => {
+          console.error('Erro ao alterar status do restaurante:', err);
+          reloadRestaurants();
+        });
+    },
+    [token, reloadRestaurants]
+  );
 
   // Carrega cardápio + config + pedidos SEMPRE do restaurante selecionado no
   // momento em que a resposta chega — nunca de um selectedSlug antigo. Se o
@@ -380,6 +406,14 @@ export const AdminPortal: React.FC = () => {
     playSoundEffect('beep');
   };
 
+  const persistCategories = (next: Category[]) => {
+    setCategories(next);
+    setIsSaving(true);
+    saveCategories(selectedSlug, token, next)
+      .catch((err) => console.error('Erro ao salvar categorias:', err))
+      .finally(() => setIsSaving(false));
+  };
+
   const handleUpdateConfig = (config: RestaurantConfig) => {
     setRestaurantConfig(config);
     setIsSaving(true);
@@ -395,22 +429,51 @@ export const AdminPortal: React.FC = () => {
         <span className="flex items-center gap-1.5 text-xs font-medium text-stone-400 shrink-0">
           <ShieldCheck size={14} /> Super-admin
         </span>
-        {restaurants.map((r) => (
-          <button
-            key={r.slug}
-            onClick={() => handleSelectRestaurant(r.slug)}
-            disabled={isSaving && r.slug !== selectedSlug}
-            title={isSaving && r.slug !== selectedSlug ? 'Aguarde o salvamento terminar antes de trocar de restaurante' : undefined}
-            className={`text-sm px-3 py-1.5 rounded-full whitespace-nowrap transition-colors disabled:opacity-40 disabled:cursor-not-allowed ${
-              r.slug === selectedSlug ? 'bg-white text-stone-900 font-medium' : 'text-stone-300 hover:bg-stone-800'
-            }`}
-          >
-            {r.emoji} {r.name}
-            {r.slug === selectedSlug && isDirty && (
-              <span className="ml-1.5 text-amber-500" title="Alterações não salvas">●</span>
-            )}
-          </button>
-        ))}
+        {restaurants.map((r) => {
+          const isInactive = r.active === false;
+          return (
+            <div
+              key={r.slug}
+              className={`flex items-center rounded-full whitespace-nowrap shrink-0 ${
+                r.slug === selectedSlug ? 'bg-white text-stone-900' : 'text-stone-300 hover:bg-stone-800'
+              } ${isInactive ? 'opacity-60' : ''}`}
+            >
+              <button
+                onClick={() => handleSelectRestaurant(r.slug)}
+                disabled={isSaving && r.slug !== selectedSlug}
+                title={
+                  isSaving && r.slug !== selectedSlug
+                    ? 'Aguarde o salvamento terminar antes de trocar de restaurante'
+                    : isInactive
+                    ? 'Restaurante desativado — invisível na tela inicial'
+                    : undefined
+                }
+                className={`text-sm pl-3 pr-1.5 py-1.5 disabled:opacity-40 disabled:cursor-not-allowed ${
+                  r.slug === selectedSlug ? 'font-medium' : ''
+                }`}
+              >
+                {r.emoji} {r.name}
+                {isInactive && <span className="ml-1.5 text-[10px] uppercase tracking-wide text-stone-400">inativo</span>}
+                {r.slug === selectedSlug && isDirty && (
+                  <span className="ml-1.5 text-amber-500" title="Alterações não salvas">●</span>
+                )}
+              </button>
+              <button
+                onClick={() => handleToggleActive(r)}
+                title={isInactive ? 'Reativar restaurante' : 'Desativar restaurante'}
+                className={`p-1.5 mr-1 rounded-full transition-colors ${
+                  isInactive
+                    ? 'text-emerald-500 hover:bg-emerald-500/20'
+                    : r.slug === selectedSlug
+                    ? 'text-stone-400 hover:bg-stone-200'
+                    : 'text-stone-500 hover:bg-stone-800'
+                }`}
+              >
+                <Power size={13} />
+              </button>
+            </div>
+          );
+        })}
         {isSaving && (
           <span className="text-[11px] text-amber-400 font-semibold shrink-0 animate-pulse">Salvando...</span>
         )}
@@ -438,6 +501,7 @@ export const AdminPortal: React.FC = () => {
         onDeleteMenuItem={handleDeleteMenuItem}
         onToggleAvailability={handleToggleAvailability}
         onUpdateMenuItems={persistMenuItems}
+        onUpdateCategories={persistCategories}
         restaurantConfig={restaurantConfig}
         onUpdateConfig={handleUpdateConfig}
         onCloseAdmin={() => (window.location.href = '/')}

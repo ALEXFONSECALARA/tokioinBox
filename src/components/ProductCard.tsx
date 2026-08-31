@@ -1,6 +1,6 @@
 import React from 'react';
-import { MenuItem } from '../types';
-import { formatCurrency, getDietaryTagInfo } from '../utils/helpers';
+import { MenuItem, RestaurantConfig } from '../types';
+import { formatCurrency, getBadgeInfo } from '../utils/helpers';
 import { Plus, Clock, Users, Heart } from 'lucide-react';
 
 interface ProductCardProps {
@@ -8,6 +8,7 @@ interface ProductCardProps {
   onSelect: (item: MenuItem) => void;
   isFavorite: boolean;
   onToggleFavorite: (id: string, e: React.MouseEvent) => void;
+  restaurantConfig?: Pick<RestaurantConfig, 'badges'>;
 }
 
 export const ProductCard: React.FC<ProductCardProps> = ({
@@ -15,6 +16,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
   onSelect,
   isFavorite,
   onToggleFavorite,
+  restaurantConfig,
 }) => {
   const hasDiscount = item.originalPrice && item.originalPrice > item.price;
   const discountPercent = hasDiscount
@@ -64,15 +66,18 @@ export const ProductCard: React.FC<ProductCardProps> = ({
             <Heart className={`w-3.5 h-3.5 ${isFavorite ? 'fill-[var(--accent-red)] text-[var(--accent-red)]' : 'text-white'}`} />
           </button>
 
-          {/* Dietary / Feature Tags Over Image */}
+          {/* Dietary / Feature Tags Over Image — no máximo 3 pra não poluir o
+              card (Fase 4, item 6); o resto fica só no detalhe do produto. */}
           <div className="absolute bottom-2 left-2 right-2 flex flex-wrap gap-1">
-            {item.tags.slice(0, 2).map((tag) => {
-              const info = getDietaryTagInfo(tag);
+            {item.tags.slice(0, 3).map((tag) => {
+              const info = getBadgeInfo(tag, restaurantConfig);
               return (
                 <span
                   key={tag}
-                  className="bg-stone-950/80 backdrop-blur-md text-white text-[10px] font-medium px-2 py-0.5 rounded-md"
+                  className="backdrop-blur-md text-white text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                  style={{ backgroundColor: `${info.color}cc` }}
                 >
+                  {info.emoji ? `${info.emoji} ` : ''}
                   {info.label}
                 </span>
               );
