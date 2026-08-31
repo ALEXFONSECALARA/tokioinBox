@@ -18,6 +18,10 @@ export interface RestaurantSummary {
   bannerPositionY?: number;
   bannerZoom?: number;
   layout?: LayoutId;
+  // Só vem preenchido de fato quando a lista foi buscada via
+  // fetchRestaurantsAdmin — a lista pública (fetchRestaurants) já vem
+  // pré-filtrada só com os ativos.
+  active?: boolean;
 }
 
 // Configuração global da vitrine multi-restaurantes "/" — título, subtítulo
@@ -93,6 +97,28 @@ export async function adminLogin(password: string): Promise<string> {
   });
   const data = await handleResponse<{ token: string }>(res);
   return data.token;
+}
+
+// Lista TODOS os restaurantes (ativos e inativos) — usada pela barra de
+// troca do super-admin, que precisa mostrar e permitir reativar restaurantes
+// desativados (diferente de fetchRestaurants, que é pública e só traz ativos).
+export async function fetchRestaurantsAdmin(token: string): Promise<RestaurantSummary[]> {
+  const res = await fetch(`${API_BASE}/api/admin/restaurants`, { headers: authHeaders(token) });
+  return handleResponse<RestaurantSummary[]>(res);
+}
+
+export async function setRestaurantActive(
+  token: string,
+  slug: string,
+  active: boolean
+): Promise<RestaurantSummary | null> {
+  const res = await fetch(`${API_BASE}/api/admin/restaurants/${slug}/active`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify({ active }),
+  });
+  const data = await handleResponse<{ ok: true; restaurant: RestaurantSummary | null }>(res);
+  return data.restaurant;
 }
 
 export async function fetchOrdersAdmin(slug: string, token: string): Promise<Order[]> {

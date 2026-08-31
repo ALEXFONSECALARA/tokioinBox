@@ -1,4 +1,4 @@
-import { CartItem, Order, RestaurantConfig, DietaryTag, SplashImageConfig } from '../types';
+import { CartItem, Order, RestaurantConfig, SplashImageConfig, RestaurantBadge } from '../types';
 
 // Restaurantes antigos guardam splashImages como string[] (só a URL). Esta
 // função normaliza qualquer item (string OU objeto) pro formato novo, com
@@ -26,19 +26,41 @@ export const formatCurrency = (value: number): string => {
   }).format(value);
 };
 
-export const getDietaryTagInfo = (tag: DietaryTag): { label: string; color: string; bg: string } => {
-  const map: Record<DietaryTag, { label: string; color: string; bg: string }> = {
-    vegetariano: { label: 'Vegetariano', color: 'text-emerald-700', bg: 'bg-emerald-50 border-emerald-200' },
-    vegano: { label: 'Vegano', color: 'text-green-700', bg: 'bg-green-50 border-green-200' },
-    sem_gluten: { label: 'Sem Glúten', color: 'text-amber-700', bg: 'bg-amber-50 border-amber-200' },
-    sem_lactose: { label: 'Sem Lactose', color: 'text-blue-700', bg: 'bg-blue-50 border-blue-200' },
-    picante: { label: 'Picante 🌶️', color: 'text-red-700', bg: 'bg-red-50 border-red-200' },
-    mais_vendido: { label: 'Mais Pedido ⭐', color: 'text-orange-700', bg: 'bg-orange-50 border-orange-200' },
-    destaque: { label: 'Destaque Chef ✨', color: 'text-purple-700', bg: 'bg-purple-50 border-purple-200' },
-    novidade: { label: 'Novidade 🔥', color: 'text-rose-700', bg: 'bg-rose-50 border-rose-200' },
-    organico: { label: 'Orgânico 🌱', color: 'text-teal-700', bg: 'bg-teal-50 border-teal-200' },
-  };
-  return map[tag] || { label: tag, color: 'text-gray-700', bg: 'bg-gray-50 border-gray-200' };
+// Nota: existiu aqui uma `getDietaryTagInfo` fixa com 9 valores de badge
+// hardcoded. Foi substituída por `getBadgeInfo` abaixo (Fase 4, itens 5/6),
+// que resolve a mesma informação a partir da biblioteca editável do
+// restaurante — sem duas fontes de verdade pro mesmo dado.
+
+// Biblioteca padrão de badges (Fase 4, itens 5/6) — usada como fallback pra
+// restaurantes que ainda não personalizaram `restaurantConfig.badges`. Os
+// IDs batem com os valores antigos de DietaryTag de propósito: um item
+// salvo antes desta mudança com tags:['vegano'] continua resolvendo pro
+// badge certo sem precisar de nenhuma migração de dados.
+export const DEFAULT_BADGES: RestaurantBadge[] = [
+  { id: 'mais_vendido', label: 'Mais Pedido', emoji: '⭐', color: '#ea580c', active: true },
+  { id: 'destaque', label: 'Destaque Chef', emoji: '✨', color: '#7c3aed', active: true },
+  { id: 'novidade', label: 'Novidade', emoji: '🔥', color: '#e11d48', active: true },
+  { id: 'vegetariano', label: 'Vegetariano', emoji: '🌱', color: '#059669', active: true },
+  { id: 'vegano', label: 'Vegano', emoji: '🌿', color: '#16a34a', active: true },
+  { id: 'sem_gluten', label: 'Sem Glúten', emoji: '🌾', color: '#d97706', active: true },
+  { id: 'sem_lactose', label: 'Sem Lactose', emoji: '🥛', color: '#2563eb', active: true },
+  { id: 'picante', label: 'Picante', emoji: '🌶️', color: '#dc2626', active: true },
+];
+
+// Resolve um badge (id salvo em item.tags) pra exibição, priorizando a
+// biblioteca editável do restaurante (restaurantConfig.badges) e caindo pra
+// DEFAULT_BADGES quando o restaurante nunca personalizou nada — e, no pior
+// caso (badge apagado depois de já usado em algum prato), mostra o próprio
+// id como rótulo em vez de sumir silenciosamente.
+export const getBadgeInfo = (
+  badgeId: string,
+  restaurantConfig?: Pick<RestaurantConfig, 'badges'> | null
+): RestaurantBadge => {
+  const fromRestaurant = restaurantConfig?.badges?.find((b) => b.id === badgeId);
+  if (fromRestaurant) return fromRestaurant;
+  const fromDefaults = DEFAULT_BADGES.find((b) => b.id === badgeId);
+  if (fromDefaults) return fromDefaults;
+  return { id: badgeId, label: badgeId, color: '#78716c', active: true };
 };
 
 // Web Audio sound synthesizer for instant alerts
