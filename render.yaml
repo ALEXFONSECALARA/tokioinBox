@@ -22,6 +22,18 @@ services:
         # A chave "service_role" do projeto Supabase (ojztmcnghgsrvstmasnc).
         # NUNCA a chave "anon". Defina só aqui no painel do Render — nunca
         # no repositório.
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+        # Fase 4 — ver server/lib/cloudinary.js. As 3 variáveis CLOUDINARY_*
+        # vêm do Dashboard do Cloudinary (cloudinary.com → Dashboard). Sem
+        # elas, o upload de fotos volta a usar o disco local (efêmero no
+        # Render — ver aviso abaixo).
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+        # Nunca comitar o valor real. Usada só pelo backend, nunca enviada
+        # ao frontend.
     autoDeploy: true
     # ATENÇÃO (resolvido pela Fase 2, se SUPABASE_URL/SUPABASE_SERVICE_ROLE_KEY
     # estiverem configurados): o plano free do Render tem disco efêmero —
@@ -31,7 +43,9 @@ services:
     # pedidos/cardápio/config passam a viver no Postgres do Supabase, e o
     # disco efêmero deixa de ser um problema para ESSES dados.
     #
-    # Isso NÃO cobre as imagens enviadas em server/data/uploads/ (logo,
-    # banner, fotos de prato) — essas continuam em disco local e ainda
-    # seriam perdidas num redeploy no plano free. Migrar uploads para o
-    # Supabase Storage é trabalho futuro, fora desta fase.
+    # Fase 4 (resolvido, se CLOUDINARY_CLOUD_NAME/API_KEY/API_SECRET estiverem
+    # configurados): imagens enviadas pelo admin (logo, banner, splash, fotos
+    # de prato, entregadores) agora sobem pro Cloudinary e ficam com URL
+    # https permanente — deixam de depender do disco efêmero do Render. Sem
+    # essas 3 variáveis, o upload volta a cair no disco local de
+    # server/data/uploads/ (mesmo comportamento de antes, ainda efêmero).
