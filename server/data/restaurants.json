@@ -9,7 +9,8 @@
     "slug": "japones",
     "name": "Sakura Sushi House",
     "emoji": "🍣",
-    "color": "#B91C1C"
+    "color": "#B91C1C",
+    "active": true
   },
   {
     "slug": "italiano",
