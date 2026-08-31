@@ -90,7 +90,9 @@ app.use('/uploads', express.static(UPLOADS_DIR));
 
 app.get('/api/health', (req, res) => res.json({ ok: true, dataBackend: db.backendName }));
 
-// Lista os restaurantes disponíveis (pra tela inicial de escolha)
+// Lista os restaurantes disponíveis (pra tela inicial de escolha) — só os
+// ATIVOS. Restaurante desativado não aparece aqui (mas continua no banco e
+// visível em /api/admin/restaurants, pro super-admin poder reativar).
 app.get('/api/restaurants', async (req, res) => {
   try {
     res.json(await db.getRestaurants());
@@ -135,6 +137,12 @@ app.post('/api/:slug/orders', async (req, res) => {
   if (!(await db.restaurantExists(slug))) {
     return res.status(404).json({ error: 'Restaurante não encontrado.' });
   }
+  // Restaurante desativado pelo super-admin não pode receber novos pedidos —
+  // reforçado aqui no backend (nunca só no frontend), mesmo que alguém chame
+  // a API diretamente com o slug de um restaurante inativo.
+  if (!(await db.restaurantIsActive(slug))) {
+    return res.status(403).json({ error: 'Este restaurante está temporariamente indisponível para novos pedidos.' });
+  }
   try {
     const order = req.body;
     if (!order || !order.id) {
@@ -175,6 +183,39 @@ app.post('/api/admin/login', (req, res) => {
 });
 
 // ---------- Rotas do admin (protegidas) ----------
+
+// Lista TODOS os restaurantes (ativos e inativos) — usada pela barra de troca
+// do super-admin em /admin, que precisa continuar mostrando (e permitindo
+// reativar) restaurantes desativados. Diferente de GET /api/restaurants,
+// que é pública e só traz os ativos.
+app.get('/api/admin/restaurants', requireAdmin, async (req, res) => {
+  try {
+    res.json(await db.getRestaurantsAdmin());
+  } catch (err) {
+    console.error('Erro ao listar restaurantes (admin):', err);
+    res.status(500).json({ error: 'Não foi possível carregar a lista de restaurantes.' });
+  }
+});
+
+// Ativa/desativa um restaurante. Nunca apaga nada — só some da vitrine
+// pública e passa a recusar novos pedidos (ver POST /api/:slug/orders).
+app.patch('/api/admin/restaurants/:slug/active', requireAdmin, async (req, res) => {
+  const { slug } = req.params;
+  const { active } = req.body || {};
+  if (typeof active !== 'boolean') {
+    return res.status(400).json({ error: 'Campo "active" deve ser true ou false.' });
+  }
+  if (!(await db.restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    const updated = await db.setRestaurantActive(slug, active);
+    res.json({ ok: true, restaurant: updated });
+  } catch (err) {
+    console.error(`Erro ao alterar status ativo de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível alterar o status do restaurante.' });
+  }
+});
 
 // Admin envia uma foto (logo, banner, splash, prato ou entregador) do computador
 // do restaurante. Retorna a URL pública já pronta pra salvar no cardápio/config.
