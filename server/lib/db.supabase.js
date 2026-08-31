@@ -43,6 +43,9 @@ function configRowToApi(restaurantRow, configRow) {
     color: configRow.color || restaurantRow?.color,
     secondaryColor: configRow.secondary_color ?? undefined,
     layout: configRow.layout ?? undefined,
+    // Ativo/inativo mora na tabela `restaurants` (lista mestre), não em
+    // restaurant_configs — restaurante sem o campo (linha antiga) é ativo.
+    active: restaurantRow?.active !== false,
     phone: configRow.phone,
     whatsapp: configRow.whatsapp,
     address: configRow.address,
@@ -57,6 +60,7 @@ function configRowToApi(restaurantRow, configRow) {
     deliveryZones: configRow.delivery_zones || [],
     drivers: configRow.drivers || [],
     promoBadges: configRow.promo_badges || [],
+    badges: configRow.badges || [],
     pixKey: configRow.pix_key,
     pixKeyType: configRow.pix_key_type,
     instagram: configRow.instagram,
@@ -97,6 +101,7 @@ function configApiToRow(incoming) {
     deliveryZones: 'delivery_zones',
     drivers: 'drivers',
     promoBadges: 'promo_badges',
+    badges: 'badges',
     pixKey: 'pix_key',
     pixKeyType: 'pix_key_type',
     instagram: 'instagram',
@@ -120,6 +125,8 @@ function categoryRowToApi(row) {
     name: row.name,
     icon: row.icon || undefined,
     description: row.description || undefined,
+    image: row.image || undefined,
+    active: row.active !== false,
   };
 }
 
@@ -206,38 +213,71 @@ function orderRowToApi(orderRow, itemRows) {
 
 // ---------- interface pública (espelha db.json.js) ----------
 
+function restaurantRowToSummary(r) {
+  const cfg = Array.isArray(r.restaurant_configs) ? r.restaurant_configs[0] : r.restaurant_configs;
+  return {
+    slug: r.slug,
+    name: r.name,
+    emoji: r.emoji,
+    color: cfg?.color || r.color,
+    secondaryColor: cfg?.secondary_color ?? undefined,
+    tagline: cfg?.tagline ?? undefined,
+    logo: cfg?.logo ?? undefined,
+    bannerImage: cfg?.banner_image ?? undefined,
+    bannerPositionX: cfg?.banner_position_x ?? undefined,
+    bannerPositionY: cfg?.banner_position_y ?? undefined,
+    bannerZoom: cfg?.banner_zoom ?? undefined,
+    layout: cfg?.layout ?? undefined,
+    active: r.active !== false,
+  };
+}
+
+const RESTAURANT_SUMMARY_SELECT =
+  'slug, name, emoji, color, active, restaurant_configs(tagline, logo, banner_image, banner_position_x, banner_position_y, banner_zoom, color, secondary_color, layout)';
+
 export async function getRestaurants() {
   // Uma única query (embed via FK restaurant_configs.restaurant_id ->
   // restaurants.id) já traz tudo que a vitrine "/" precisa — nada de N+1
   // nem de carregar cardápio/pedidos, só os campos de identidade visual.
+  // Vitrine pública: só restaurantes ativos (getRestaurantsAdmin traz todos).
   const { data, error } = await supabase
     .from('restaurants')
-    .select(
-      'slug, name, emoji, color, restaurant_configs(tagline, logo, banner_image, banner_position_x, banner_position_y, banner_zoom, color, secondary_color, layout)'
-    )
+    .select(RESTAURANT_SUMMARY_SELECT)
+    .eq('active', true)
     .order('name', { ascending: true });
   if (error) throw error;
-  return (data || []).map((r) => {
-    const cfg = Array.isArray(r.restaurant_configs) ? r.restaurant_configs[0] : r.restaurant_configs;
-    return {
-      slug: r.slug,
-      name: r.name,
-      emoji: r.emoji,
-      color: cfg?.color || r.color,
-      secondaryColor: cfg?.secondary_color ?? undefined,
-      tagline: cfg?.tagline ?? undefined,
-      logo: cfg?.logo ?? undefined,
-      bannerImage: cfg?.banner_image ?? undefined,
-      bannerPositionX: cfg?.banner_position_x ?? undefined,
-      bannerPositionY: cfg?.banner_position_y ?? undefined,
-      bannerZoom: cfg?.banner_zoom ?? undefined,
-      layout: cfg?.layout ?? undefined,
-    };
-  });
+  return (data || []).map(restaurantRowToSummary);
+}
+
+export async function getRestaurantsAdmin() {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .select(RESTAURANT_SUMMARY_SELECT)
+    .order('name', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(restaurantRowToSummary);
+}
+
+export async function setRestaurantActive(slug, active) {
+  const { data, error } = await supabase
+    .from('restaurants')
+    .update({ active: !!active })
+    .eq('slug', slug)
+    .select(RESTAURANT_SUMMARY_SELECT)
+    .maybeSingle();
+  if (error) throw error;
+  return data ? restaurantRowToSummary(data) : null;
 }
 
 export async function restaurantExists(slug) {
   return (await resolveRestaurantId(slug)) !== null;
+}
+
+export async function restaurantIsActive(slug) {
+  const { data, error } = await supabase.from('restaurants').select('active').eq('slug', slug).maybeSingle();
+  if (error) throw error;
+  if (!data) return false;
+  return data.active !== false;
 }
 
 export async function readRestaurantData(slug) {
@@ -435,17 +475,36 @@ export async function updateCategories(slug, categories) {
     name: cat.name,
     icon: cat.icon || null,
     description: cat.description || null,
+    image: cat.image || null,
+    active: cat.active !== false,
     sort_order: idx,
   }));
 
   // menu_items.category_id tem FK pra menu_categories — por isso categorias
   // não podem ser simplesmente apagadas-e-recriadas se algum item ainda
-  // referenciar uma categoria removida. Fazemos upsert (nunca deleta aqui);
-  // remoção de categoria com itens dependentes deve ser tratada no admin,
-  // igual já seria necessário no JSON (categoria some do menu.json mas os
-  // itens continuariam com o categoryId antigo, órfão).
+  // referenciar uma categoria removida. Fazemos upsert e, à parte, apagamos
+  // só as categorias que SUMIRAM da lista enviada E não têm nenhum produto
+  // (o admin, ao excluir uma categoria com produtos, precisa mover os
+  // produtos pra outra categoria primeiro — ver ToolsHub/menu tab — então
+  // quando a exclusão chega até aqui, ela já está vazia e a FK não barra).
   const { error } = await supabase.from('menu_categories').upsert(rows, { onConflict: 'restaurant_id,id' });
   if (error) throw error;
+
+  const { data: existingRows, error: existingErr } = await supabase
+    .from('menu_categories')
+    .select('id')
+    .eq('restaurant_id', restaurantId);
+  if (existingErr) throw existingErr;
+  const incomingIds = new Set(categories.map((c) => c.id));
+  const removedIds = (existingRows || []).map((r) => r.id).filter((id) => !incomingIds.has(id));
+  if (removedIds.length > 0) {
+    // Se ainda houver produto referenciando alguma dessas categorias, a FK
+    // (menu_items.category_id -> menu_categories.id) rejeita o delete e a
+    // categoria simplesmente permanece no banco (mesmo comportamento seguro
+    // de antes) — não tratamos isso como erro fatal da rota.
+    await supabase.from('menu_categories').delete().eq('restaurant_id', restaurantId).in('id', removedIds);
+  }
+
   return categories;
 }
 

@@ -16,7 +16,10 @@ const impl = supabaseEnabled ? supabaseDb : jsonDb;
 
 export const backendName = supabaseEnabled ? 'supabase' : 'json';
 export const getRestaurants = impl.getRestaurants;
+export const getRestaurantsAdmin = impl.getRestaurantsAdmin;
+export const setRestaurantActive = impl.setRestaurantActive;
 export const restaurantExists = impl.restaurantExists;
+export const restaurantIsActive = impl.restaurantIsActive;
 export const readRestaurantData = impl.readRestaurantData;
 export const listOrders = impl.listOrders;
 export const getOrder = impl.getOrder;

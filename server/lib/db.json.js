@@ -42,16 +42,19 @@ function ordersPath(slug) {
   return path.join(DATA_DIR, 'restaurants', slug, 'orders.json');
 }
 
-export async function getRestaurants() {
+// Lista bruta (todos os restaurantes, ativos ou não) já enriquecida com os
+// campos de identidade visual do config.json de cada um. Uso interno — as
+// funções públicas abaixo decidem o que filtrar pra cada consumidor.
+async function getAllRestaurantsRaw() {
   const list = await readJson(RESTAURANTS_FILE, []);
-  // Enriquece a lista básica (slug/name/emoji/color) com os campos de
-  // identidade visual que já moram no config.json de cada restaurante
-  // (tagline, logo, bannerImage, cores, layout) — sem duplicar arquivos nem
-  // exigir uma segunda chamada de rede do frontend pra montar a vitrine "/".
   return Promise.all(
     list.map(async (r) => {
       const config = await readJson(configPath(r.slug), null);
-      if (!config) return r;
+      // `active` mora em restaurants.json (lista mestre do super-admin), não
+      // no config.json de cada restaurante — restaurantes antigos sem o campo
+      // são tratados como ativos (default true), nunca somem silenciosamente.
+      const active = r.active !== false;
+      if (!config) return { ...r, active };
       return {
         slug: r.slug,
         name: config.name || r.name,
@@ -65,25 +68,63 @@ export async function getRestaurants() {
         bannerPositionY: config.bannerPositionY,
         bannerZoom: config.bannerZoom,
         layout: config.layout,
+        active,
       };
     })
   );
 }
 
+// Lista pública (vitrine "/"): só restaurantes ativos. O super-admin usa
+// getRestaurantsAdmin() pra ver todos, inclusive os desativados.
+export async function getRestaurants() {
+  const all = await getAllRestaurantsRaw();
+  return all.filter((r) => r.active);
+}
+
+export async function getRestaurantsAdmin() {
+  return getAllRestaurantsRaw();
+}
+
+export async function setRestaurantActive(slug, active) {
+  const list = await readJson(RESTAURANTS_FILE, []);
+  const idx = list.findIndex((r) => r.slug === slug);
+  if (idx === -1) return null;
+  list[idx] = { ...list[idx], active: !!active };
+  await writeJson(RESTAURANTS_FILE, list);
+  const all = await getAllRestaurantsRaw();
+  return all.find((r) => r.slug === slug) || null;
+}
+
+// Existência bruta (ignora ativo/inativo) — usada pelas rotas de admin e de
+// leitura de cardápio, que precisam continuar funcionando pra um restaurante
+// desativado (o admin ainda edita/reativa; só a vitrine e novos pedidos são
+// bloqueados). Quem precisa saber "posso vender aqui agora?" usa
+// restaurantIsActive(slug) separadamente.
 export async function restaurantExists(slug) {
-  const list = await getRestaurants();
+  const list = await readJson(RESTAURANTS_FILE, []);
   return list.some((r) => r.slug === slug);
 }
 
+export async function restaurantIsActive(slug) {
+  const list = await readJson(RESTAURANTS_FILE, []);
+  const entry = list.find((r) => r.slug === slug);
+  if (!entry) return false;
+  return entry.active !== false;
+}
+
 export async function readRestaurantData(slug) {
-  const [menu, config] = await Promise.all([
+  const [menu, config, active] = await Promise.all([
     readJson(menuPath(slug), { menuItems: [], categories: [] }),
     readJson(configPath(slug), null),
+    restaurantIsActive(slug),
   ]);
   return {
     menuItems: menu.menuItems || [],
     categories: menu.categories || [],
-    restaurantConfig: config,
+    // `active` (ativo/inativo no super-admin) é injetado aqui em vez de
+    // morar no config.json — assim o cardápio do cliente sabe se deve
+    // bloquear pedidos sem o admin precisar duplicar o campo em dois lugares.
+    restaurantConfig: config ? { ...config, active } : config,
   };
 }
 
