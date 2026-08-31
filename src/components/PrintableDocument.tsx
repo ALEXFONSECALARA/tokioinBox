@@ -86,6 +86,7 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({ order, con
                 <p className="font-bold">
                   📍 {order.customer.address.street}, {order.customer.address.number}
                 </p>
+                {order.customer.address.unit && <p className="font-semibold">{order.customer.address.unit}</p>}
                 {order.customer.address.complement && <p>Comp: {order.customer.address.complement}</p>}
                 <p className="font-semibold">Bairro: {order.customer.address.neighborhood}</p>
                 <p>{order.customer.address.city} • CEP: {order.customer.address.cep || 'S/N'}</p>
@@ -123,6 +124,7 @@ export const PrintableDocument: React.FC<PrintableDocumentProps> = ({ order, con
                 <p className="font-bold">
                   📍 {order.customer.address.street}, {order.customer.address.number}
                 </p>
+                {order.customer.address.unit && <p className="font-semibold">{order.customer.address.unit}</p>}
                 {order.customer.address.complement && <p>Comp: {order.customer.address.complement}</p>}
                 <p className="font-semibold">Bairro: {order.customer.address.neighborhood}</p>
                 <p>{order.customer.address.city} • CEP: {order.customer.address.cep || 'S/N'}</p>

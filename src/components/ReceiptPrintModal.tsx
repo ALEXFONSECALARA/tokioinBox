@@ -74,6 +74,7 @@ export const ReceiptPrintModal: React.FC<ReceiptPrintModalProps> = ({
     if (order.customer.address) {
       const a = order.customer.address;
       txt += `Endereço: ${a.street}, ${a.number}\n`;
+      if (a.unit) txt += `Apto/Bloco: ${a.unit}\n`;
       if (a.complement) txt += `Complemento: ${a.complement}\n`;
       txt += `Bairro: ${a.neighborhood}\n`;
       txt += `Cidade: ${a.city} - CEP: ${a.cep || 'S/N'}\n`;

@@ -34,8 +34,12 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
   const [number, setNumber] = useState(currentAddress?.number || '');
   const [neighborhood, setNeighborhood] = useState(currentAddress?.neighborhood || 'Bela Vista');
   const [city, setCity] = useState(currentAddress?.city || 'São Paulo - SP');
+  // Apto/Bloco separado do Complemento livre (Fase 4, item 7)
+  const [unit, setUnit] = useState(currentAddress?.unit || '');
   const [complement, setComplement] = useState(currentAddress?.complement || '');
   const [reference, setReference] = useState(currentAddress?.reference || '');
+  const [lat, setLat] = useState<number | undefined>(currentAddress?.lat);
+  const [lng, setLng] = useState<number | undefined>(currentAddress?.lng);
 
   const [isLoadingCep, setIsLoadingCep] = useState(false);
   const [cepError, setCepError] = useState<string | null>(null);
@@ -48,12 +52,31 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       setNumber(currentAddress.number || '');
       setNeighborhood(currentAddress.neighborhood || 'Bela Vista');
       setCity(currentAddress.city || 'São Paulo - SP');
+      setUnit(currentAddress.unit || '');
       setComplement(currentAddress.complement || '');
       setReference(currentAddress.reference || '');
+      setLat(currentAddress.lat);
+      setLng(currentAddress.lng);
     }
   }, [currentAddress, isOpen]);
 
   if (!isOpen) return null;
+
+  // Geocodificação best-effort via Nominatim (Fase 4, item 8) — mesmo padrão
+  // do CheckoutModal: nunca bloqueia nem mostra erro, é só um dado extra.
+  const geocodeAddress = async (street_: string, neighborhood_: string, city_: string, state_: string) => {
+    try {
+      const query = encodeURIComponent(`${street_ || ''}, ${neighborhood_ || ''}, ${city_ || ''}, ${state_ || ''}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${query}`);
+      const results = await res.json();
+      if (Array.isArray(results) && results[0]) {
+        setLat(parseFloat(results[0].lat));
+        setLng(parseFloat(results[0].lon));
+      }
+    } catch {
+      // Best-effort — segue sem lat/lng se falhar.
+    }
+  };
 
   // Handle CEP lookup
   const handleCepLookup = async (cepValue: string) => {
@@ -80,6 +103,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
           setComplement(data.complemento);
         }
         playSoundEffect('beep');
+        geocodeAddress(data.logradouro, data.bairro, data.localidade, data.uf);
       }
     } catch {
       setCepError('Erro ao consultar CEP. Preencha manualmente.');
@@ -136,8 +160,11 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
       number: number.trim(),
       neighborhood: neighborhood.trim(),
       city: city.trim(),
+      unit: unit.trim() || undefined,
       complement: complement.trim(),
       reference: reference.trim(),
+      lat,
+      lng,
     };
 
     playSoundEffect('success');
@@ -310,8 +337,20 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
             </div>
           </div>
 
-          {/* Complement and Reference */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          {/* Unit (Apto/Bloco), Complement and Reference */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+            <div>
+              <label className="block font-bold text-stone-700 mb-1">
+                Apto / Bloco
+              </label>
+              <input
+                type="text"
+                value={unit}
+                onChange={(e) => setUnit(e.target.value)}
+                placeholder="Apto 302, Bloco B"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
+              />
+            </div>
             <div>
               <label className="block font-bold text-stone-700 mb-1">
                 Complemento (Opcional)
@@ -320,7 +359,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                 type="text"
                 value={complement}
                 onChange={(e) => setComplement(e.target.value)}
-                placeholder="Apto 42, Bloco B"
+                placeholder="Casa azul, fundos"
                 className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)] focus:bg-white"
               />
             </div>

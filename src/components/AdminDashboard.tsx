@@ -952,6 +952,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                             <p className="font-semibold text-stone-900 flex items-center gap-1">
                               <MapPin className="w-3 h-3 text-amber-600" />
                               {order.customer.address.street}, {order.customer.address.number}
+                              {order.customer.address.unit && ` — ${order.customer.address.unit}`}
                             </p>
                             <p className="text-stone-500">
                               {order.customer.address.neighborhood} • {order.customer.address.city}
@@ -1155,7 +1156,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
                         {order.customer.address && (
                           <p className="text-[11px] text-stone-600 bg-stone-50 p-2 rounded-lg">
-                            📍 {order.customer.address.street}, {order.customer.address.number} ({order.customer.address.neighborhood})
+                            📍 {order.customer.address.street}, {order.customer.address.number}
+                            {order.customer.address.unit ? ` — ${order.customer.address.unit}` : ''} ({order.customer.address.neighborhood})
                           </p>
                         )}
 

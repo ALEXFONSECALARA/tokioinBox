@@ -61,8 +61,16 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const [number, setNumber] = useState(currentAddress?.number || '');
   const [neighborhood, setNeighborhood] = useState(currentAddress?.neighborhood || restaurantConfig.deliveryZones[0]?.name || 'Bela Vista');
   const [city, setCity] = useState(currentAddress?.city || 'São Paulo - SP');
+  // Apto/Bloco separado do Complemento livre (Fase 4, item 7) — antes só
+  // existia um campo "Complemento (Apto/Bloco)" misturando os dois conceitos.
+  const [unit, setUnit] = useState(currentAddress?.unit || '');
   const [complement, setComplement] = useState(currentAddress?.complement || '');
   const [reference, setReference] = useState(currentAddress?.reference || '');
+  // Latitude/longitude do endereço (Fase 4, item 8) — obtidas por geocodificação
+  // best-effort depois do CEP resolver a rua/bairro; nunca bloqueiam o pedido
+  // se a busca falhar (ficam undefined e seguem assim).
+  const [lat, setLat] = useState<number | undefined>(currentAddress?.lat);
+  const [lng, setLng] = useState<number | undefined>(currentAddress?.lng);
   
   // Payment
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('pix');
@@ -90,8 +98,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       setNumber(currentAddress.number || '');
       setNeighborhood(currentAddress.neighborhood || restaurantConfig.deliveryZones[0]?.name || 'Bela Vista');
       setCity(currentAddress.city || 'São Paulo - SP');
+      setUnit(currentAddress.unit || '');
       setComplement(currentAddress.complement || '');
       setReference(currentAddress.reference || '');
+      setLat(currentAddress.lat);
+      setLng(currentAddress.lng);
     }
   }, [currentAddress, isOpen]);
 
@@ -113,6 +124,25 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
     setCopiedPix(true);
     playSoundEffect('beep');
     setTimeout(() => setCopiedPix(false), 2500);
+  };
+
+  // Busca lat/long best-effort via Nominatim (OpenStreetMap, gratuito e sem
+  // chave) a partir do endereço já resolvido pelo CEP. Silencioso de
+  // propósito: nunca mostra erro pro cliente, nunca bloqueia o checkout —
+  // é só um dado extra pra cálculo de entrega por distância no futuro.
+  const geocodeAddress = async (street_: string, neighborhood_: string, city_: string, state_: string, cep_: string) => {
+    try {
+      const query = encodeURIComponent(`${street_ || ''}, ${neighborhood_ || ''}, ${city_ || ''}, ${state_ || ''}, Brasil`);
+      const res = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${query}`);
+      const results = await res.json();
+      if (Array.isArray(results) && results[0]) {
+        setLat(parseFloat(results[0].lat));
+        setLng(parseFloat(results[0].lon));
+      }
+    } catch {
+      // Best-effort — se a geocodificação falhar (rede, rate limit etc.),
+      // simplesmente não temos lat/lng pra esse endereço. Sem problema.
+    }
   };
 
   // Busca o endereço pelo CEP (ViaCEP) e preenche rua, bairro e cidade
@@ -142,6 +172,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           setComplement(data.complemento);
         }
         playSoundEffect('beep');
+        // Geocodificação best-effort (Nominatim/OpenStreetMap) pra obter
+        // lat/long a partir do endereço que o CEP acabou de resolver — usado
+        // futuramente pro cálculo de entrega por distância. Silenciosa: se
+        // falhar ou não achar nada, o pedido segue normalmente sem lat/lng.
+        geocodeAddress(data.logradouro, data.bairro, data.localidade, data.uf, cleanCep);
       }
     } catch {
       setCepError('Erro ao consultar CEP. Preencha o endereço manualmente.');
@@ -217,8 +252,11 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
           number: number.trim(),
           neighborhood: neighborhood.trim(),
           city: city.trim(),
+          unit: unit.trim() || undefined,
           complement: complement.trim() || undefined,
           reference: reference.trim() || undefined,
+          lat,
+          lng,
         } : undefined,
       },
       paymentMethod,
@@ -472,17 +510,30 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-3 gap-2">
                   <div>
                     <label className="block text-stone-700 font-bold text-xs mb-1">
-                      Complemento (Apto / Bloco)
+                      Apto / Bloco
+                    </label>
+                    <input
+                      id="checkout-unit"
+                      type="text"
+                      value={unit}
+                      onChange={(e) => setUnit(e.target.value)}
+                      placeholder="Apto 302, Bloco B"
+                      className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-stone-700 font-bold text-xs mb-1">
+                      Complemento
                     </label>
                     <input
                       id="checkout-complement"
                       type="text"
                       value={complement}
                       onChange={(e) => setComplement(e.target.value)}
-                      placeholder="Apto 42, Bloco B"
+                      placeholder="Casa azul, fundos"
                       className="w-full px-3 py-2.5 bg-white border border-stone-200 rounded-xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[var(--brand)]"
                     />
                   </div>

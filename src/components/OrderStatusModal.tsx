@@ -222,6 +222,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
                   <MapPin className="w-3.5 h-3.5 text-[var(--brand-dark)] flex-shrink-0 mt-0.5" />
                   <span>
                     {currentOrder.customer.address.street}, {currentOrder.customer.address.number}
+                    {currentOrder.customer.address.unit && ` — ${currentOrder.customer.address.unit}`}
                     {currentOrder.customer.address.complement && ` (${currentOrder.customer.address.complement})`}
                     <br />
                     {currentOrder.customer.address.neighborhood} — {currentOrder.customer.address.city}
