@@ -71,6 +71,14 @@ function configRowToApi(restaurantRow, configRow) {
     splashDurationSeconds: configRow.splash_duration_seconds ?? undefined,
     printPaperWidth: configRow.print_paper_width,
     printAutoNewOrders: configRow.print_auto_new_orders,
+    // Motor de cálculo de entrega (Fase 4, itens 9-13)
+    restaurantLocation: configRow.restaurant_location || undefined,
+    deliveryCalcMethod: configRow.delivery_calc_method || undefined,
+    deliveryHybridPriority: configRow.delivery_hybrid_priority || undefined,
+    cepRanges: configRow.cep_ranges || [],
+    distanceTiers: configRow.distance_tiers || [],
+    deliveryFormula: configRow.delivery_formula || undefined,
+    maxDeliveryRadiusKm: configRow.max_delivery_radius_km != null ? Number(configRow.max_delivery_radius_km) : undefined,
   };
 }
 
@@ -112,6 +120,14 @@ function configApiToRow(incoming) {
     splashDurationSeconds: 'splash_duration_seconds',
     printPaperWidth: 'print_paper_width',
     printAutoNewOrders: 'print_auto_new_orders',
+    // Motor de cálculo de entrega (Fase 4, itens 9-13)
+    restaurantLocation: 'restaurant_location',
+    deliveryCalcMethod: 'delivery_calc_method',
+    deliveryHybridPriority: 'delivery_hybrid_priority',
+    cepRanges: 'cep_ranges',
+    distanceTiers: 'distance_tiers',
+    deliveryFormula: 'delivery_formula',
+    maxDeliveryRadiusKm: 'max_delivery_radius_km',
   };
   for (const [apiKey, col] of Object.entries(map)) {
     if (incoming[apiKey] !== undefined) row[col] = incoming[apiKey];
