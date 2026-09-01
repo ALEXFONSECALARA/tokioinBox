@@ -297,6 +297,27 @@ app.put('/api/:slug/categories', requireAdmin, async (req, res) => {
   }
 });
 
+// Consulta leve e pública do ajuste operacional atual (Fase 4, item 15) —
+// usada pelo cliente em polling curto pra saber, quase em tempo real, se o
+// restaurante aumentou o tempo de entrega enquanto o pedido dele está aberto.
+// Não exige :slug/menu inteiro (cardápio) só pra pegar 2 campos pequenos.
+app.get('/api/:slug/operational-status', async (req, res) => {
+  const { slug } = req.params;
+  if (!(await db.restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    const { restaurantConfig } = await db.readRestaurantData(slug);
+    res.json({
+      operationalStatus: restaurantConfig?.operationalStatus || 'normal',
+      operationalAdjustmentMinutes: restaurantConfig?.operationalAdjustmentMinutes || 0,
+    });
+  } catch (err) {
+    console.error(`Erro ao consultar status operacional de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível consultar o status operacional.' });
+  }
+});
+
 app.put('/api/:slug/config', requireAdmin, async (req, res) => {
   const { slug } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
