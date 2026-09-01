@@ -1,4 +1,4 @@
-import { CartItem, Order, RestaurantConfig, SplashImageConfig, RestaurantBadge } from '../types';
+import { CartItem, Order, RestaurantConfig, SplashImageConfig, RestaurantBadge, DeliveryAddress, DeliveryCalcMethod } from '../types';
 
 // Restaurantes antigos guardam splashImages como string[] (só a URL). Esta
 // função normaliza qualquer item (string OU objeto) pro formato novo, com
@@ -212,3 +212,144 @@ export const getOrderStatusLabel = (status: Order['status']): { label: string; c
       return { label: 'Status Desconhecido', color: 'bg-gray-100 text-gray-800 border-gray-200', step: 1 };
   }
 };
+
+// ═══════════════════════════════════════════════════════════════════════
+// Motor de cálculo de entrega (Fase 4, itens 9-13)
+// ═══════════════════════════════════════════════════════════════════════
+// Decide taxa e tempo de entrega a partir do endereço do cliente, segundo o
+// método que o restaurante escolheu (bairro/CEP/distância/fórmula/híbrido).
+// Tudo aqui é aditivo: um restaurante que nunca configurou nada continua
+// caindo no método 'neighborhood', exatamente como sempre funcionou.
+
+export interface DeliveryCalcResult {
+  // null = não deu pra calcular com o que se tem (endereço incompleto pro
+  // método escolhido) — diferente de `outOfRange: true`, que é "calculou e
+  // descobriu que está fora da área atendida" (item 12).
+  fee: number | null;
+  etaMinutes: { prep: number; delivery: number; total: number } | null;
+  methodUsed: DeliveryCalcMethod | null;
+  outOfRange: boolean;
+  distanceKm?: number;
+}
+
+// Distância em linha reta entre dois pontos (fórmula de Haversine) — usada
+// pelos métodos 'distance' e 'formula'. Precisão suficiente pra faixas de
+// entrega em km; não é rota real de rua, só a distância geográfica.
+export function haversineDistanceKm(lat1: number, lng1: number, lat2: number, lng2: number): number {
+  const R = 6371;
+  const dLat = ((lat2 - lat1) * Math.PI) / 180;
+  const dLng = ((lng2 - lng1) * Math.PI) / 180;
+  const a =
+    Math.sin(dLat / 2) ** 2 +
+    Math.cos((lat1 * Math.PI) / 180) * Math.cos((lat2 * Math.PI) / 180) * Math.sin(dLng / 2) ** 2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function distanceFromRestaurant(config: RestaurantConfig, address: Partial<DeliveryAddress>): number | null {
+  const loc = config.restaurantLocation;
+  if (loc?.lat == null || loc?.lng == null || address.lat == null || address.lng == null) return null;
+  return haversineDistanceKm(loc.lat, loc.lng, address.lat, address.lng);
+}
+
+// "45-55 min" / "45" -> {prep 20 (default), delivery total-20} — os campos
+// antigos de zona (estimatedMinutes) nunca separavam preparo de entrega, só
+// os novos DistanceTier separam de verdade (item 13). Aqui é só pra manter
+// os métodos antigos (bairro/CEP) mostrando alguma estimativa coerente.
+function parseLegacyEta(estimatedMinutes?: string): { prep: number; delivery: number; total: number } | null {
+  if (!estimatedMinutes) return null;
+  const nums = estimatedMinutes.match(/\d+/g)?.map(Number);
+  if (!nums || nums.length === 0) return null;
+  const total = nums.length > 1 ? Math.round((nums[0] + nums[1]) / 2) : nums[0];
+  const prep = Math.min(20, total);
+  return { prep, delivery: Math.max(0, total - prep), total };
+}
+
+function tryNeighborhoodMethod(config: RestaurantConfig, address: Partial<DeliveryAddress>): DeliveryCalcResult | null {
+  const name = (address.neighborhood || '').trim().toLowerCase();
+  if (!name) return null;
+  // Mesmo casamento "contém" já usado no checkout antes desta mudança
+  // (zona "Centro" bate com bairro "Centro Histórico" e vice-versa) — mantido
+  // aqui pra não mudar o comportamento de quem já usa bairro hoje. `z.name`
+  // é opcional no tipo mas pode faltar em zonas antigas; usamos `neighborhood`
+  // como respaldo pra não quebrar nesse caso (bug preexistente corrigido).
+  const zone = (config.deliveryZones || []).find((z) => {
+    if (z.active === false) return false;
+    const zoneName = (z.name || z.neighborhood || '').trim().toLowerCase();
+    if (!zoneName) return false;
+    return zoneName.includes(name) || name.includes(zoneName);
+  });
+  if (!zone) return null;
+  return { fee: zone.fee, etaMinutes: parseLegacyEta(zone.estimatedMinutes), methodUsed: 'neighborhood', outOfRange: false };
+}
+
+function tryCepMethod(config: RestaurantConfig, address: Partial<DeliveryAddress>): DeliveryCalcResult | null {
+  const cep = (address.cep || '').replace(/\D/g, '');
+  if (cep.length !== 8) return null;
+  const cepNum = parseInt(cep, 10);
+  const range = (config.cepRanges || []).find((r) => {
+    if (r.active === false) return false;
+    const start = parseInt((r.cepStart || '').replace(/\D/g, ''), 10);
+    const end = parseInt((r.cepEnd || '').replace(/\D/g, ''), 10);
+    return !isNaN(start) && !isNaN(end) && cepNum >= start && cepNum <= end;
+  });
+  if (!range) return null;
+  return { fee: range.fee, etaMinutes: parseLegacyEta(range.estimatedMinutes), methodUsed: 'cep', outOfRange: false };
+}
+
+function tryDistanceMethod(config: RestaurantConfig, address: Partial<DeliveryAddress>): DeliveryCalcResult | null {
+  const dist = distanceFromRestaurant(config, address);
+  if (dist === null) return null;
+  const tier = (config.distanceTiers || []).find((t) => t.active !== false && dist >= t.fromKm && dist < t.toKm);
+  if (!tier) return null;
+  const etaMinutes =
+    tier.prepMinutes != null && tier.deliveryMinutes != null
+      ? { prep: tier.prepMinutes, delivery: tier.deliveryMinutes, total: tier.prepMinutes + tier.deliveryMinutes }
+      : null;
+  return { fee: tier.fee, etaMinutes, methodUsed: 'distance', outOfRange: false, distanceKm: dist };
+}
+
+function tryFormulaMethod(config: RestaurantConfig, address: Partial<DeliveryAddress>): DeliveryCalcResult | null {
+  const dist = distanceFromRestaurant(config, address);
+  if (dist === null || !config.deliveryFormula) return null;
+  const { baseFee, includedKm, extraFeePerKm } = config.deliveryFormula;
+  const extraKm = Math.max(0, dist - includedKm);
+  const fee = Math.round((baseFee + extraKm * extraFeePerKm) * 100) / 100;
+  return { fee, etaMinutes: null, methodUsed: 'formula', outOfRange: false, distanceKm: dist };
+}
+
+const METHOD_TRY_FNS: Record<Exclude<DeliveryCalcMethod, 'hybrid'>, (c: RestaurantConfig, a: Partial<DeliveryAddress>) => DeliveryCalcResult | null> = {
+  neighborhood: tryNeighborhoodMethod,
+  cep: tryCepMethod,
+  distance: tryDistanceMethod,
+  formula: tryFormulaMethod,
+};
+
+// Ponto de entrada do motor. Chame com a config do restaurante e o endereço
+// (parcial) do cliente — funciona com o que estiver disponível (nem todo
+// endereço vai ter lat/lng, por exemplo).
+export function calculateDeliveryFee(config: RestaurantConfig, address: Partial<DeliveryAddress>): DeliveryCalcResult {
+  const method = config.deliveryCalcMethod || 'neighborhood';
+  const sequence: Exclude<DeliveryCalcMethod, 'hybrid'>[] =
+    method === 'hybrid'
+      ? ((config.deliveryHybridPriority?.filter((m): m is Exclude<DeliveryCalcMethod, 'hybrid'> => m !== 'hybrid') || [
+          'cep',
+          'neighborhood',
+          'distance',
+        ]) as Exclude<DeliveryCalcMethod, 'hybrid'>[])
+      : [method as Exclude<DeliveryCalcMethod, 'hybrid'>];
+
+  for (const m of sequence) {
+    const result = METHOD_TRY_FNS[m]?.(config, address);
+    if (result) return result;
+  }
+
+  // Nenhum método resolveu o endereço — item 12: NUNCA cai pra primeira zona
+  // cadastrada como se fosse um match. Se dá pra saber a distância e ela
+  // ultrapassa o raio máximo configurado, informa explicitamente que está
+  // fora da área; senão, só não foi possível calcular com o que se tem.
+  const dist = distanceFromRestaurant(config, address);
+  if (config.maxDeliveryRadiusKm != null && dist !== null && dist > config.maxDeliveryRadiusKm) {
+    return { fee: null, etaMinutes: null, methodUsed: null, outOfRange: true, distanceKm: dist };
+  }
+  return { fee: null, etaMinutes: null, methodUsed: null, outOfRange: false, distanceKm: dist ?? undefined };
+}
