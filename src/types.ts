@@ -105,6 +105,21 @@ export type OrderType = 'delivery' | 'takeaway' | 'table';
 export type PaymentMethod = 'pix' | 'credit_card' | 'debit_card' | 'cash' | 'meal_voucher';
 export type OrderStatus = 'recebido' | 'em_preparo' | 'saiu_entrega' | 'pronto' | 'entregue' | 'cancelado';
 
+// Ajuste operacional em tempo real (Fase 4, itens 14-16) — o restaurante
+// sinaliza "estamos mais devagar hoje" sem precisar recadastrar os tempos
+// padrão de cada zona/faixa; o ajuste some assim que o restaurante volta ao
+// normal (ajuste = 0), e os tempos padrão continuam intactos.
+export type OperationalStatus = 'normal' | 'busy' | 'delayed';
+
+export interface OperationalAdjustmentEntry {
+  id: string;
+  timestamp: string; // ISO
+  previousMinutes: number;
+  newMinutes: number;
+  status: OperationalStatus;
+  reason?: string;
+}
+
 export interface DeliveryZone {
   id: string;
   name?: string;
@@ -310,6 +325,13 @@ export interface RestaurantConfig {
   // ("fora da área de entrega") em vez de usar a primeira zona cadastrada
   // como fallback (item 12). Ausente = sem limite de raio.
   maxDeliveryRadiusKm?: number;
+  // Ajuste operacional em tempo real (Fase 4, itens 14-16). Ausente =
+  // 'normal' / +0min (comportamento de sempre, tempo padrão exibido puro).
+  operationalStatus?: OperationalStatus;
+  operationalAdjustmentMinutes?: number;
+  // Histórico dos últimos ajustes — mais recente primeiro. Capado no
+  // backend (ver server/index.js) pra não crescer sem limite.
+  operationalAdjustmentHistory?: OperationalAdjustmentEntry[];
   drivers: DriverInfo[];
   pixKey: string;
   pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';

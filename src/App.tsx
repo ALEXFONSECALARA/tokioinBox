@@ -13,7 +13,7 @@ import {
   INITIAL_MENU_ITEMS, 
   INITIAL_RESTAURANT_CONFIG 
 } from './data/initialData';
-import { fetchMenu, createOrder, fetchOrder } from './utils/api';
+import { fetchMenu, createOrder, fetchOrder, fetchOperationalStatus } from './utils/api';
 import { formatCurrency, playSoundEffect, COUPONS } from './utils/helpers';
 import { SplashScreen } from './components/SplashScreen';
 import { Header } from './components/Header';
@@ -271,6 +271,31 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
       }
     }, 6000);
     return () => clearInterval(interval);
+  }, [activeOrderId, restaurantSlug]);
+
+  // Ajuste operacional em tempo real (Fase 4, itens 14-16): se o restaurante
+  // sinalizar "estamos mais devagar hoje" enquanto o cliente tem um pedido
+  // aberto, a previsão exibida atualiza sozinha — sem precisar dar refresh —
+  // reaproveitando o mesmo mecanismo de polling já usado acima pro status do
+  // pedido, só que numa consulta mais leve (2 campos, não o pedido inteiro).
+  const [liveOperationalAdjustment, setLiveOperationalAdjustment] = useState(0);
+  useEffect(() => {
+    if (!activeOrderId) return;
+    let cancelled = false;
+    const poll = async () => {
+      try {
+        const status = await fetchOperationalStatus(restaurantSlug);
+        if (!cancelled) setLiveOperationalAdjustment(status.operationalAdjustmentMinutes || 0);
+      } catch {
+        // idem — ignora falha pontual, tenta de novo no próximo ciclo
+      }
+    };
+    poll();
+    const interval = setInterval(poll, 6000);
+    return () => {
+      cancelled = true;
+      clearInterval(interval);
+    };
   }, [activeOrderId, restaurantSlug]);
 
   // Some com o aviso de "pedido em andamento" assim que ele for entregue ou cancelado
@@ -821,6 +846,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
         activeOrderId={activeOrderId}
         onSelectOrder={setActiveOrderId}
         restaurantConfig={restaurantConfig}
+        liveOperationalAdjustment={liveOperationalAdjustment}
       />
 
       {/* Favorites Modal */}
