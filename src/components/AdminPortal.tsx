@@ -235,6 +235,22 @@ export const AdminPortal: React.FC = () => {
   // trás de "troquei a foto e não salvou" — o upload em si sempre funcionou.
   const [saveError, setSaveError] = useState<string | null>(null);
 
+  // Serializa gravações para impedir que dois PUTs simultâneos (por exemplo,
+  // upload da foto + ajuste de capa) terminem fora de ordem e sobrescrevam a
+  // alteração mais nova. Cada domínio tem sua própria fila.
+  const configSaveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
+  const menuSaveQueueRef = React.useRef<Promise<unknown>>(Promise.resolve());
+  const latestConfigRef = React.useRef<RestaurantConfig | null>(null);
+  const latestMenuRef = React.useRef<MenuItem[]>([]);
+
+  useEffect(() => {
+    latestConfigRef.current = restaurantConfig;
+  }, [restaurantConfig]);
+
+  useEffect(() => {
+    latestMenuRef.current = menuItems;
+  }, [menuItems]);
+
   // Sempre a versão mais recente do slug pedido — usada dentro dos efeitos
   // assíncronos abaixo pra descartar respostas que chegaram atrasadas (race
   // condition clássica de trocar de restaurante rápido demais).
@@ -396,14 +412,25 @@ export const AdminPortal: React.FC = () => {
   };
 
   const persistMenuItems = (items: MenuItem[]) => {
-    const previous = menuItems; // pra reverter se o servidor recusar/falhar
+    const previous = latestMenuRef.current;
+    latestMenuRef.current = items;
     setMenuItems(items);
     setIsSaving(true);
     setSaveError(null);
-    saveMenuItems(selectedSlug, token, items)
+
+    menuSaveQueueRef.current = menuSaveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        // Usa a versão mais recente no momento em que a fila executa.
+        const next = latestMenuRef.current;
+        const saved = await saveMenuItems(selectedSlug, token, next);
+        latestMenuRef.current = saved;
+        setMenuItems(saved);
+      })
       .catch((err) => {
         console.error('Erro ao salvar itens:', err);
-        setMenuItems(previous); // desfaz a atualização otimista — a tela não mente sobre o que foi salvo
+        latestMenuRef.current = previous;
+        setMenuItems(previous);
         setSaveError(err?.message || 'Não foi possível salvar o cardápio. Tente novamente.');
       })
       .finally(() => setIsSaving(false));
@@ -433,14 +460,28 @@ export const AdminPortal: React.FC = () => {
   };
 
   const handleUpdateConfig = (config: RestaurantConfig) => {
-    const previous = restaurantConfig;
+    const previous = latestConfigRef.current;
+    latestConfigRef.current = config;
     setRestaurantConfig(config);
     setIsSaving(true);
     setSaveError(null);
-    saveRestaurantConfig(selectedSlug, token, config)
+
+    configSaveQueueRef.current = configSaveQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        // Serialização evita que uma resposta antiga sobrescreva uma foto nova.
+        const next = latestConfigRef.current;
+        if (!next) throw new Error('Configuração do restaurante indisponível.');
+        const saved = await saveRestaurantConfig(selectedSlug, token, next);
+        latestConfigRef.current = saved;
+        setRestaurantConfig(saved);
+      })
       .catch((err) => {
         console.error('Erro ao salvar configuração:', err);
-        setRestaurantConfig(previous); // inclui logo/banner/splash/badges/etc — tudo que passa por aqui
+        if (previous) {
+          latestConfigRef.current = previous;
+          setRestaurantConfig(previous);
+        }
         setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
       })
       .finally(() => setIsSaving(false));
