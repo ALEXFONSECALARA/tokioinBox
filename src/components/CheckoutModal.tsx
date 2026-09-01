@@ -254,6 +254,10 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       total,
       orderType,
       driver: assignedDriver,
+      // Guarda o tempo PADRÃO (sem o ajuste operacional) — o ajuste em si é
+      // sempre recalculado ao vivo na hora de exibir (item 14: "tempo padrão
+      // + ajuste operacional ATUAL"), nunca fica congelado no valor de quando
+      // o pedido foi criado. Ver OrderStatusModal, que soma o ajuste vigente.
       estimatedMinutes: deliveryCalc.etaMinutes?.total ?? 35,
       customer: {
         name: name.trim(),

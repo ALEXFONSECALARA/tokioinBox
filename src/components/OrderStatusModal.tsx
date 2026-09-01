@@ -24,6 +24,11 @@ interface OrderStatusModalProps {
   activeOrderId: string | null;
   onSelectOrder: (id: string) => void;
   restaurantConfig: RestaurantConfig;
+  // Ajuste operacional atual (Fase 4, itens 14-16), atualizado por polling
+  // enquanto o modal está de olho num pedido aberto — soma ao tempo padrão
+  // do pedido pra refletir "restaurante mais devagar hoje" quase em tempo
+  // real, sem o cliente precisar dar refresh na página.
+  liveOperationalAdjustment?: number;
 }
 
 export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
@@ -33,6 +38,7 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
   activeOrderId,
   onSelectOrder,
   restaurantConfig,
+  liveOperationalAdjustment = 0,
 }) => {
   if (!isOpen || orders.length === 0) return null;
 
@@ -243,10 +249,31 @@ export const OrderStatusModal: React.FC<OrderStatusModalProps> = ({
 
             <div className="bg-stone-50 p-4 rounded-2xl border border-stone-200 space-y-1.5">
               <span className="text-[10px] uppercase font-black text-stone-400">Previsão & Pagamento</span>
-              <p className="font-bold text-stone-900 text-sm flex items-center gap-1.5">
-                <Clock className="w-4 h-4 text-[var(--brand-dark)]" />
-                <span>Previsão: {currentOrder.estimatedMinutes || 35} - {(currentOrder.estimatedMinutes || 35) + 15} min</span>
-              </p>
+              {(() => {
+                const baseMin = currentOrder.estimatedMinutes || 35;
+                // Só aplica o ajuste operacional enquanto o pedido ainda está
+                // em andamento — um pedido já entregue/cancelado não muda de
+                // previsão retroativamente.
+                const isOngoing = !['entregue', 'cancelado'].includes(currentOrder.status);
+                const adjustedMin = isOngoing ? baseMin + liveOperationalAdjustment : baseMin;
+                const wasAdjusted = isOngoing && liveOperationalAdjustment > 0;
+                return (
+                  <>
+                    <p className={`font-bold text-sm flex items-center gap-1.5 ${wasAdjusted ? 'text-amber-700' : 'text-stone-900'}`}>
+                      <Clock className="w-4 h-4 text-[var(--brand-dark)]" />
+                      <span>
+                        {wasAdjusted ? 'Previsão atualizada: ' : 'Previsão: '}
+                        {adjustedMin} - {adjustedMin + 15} min
+                      </span>
+                    </p>
+                    {wasAdjusted && (
+                      <p className="text-[11px] text-amber-600 font-medium flex items-center gap-1">
+                        ⚠️ O restaurante está com o movimento mais alto agora — previsão ajustada em +{liveOperationalAdjustment} min.
+                      </p>
+                    )}
+                  </>
+                );
+              })()}
               <p className="text-xs text-stone-600">
                 Pagamento: <strong className="uppercase">{currentOrder.paymentMethod.replace('_', ' ')}</strong>
                 {currentOrder.cardBrand && ` (${currentOrder.cardBrand})`}

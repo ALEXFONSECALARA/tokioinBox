@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { uploadImage } from '../utils/api';
 import { Upload, Loader2, ImageOff } from 'lucide-react';
 
@@ -29,7 +29,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   aspect = 'wide',
   onUploadingChange,
 }) => {
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputId = useId();
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,13 +52,23 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       setError(`Imagem muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). O limite é 8MB.`);
       return;
     }
+    if (!token) {
+      // Acontece se a sessão do admin expirou e o token some do estado —
+      // sem isso a requisição ia falhar lá na frente com um 401 confuso.
+      setError('Sua sessão expirou. Saia e faça login novamente antes de enviar fotos.');
+      return;
+    }
 
     setUploading(true);
     onUploadingChange?.(true);
     try {
       const url = await uploadImage(slug, token, file);
+      if (!url) {
+        throw new Error('O servidor não retornou a URL da imagem enviada.');
+      }
       onChange(url);
     } catch (err: any) {
+      console.error('Falha ao enviar imagem:', err);
       setError(err?.message || 'Não foi possível enviar a foto. Verifique sua conexão e tente novamente.');
     } finally {
       setUploading(false);
@@ -88,23 +98,30 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
         </div>
 
         <div className="flex-1 min-w-0 space-y-1.5">
-          <button
-            type="button"
-            onClick={() => inputRef.current?.click()}
-            disabled={uploading}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 hover:bg-stone-800 text-white text-xs font-bold transition-colors disabled:opacity-50"
+          {/* <label htmlFor=...> é mais confiável que onClick + ref.click()
+              pra abrir o seletor de arquivo — funciona mesmo em navegadores/
+              extensões que bloqueiam cliques disparados via JavaScript em
+              inputs ocultos. O estado `uploading` desabilita visualmente e
+              via pointer-events, já que <label> não tem atributo disabled. */}
+          <label
+            htmlFor={inputId}
+            aria-disabled={uploading}
+            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-stone-900 text-white text-xs font-bold transition-colors select-none ${
+              uploading ? 'opacity-50 pointer-events-none cursor-default' : 'hover:bg-stone-800 cursor-pointer'
+            }`}
           >
             <Upload className="w-3.5 h-3.5" />
             <span>{uploading ? 'Enviando...' : value ? 'Trocar foto' : 'Enviar foto do computador'}</span>
-          </button>
+          </label>
           <input
-            ref={inputRef}
+            id={inputId}
             type="file"
             accept="image/*"
             className="hidden"
+            disabled={uploading}
             onChange={handleFileChange}
           />
-          {error && <p className="text-[11px] text-red-600">{error}</p>}
+          {error && <p className="text-[11px] text-red-600 font-medium">⚠️ {error}</p>}
         </div>
       </div>
     </div>

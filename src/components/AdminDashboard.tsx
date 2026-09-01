@@ -438,6 +438,38 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [copyZonesLoading, setCopyZonesLoading] = useState(false);
   const [copyZonesError, setCopyZonesError] = useState<string | null>(null);
 
+  // ---------- Ajuste operacional em tempo real (Fase 4, itens 14-16) ----------
+  const [showOperationalPanel, setShowOperationalPanel] = useState(false);
+  const [opReason, setOpReason] = useState('');
+  const currentOpStatus = localConfig.operationalStatus || 'normal';
+  const currentOpAdjustment = localConfig.operationalAdjustmentMinutes || 0;
+
+  const applyOperationalAdjustment = (status: 'normal' | 'busy' | 'delayed', minutes: number) => {
+    const previousMinutes = currentOpAdjustment;
+    if (previousMinutes === minutes && currentOpStatus === status) return;
+    const entry = {
+      id: `adj-${Date.now()}`,
+      timestamp: new Date().toISOString(),
+      previousMinutes,
+      newMinutes: minutes,
+      status,
+      reason: opReason.trim() || undefined,
+    };
+    // Histórico capado em 50 entradas (mais recente primeiro) — não cresce
+    // pra sempre, mas guarda um bom retrospecto de operação (item 16).
+    const history = [entry, ...(localConfig.operationalAdjustmentHistory || [])].slice(0, 50);
+    const updated = {
+      ...localConfig,
+      operationalStatus: status,
+      operationalAdjustmentMinutes: minutes,
+      operationalAdjustmentHistory: history,
+    };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+    setOpReason('');
+    playSoundEffect('beep');
+  };
+
   // ---------- Motor de cálculo de entrega (Fase 4, itens 9-13) ----------
   const [showDeliveryEngine, setShowDeliveryEngine] = useState(false);
   const [locCepLoading, setLocCepLoading] = useState(false);
@@ -2061,6 +2093,109 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span>Adicionar Novo Bairro</span>
                 </button>
               </div>
+            </div>
+
+            {/* ================= Ajuste Operacional em Tempo Real (Fase 4, itens 14-16) ================= */}
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+              <button onClick={() => setShowOperationalPanel((v) => !v)} className="w-full flex items-center justify-between p-4">
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-stone-500" />
+                  <span className="font-bold text-stone-900 text-sm">Status Operacional</span>
+                  <span
+                    className={`text-[10px] uppercase tracking-wide px-2 py-0.5 rounded-full font-bold ${
+                      currentOpStatus === 'delayed'
+                        ? 'bg-rose-100 text-rose-700'
+                        : currentOpStatus === 'busy'
+                        ? 'bg-amber-100 text-amber-700'
+                        : 'bg-emerald-100 text-emerald-700'
+                    }`}
+                  >
+                    {currentOpStatus === 'delayed' ? '🔴 Atrasado' : currentOpStatus === 'busy' ? '🟡 Movimento alto' : '🟢 Normal'}
+                    {currentOpAdjustment > 0 ? ` +${currentOpAdjustment}min` : ''}
+                  </span>
+                </div>
+                {showOperationalPanel ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+              </button>
+
+              {showOperationalPanel && (
+                <div className="border-t border-stone-200 p-4 space-y-4 text-xs sm:text-sm">
+                  <p className="text-[11px] text-stone-500 -mt-1">
+                    O ajuste soma ao tempo padrão de cada zona/faixa na hora de mostrar ao cliente — não altera os tempos
+                    cadastrados. Pedidos já abertos são atualizados automaticamente, sem o cliente precisar dar refresh.
+                    Fórmula: <strong>tempo padrão + ajuste atual = tempo exibido</strong>.
+                  </p>
+
+                  <div>
+                    <h4 className="font-bold text-stone-800 mb-1.5">Status</h4>
+                    <div className="flex gap-1.5">
+                      {([
+                        ['normal', '🟢 Normal'],
+                        ['busy', '🟡 Movimento alto'],
+                        ['delayed', '🔴 Atrasado'],
+                      ] as const).map(([value, label]) => (
+                        <button
+                          key={value}
+                          type="button"
+                          onClick={() => applyOperationalAdjustment(value, currentOpAdjustment)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                            currentOpStatus === value ? 'bg-stone-900 border-stone-900 text-white' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                          }`}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 className="font-bold text-stone-800 mb-1.5">Ajuste de tempo atual</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {[0, 5, 10, 15, 20, 30].map((min) => (
+                        <button
+                          key={min}
+                          type="button"
+                          onClick={() => applyOperationalAdjustment(min === 0 ? 'normal' : currentOpStatus === 'normal' ? 'busy' : currentOpStatus, min)}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                            currentOpAdjustment === min ? 'bg-amber-500 border-amber-500 text-slate-950' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                          }`}
+                        >
+                          +{min} min
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Motivo (opcional, fica no histórico)</label>
+                    <input
+                      type="text"
+                      value={opReason}
+                      onChange={(e) => setOpReason(e.target.value)}
+                      placeholder="Ex: chuva forte, cozinha com pedidos acumulados…"
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                  </div>
+
+                  {(localConfig.operationalAdjustmentHistory || []).length > 0 && (
+                    <div>
+                      <h4 className="font-bold text-stone-800 mb-1.5">Histórico de Ajustes</h4>
+                      <div className="space-y-1 max-h-48 overflow-y-auto">
+                        {(localConfig.operationalAdjustmentHistory || []).slice(0, 15).map((entry) => (
+                          <div key={entry.id} className="flex items-center gap-2 bg-stone-50 p-2 rounded-lg border border-stone-200 text-[11px]">
+                            <span className="text-stone-400 shrink-0">
+                              {new Date(entry.timestamp).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            <span className="flex-1 truncate">
+                              {entry.previousMinutes}min → <strong>+{entry.newMinutes}min</strong>
+                              {entry.reason ? ` · ${entry.reason}` : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ================= Motor de Cálculo de Entrega (Fase 4, itens 9-13) ================= */}
