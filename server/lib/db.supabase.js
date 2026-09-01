@@ -79,6 +79,10 @@ function configRowToApi(restaurantRow, configRow) {
     distanceTiers: configRow.distance_tiers || [],
     deliveryFormula: configRow.delivery_formula || undefined,
     maxDeliveryRadiusKm: configRow.max_delivery_radius_km != null ? Number(configRow.max_delivery_radius_km) : undefined,
+    // Ajuste operacional em tempo real (Fase 4, itens 14-16)
+    operationalStatus: configRow.operational_status || undefined,
+    operationalAdjustmentMinutes: configRow.operational_adjustment_minutes != null ? Number(configRow.operational_adjustment_minutes) : undefined,
+    operationalAdjustmentHistory: configRow.operational_adjustment_history || [],
   };
 }
 
@@ -128,6 +132,9 @@ function configApiToRow(incoming) {
     distanceTiers: 'distance_tiers',
     deliveryFormula: 'delivery_formula',
     maxDeliveryRadiusKm: 'max_delivery_radius_km',
+    operationalStatus: 'operational_status',
+    operationalAdjustmentMinutes: 'operational_adjustment_minutes',
+    operationalAdjustmentHistory: 'operational_adjustment_history',
   };
   for (const [apiKey, col] of Object.entries(map)) {
     if (incoming[apiKey] !== undefined) row[col] = incoming[apiKey];
