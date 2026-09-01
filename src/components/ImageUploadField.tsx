@@ -9,6 +9,12 @@ interface ImageUploadFieldProps {
   value: string;
   onChange: (url: string) => void;
   aspect?: 'square' | 'wide';
+  // Avisa o formulário-pai quando um upload está em andamento, pra ele poder
+  // desabilitar o botão de Salvar enquanto isso — sem isso, clicar em Salvar
+  // durante o envio da foto salvava o item com a foto ANTIGA (a nova só
+  // chegava depois, e o clique em Salvar já tinha ignorado ela). Foi uma
+  // causa real de "troquei a foto e não salvou" encontrada nesta rodada.
+  onUploadingChange?: (uploading: boolean) => void;
 }
 
 // Campo de upload de foto local: mostra a prévia da imagem atual, um botão pra
@@ -21,6 +27,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   value,
   onChange,
   aspect = 'wide',
+  onUploadingChange,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
@@ -32,6 +39,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     if (!file) return;
     setError(null);
     setUploading(true);
+    onUploadingChange?.(true);
     try {
       const url = await uploadImage(slug, token, file);
       onChange(url);
@@ -39,6 +47,7 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
       setError(err?.message || 'Não foi possível enviar a foto.');
     } finally {
       setUploading(false);
+      onUploadingChange?.(false);
     }
   };
 

@@ -120,6 +120,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [categoryDraftName, setCategoryDraftName] = useState('');
   const [categoryDraftIcon, setCategoryDraftIcon] = useState('');
   const [categoryDraftImage, setCategoryDraftImage] = useState('');
+  const [categoryImageUploading, setCategoryImageUploading] = useState(false);
   // Categoria que o admin tentou excluir mas ainda tem produtos — pede pra
   // escolher outra categoria de destino antes de seguir com a exclusão
   // (nunca apaga produto junto com a categoria).
@@ -144,7 +145,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
   const saveCategoryForm = () => {
     const name = categoryDraftName.trim();
-    if (!name) return;
+    if (!name || categoryImageUploading) return; // ver comentário em handleSaveDishSubmit
     if (editingCategoryId === 'new') {
       const id = name
         .toLowerCase()
@@ -233,6 +234,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [driverVehicle, setDriverVehicle] = useState('Honda CG 160 Fan');
   const [driverPlate, setDriverPlate] = useState('');
   const [driverPhoto, setDriverPhoto] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
+  const [driverPhotoUploading, setDriverPhotoUploading] = useState(false);
 
   // Order Dispatch Modal (assigning driver)
   const [dispatchOrder, setDispatchOrder] = useState<Order | null>(null);
@@ -252,6 +254,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [dishPrepTime, setDishPrepTime] = useState('20');
   const [dishServes, setDishServes] = useState('1');
   const [dishTags, setDishTags] = useState<DietaryTag[]>([]);
+  // Trava o botão de Salvar enquanto a foto do prato ainda está subindo —
+  // sem isso, salvar durante o upload gravava a foto ANTIGA (a nova só
+  // chegava depois e ficava perdida, sem nenhum aviso).
+  const [dishImageUploading, setDishImageUploading] = useState(false);
 
   // Config Form State
   const [localConfig, setLocalConfig] = useState<RestaurantConfig>({ ...restaurantConfig });
@@ -315,6 +321,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveDishSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!dishName.trim() || !dishPrice) return;
+    if (dishImageUploading) return; // segunda trava — o botão já fica disabled, mas o form pode ser submetido via Enter
 
     const priceNum = parseFloat(dishPrice.replace(',', '.'));
     const origPriceNum = dishOriginalPrice ? parseFloat(dishOriginalPrice.replace(',', '.')) : undefined;
@@ -483,6 +490,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleSaveDriverSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!driverName.trim()) return;
+    if (driverPhotoUploading) return; // ver comentário equivalente em handleSaveDishSubmit
 
     const currentDrivers = localConfig.drivers || [];
     let updatedDrivers: DriverInfo[];
@@ -1367,15 +1375,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               label="Imagem da categoria (opcional)"
                               value={categoryDraftImage}
                               onChange={setCategoryDraftImage}
+                              onUploadingChange={setCategoryImageUploading}
                               aspect="wide"
                             />
-                            <div className="flex justify-end gap-2 pt-1">
+                            <div className="flex justify-end items-center gap-2 pt-1">
+                              {categoryImageUploading && (
+                                <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto…</span>
+                              )}
                               <button onClick={closeCategoryForm} className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800">
                                 Cancelar
                               </button>
                               <button
                                 onClick={saveCategoryForm}
-                                disabled={!categoryDraftName.trim()}
+                                disabled={!categoryDraftName.trim() || categoryImageUploading}
                                 className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl disabled:opacity-40"
                               >
                                 Salvar
@@ -1412,15 +1424,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         label="Imagem da categoria (opcional)"
                         value={categoryDraftImage}
                         onChange={setCategoryDraftImage}
+                        onUploadingChange={setCategoryImageUploading}
                         aspect="wide"
                       />
-                      <div className="flex justify-end gap-2 pt-1">
+                      <div className="flex justify-end items-center gap-2 pt-1">
+                        {categoryImageUploading && (
+                          <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto…</span>
+                        )}
                         <button onClick={closeCategoryForm} className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800">
                           Cancelar
                         </button>
                         <button
                           onClick={saveCategoryForm}
-                          disabled={!categoryDraftName.trim()}
+                          disabled={!categoryDraftName.trim() || categoryImageUploading}
                           className="px-3 py-1.5 text-xs font-bold bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl disabled:opacity-40"
                         >
                           Criar categoria
@@ -3081,11 +3097,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   label="Foto de Perfil do Entregador"
                   value={driverPhoto}
                   onChange={setDriverPhoto}
+                  onUploadingChange={setDriverPhotoUploading}
                   aspect="square"
                 />
               </div>
 
-              <div className="pt-3 flex justify-end gap-2">
+              <div className="pt-3 flex justify-end items-center gap-2">
+                {driverPhotoUploading && (
+                  <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto, aguarde…</span>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsDriverModalOpen(false)}
@@ -3095,7 +3115,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs shadow-xs"
+                  disabled={driverPhotoUploading}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Salvar Entregador
                 </button>
@@ -3182,6 +3203,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   label="Foto do Prato"
                   value={dishImage}
                   onChange={setDishImage}
+                  onUploadingChange={setDishImageUploading}
                   aspect="wide"
                 />
                 <details className="mt-1.5">
@@ -3258,7 +3280,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-stone-200 flex justify-end gap-2">
+              <div className="pt-3 border-t border-stone-200 flex justify-end items-center gap-2">
+                {dishImageUploading && (
+                  <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto, aguarde…</span>
+                )}
                 <button
                   type="button"
                   onClick={() => setIsDishModalOpen(false)}
@@ -3268,7 +3293,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold shadow-xs"
+                  disabled={dishImageUploading}
+                  className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {editingDish ? 'Salvar Alterações' : 'Adicionar Prato'}
                 </button>
