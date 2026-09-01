@@ -30,5 +30,8 @@
   "restaurantLocation": null,
   "deliveryCalcMethod": null,
   "distanceTiers": [],
-  "maxDeliveryRadiusKm": null
+  "maxDeliveryRadiusKm": null,
+  "operationalStatus": null,
+  "operationalAdjustmentMinutes": null,
+  "operationalAdjustmentHistory": []
 }
