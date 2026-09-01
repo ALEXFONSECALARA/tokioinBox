@@ -38,13 +38,28 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
     e.target.value = ''; // permite escolher o mesmo arquivo de novo depois
     if (!file) return;
     setError(null);
+
+    // Validação no navegador ANTES de gastar uma requisição — feedback
+    // imediato em vez de esperar a viagem até o servidor pra descobrir que
+    // o arquivo é grande/tipo errado demais (o servidor também valida isso,
+    // essa é só a camada rápida que evita o vai-e-volta).
+    if (!/^image\//.test(file.type)) {
+      setError('Envie um arquivo de imagem (jpg, png, webp, gif ou avif).');
+      return;
+    }
+    const MAX_BYTES = 8 * 1024 * 1024;
+    if (file.size > MAX_BYTES) {
+      setError(`Imagem muito grande (${(file.size / 1024 / 1024).toFixed(1)}MB). O limite é 8MB.`);
+      return;
+    }
+
     setUploading(true);
     onUploadingChange?.(true);
     try {
       const url = await uploadImage(slug, token, file);
       onChange(url);
     } catch (err: any) {
-      setError(err?.message || 'Não foi possível enviar a foto.');
+      setError(err?.message || 'Não foi possível enviar a foto. Verifique sua conexão e tente novamente.');
     } finally {
       setUploading(false);
       onUploadingChange?.(false);

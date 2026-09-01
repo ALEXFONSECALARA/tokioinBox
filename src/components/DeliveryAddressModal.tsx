@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { DeliveryAddress, RestaurantConfig, DeliveryZone } from '../types';
-import { formatCurrency, playSoundEffect } from '../utils/helpers';
+import { formatCurrency, playSoundEffect, calculateDeliveryFee } from '../utils/helpers';
 import { 
   X, 
   MapPin, 
@@ -127,13 +127,20 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
     }
   };
 
-  // Find matching delivery zone
-  const currentZone = restaurantConfig.deliveryZones.find(
-    (z) => z.name.toLowerCase().includes(neighborhood.toLowerCase()) || neighborhood.toLowerCase().includes(z.name.toLowerCase())
-  ) || restaurantConfig.deliveryZones[0];
+  // Motor de cálculo de entrega (Fase 4, itens 9-13) — antes este preview
+  // caía automaticamente na PRIMEIRA zona cadastrada quando o bairro não
+  // batia com nenhuma (bug real que o item 12 do escopo pede pra corrigir:
+  // nunca assumir a primeira zona como se fosse a certa). Agora usa o mesmo
+  // motor do checkout, com o mesmo fallback padrão (taxa fixa do
+  // restaurante) só quando não dá pra calcular de nenhuma forma.
+  const deliveryCalc = calculateDeliveryFee(restaurantConfig, { neighborhood, cep, lat, lng });
+  const currentZoneFee = deliveryCalc.fee ?? restaurantConfig.deliveryFee;
+  const currentZoneEta = deliveryCalc.etaMinutes
+    ? `${deliveryCalc.etaMinutes.total} min`
+    : restaurantConfig.estimatedDeliveryTime;
 
   const handleSelectZoneQuick = (zone: DeliveryZone) => {
-    setNeighborhood(zone.name);
+    setNeighborhood(zone.name || zone.neighborhood);
     playSoundEffect('beep');
   };
 
@@ -253,7 +260,8 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-1.5 max-h-36 overflow-y-auto p-1 bg-stone-50 rounded-2xl border border-stone-200">
               {restaurantConfig.deliveryZones.map((zone) => {
-                const isSelected = neighborhood.toLowerCase() === zone.name.toLowerCase();
+                const zoneName = zone.name || zone.neighborhood;
+                const isSelected = neighborhood.toLowerCase() === zoneName.toLowerCase();
                 return (
                   <button
                     key={zone.id}
@@ -265,7 +273,7 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
                         : 'bg-white text-stone-700 border-stone-200 hover:bg-stone-100'
                     }`}
                   >
-                    <p className="text-xs font-bold truncate">{zone.name}</p>
+                    <p className="text-xs font-bold truncate">{zoneName}</p>
                     <p className="text-[10px] opacity-80 mt-0.5">
                       Taxa: {formatCurrency(zone.fee)}
                     </p>
@@ -385,11 +393,11 @@ export const DeliveryAddressModal: React.FC<DeliveryAddressModalProps> = ({
               </div>
               <div>
                 <p className="text-xs font-extrabold text-stone-900">
-                  Taxa para {neighborhood || 'seu bairro'}: {formatCurrency(currentZone ? currentZone.fee : restaurantConfig.deliveryFee)}
+                  Taxa para {neighborhood || 'seu bairro'}: {formatCurrency(currentZoneFee)}
                 </p>
                 <p className="text-[11px] text-stone-600 flex items-center gap-1 mt-0.5">
                   <Clock className="w-3.5 h-3.5 text-stone-500" />
-                  <span>Tempo estimado: {currentZone ? currentZone.estimatedTime : restaurantConfig.estimatedDeliveryTime}</span>
+                  <span>Tempo estimado: {currentZoneEta}</span>
                 </p>
               </div>
             </div>

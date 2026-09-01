@@ -19,7 +19,7 @@ import { AdminDashboard } from './AdminDashboard';
 import { playSoundEffect } from '../utils/helpers';
 import { LAYOUTS } from '../utils/layouts';
 import { LayoutPreviewModal } from './LayoutPreviewModal';
-import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye, Power } from 'lucide-react';
+import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye, Power, AlertTriangle, X } from 'lucide-react';
 
 const TOKEN_KEY = 'super_admin_token';
 
@@ -228,6 +228,12 @@ export const AdminPortal: React.FC = () => {
   // de restaurante ou sair, e pra travar a barra de troca durante o salvamento.
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  // Erro visível de "salvar falhou" (Fase 4) — antes, um PUT que falhasse
+  // (sessão expirada, rede caiu, erro do Supabase) só ia pro console.error:
+  // o admin via a mudança na tela (atualização otimista) e achava que tinha
+  // salvo, mas o servidor nunca recebeu. Essa foi a causa raiz real por
+  // trás de "troquei a foto e não salvou" — o upload em si sempre funcionou.
+  const [saveError, setSaveError] = useState<string | null>(null);
 
   // Sempre a versão mais recente do slug pedido — usada dentro dos efeitos
   // assíncronos abaixo pra descartar respostas que chegaram atrasadas (race
@@ -390,10 +396,16 @@ export const AdminPortal: React.FC = () => {
   };
 
   const persistMenuItems = (items: MenuItem[]) => {
+    const previous = menuItems; // pra reverter se o servidor recusar/falhar
     setMenuItems(items);
     setIsSaving(true);
+    setSaveError(null);
     saveMenuItems(selectedSlug, token, items)
-      .catch((err) => console.error('Erro ao salvar itens:', err))
+      .catch((err) => {
+        console.error('Erro ao salvar itens:', err);
+        setMenuItems(previous); // desfaz a atualização otimista — a tela não mente sobre o que foi salvo
+        setSaveError(err?.message || 'Não foi possível salvar o cardápio. Tente novamente.');
+      })
       .finally(() => setIsSaving(false));
   };
 
@@ -407,23 +419,46 @@ export const AdminPortal: React.FC = () => {
   };
 
   const persistCategories = (next: Category[]) => {
+    const previous = categories;
     setCategories(next);
     setIsSaving(true);
+    setSaveError(null);
     saveCategories(selectedSlug, token, next)
-      .catch((err) => console.error('Erro ao salvar categorias:', err))
+      .catch((err) => {
+        console.error('Erro ao salvar categorias:', err);
+        setCategories(previous);
+        setSaveError(err?.message || 'Não foi possível salvar as categorias. Tente novamente.');
+      })
       .finally(() => setIsSaving(false));
   };
 
   const handleUpdateConfig = (config: RestaurantConfig) => {
+    const previous = restaurantConfig;
     setRestaurantConfig(config);
     setIsSaving(true);
+    setSaveError(null);
     saveRestaurantConfig(selectedSlug, token, config)
-      .catch((err) => console.error('Erro ao salvar configuração:', err))
+      .catch((err) => {
+        console.error('Erro ao salvar configuração:', err);
+        setRestaurantConfig(previous); // inclui logo/banner/splash/badges/etc — tudo que passa por aqui
+        setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
+      })
       .finally(() => setIsSaving(false));
   };
 
   return (
     <div className="min-h-screen bg-stone-100">
+      {/* Banner de erro ao salvar (Fase 4) — antes uma falha ficava só no
+          console.error, invisível pro admin, que achava que tinha salvo. */}
+      {saveError && (
+        <div className="bg-rose-600 text-white px-4 py-2.5 flex items-center gap-2 text-xs sm:text-sm font-semibold">
+          <AlertTriangle size={16} className="shrink-0" />
+          <span className="flex-1">{saveError}</span>
+          <button onClick={() => setSaveError(null)} className="p-1 rounded-lg hover:bg-rose-700 shrink-0" title="Fechar aviso">
+            <X size={14} />
+          </button>
+        </div>
+      )}
       {/* Barra de troca de restaurante do super-admin */}
       <div className="bg-stone-900 text-white px-4 py-2.5 flex items-center gap-3 overflow-x-auto">
         <span className="flex items-center gap-1.5 text-xs font-medium text-stone-400 shrink-0">

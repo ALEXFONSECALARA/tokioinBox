@@ -10,7 +10,8 @@ import {
 import { 
   formatCurrency, 
   generateWhatsAppOrderUrl, 
-  playSoundEffect 
+  playSoundEffect,
+  calculateDeliveryFee
 } from '../utils/helpers';
 import confetti from 'canvas-confetti';
 import { 
@@ -111,11 +112,15 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
   const subtotal = items.reduce((acc, item) => acc + item.totalPrice, 0);
   const isFreeDelivery = (restaurantConfig.freeDeliveryEnabled ?? true) && subtotal >= (restaurantConfig.freeDeliveryThreshold || 80);
 
-  // Find fee based on selected neighborhood
-  const activeZone = restaurantConfig.deliveryZones.find(
-    (z) => z.name.toLowerCase().includes(neighborhood.toLowerCase()) || neighborhood.toLowerCase().includes(z.name.toLowerCase())
-  );
-  const baseDeliveryFee = activeZone ? activeZone.fee : restaurantConfig.deliveryFee;
+  // Motor de cálculo de entrega (Fase 4, itens 9-13) — decide taxa/tempo
+  // conforme o método que o restaurante escolheu (bairro/CEP/distância/
+  // fórmula/híbrido). Sem fee resolvido e sem estar fora da área (endereço
+  // incompleto pro método, ou restaurante nunca configurou nada além de
+  // bairro), cai pro valor padrão fixo de sempre — exatamente o
+  // comportamento anterior a esta mudança, preservado de propósito.
+  const deliveryCalc = calculateDeliveryFee(restaurantConfig, { neighborhood, cep, lat, lng });
+  const isOutOfDeliveryRange = orderType === 'delivery' && deliveryCalc.outOfRange;
+  const baseDeliveryFee = deliveryCalc.fee ?? restaurantConfig.deliveryFee;
   const deliveryFee = orderType === 'delivery' ? (isFreeDelivery ? 0 : baseDeliveryFee) : 0;
   const total = Math.max(0, subtotal - discountAmount + deliveryFee);
 
@@ -215,6 +220,13 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       return;
     }
 
+    // Item 12: endereço fora do raio máximo de entrega configurado é
+    // recusado aqui — nunca aceito silenciosamente com a taxa padrão.
+    if (isOutOfDeliveryRange) {
+      setErrorMsg('Este endereço está fora da nossa área de entrega no momento.');
+      return;
+    }
+
     if (paymentMethod === 'cash' && needCashChange) {
       const changeNum = parseFloat(cashChangeFor.replace(',', '.'));
       if (isNaN(changeNum) || changeNum < total) {
@@ -242,7 +254,7 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
       total,
       orderType,
       driver: assignedDriver,
-      estimatedMinutes: activeZone ? parseInt(activeZone.estimatedTime.split('-')[0]) || 35 : 35,
+      estimatedMinutes: deliveryCalc.etaMinutes?.total ?? 35,
       customer: {
         name: name.trim(),
         phone: phone.trim(),
@@ -465,13 +477,18 @@ export const CheckoutModal: React.FC<CheckoutModalProps> = ({
                     className={`${fieldClass('neighborhood')} font-semibold`}
                   >
                     {restaurantConfig.deliveryZones.map((zone) => (
-                      <option key={zone.id} value={zone.name}>
-                        {zone.name} — Taxa: {formatCurrency(zone.fee)} (Tempo: {zone.estimatedTime})
+                      <option key={zone.id} value={zone.name || zone.neighborhood}>
+                        {zone.name || zone.neighborhood} — Taxa: {formatCurrency(zone.fee)} (Tempo: {zone.estimatedMinutes || zone.estimatedTime || '—'})
                       </option>
                     ))}
                   </select>
                   {triedSubmit && fieldErrors.neighborhood && (
                     <p className="text-rose-600 text-[11px] mt-1 font-semibold">{fieldErrors.neighborhood}</p>
+                  )}
+                  {isOutOfDeliveryRange && (
+                    <p className="text-rose-600 text-[11px] mt-1.5 font-semibold flex items-center gap-1">
+                      ⚠️ Este endereço está fora da nossa área de entrega no momento.
+                    </p>
                   )}
                 </div>
 

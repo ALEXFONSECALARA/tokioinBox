@@ -438,6 +438,144 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [copyZonesLoading, setCopyZonesLoading] = useState(false);
   const [copyZonesError, setCopyZonesError] = useState<string | null>(null);
 
+  // ---------- Motor de cálculo de entrega (Fase 4, itens 9-13) ----------
+  const [showDeliveryEngine, setShowDeliveryEngine] = useState(false);
+  const [locCepLoading, setLocCepLoading] = useState(false);
+  const [locCepError, setLocCepError] = useState<string | null>(null);
+  const [editingCepRangeId, setEditingCepRangeId] = useState<string | 'new' | null>(null);
+  const [cepDraft, setCepDraft] = useState({ cepStart: '', cepEnd: '', fee: '', estimatedMinutes: '' });
+  const [editingTierId, setEditingTierId] = useState<string | 'new' | null>(null);
+  const [tierDraft, setTierDraft] = useState({ fromKm: '', toKm: '', fee: '', prepMinutes: '', deliveryMinutes: '' });
+
+  const updateConfigField = <K extends keyof RestaurantConfig>(key: K, value: RestaurantConfig[K]) => {
+    const updated = { ...localConfig, [key]: value };
+    setLocalConfig(updated);
+    onUpdateConfig(updated);
+  };
+
+  const restaurantLocation = localConfig.restaurantLocation || {};
+  const updateLocation = (patch: Partial<NonNullable<RestaurantConfig['restaurantLocation']>>) => {
+    updateConfigField('restaurantLocation', { ...restaurantLocation, ...patch });
+  };
+
+  // CEP automático da localização do restaurante (mesmo padrão ViaCEP+Nominatim
+  // já usado no endereço do cliente — item 8/9) — preenche rua/bairro/cidade/
+  // estado e tenta geocodificar lat/lng, tudo pro cálculo por distância funcionar.
+  const handleLocationCepLookup = async (cepValue: string) => {
+    const cleanCep = cepValue.replace(/\D/g, '');
+    if (cleanCep.length !== 8) {
+      setLocCepError('O CEP deve conter 8 dígitos');
+      return;
+    }
+    setLocCepLoading(true);
+    setLocCepError(null);
+    try {
+      const res = await fetch(`https://viacep.com.br/ws/${cleanCep}/json/`);
+      const data = await res.json();
+      if (data.erro) {
+        setLocCepError('CEP não encontrado.');
+        return;
+      }
+      updateLocation({
+        cep: cleanCep,
+        street: data.logradouro || restaurantLocation.street,
+        neighborhood: data.bairro || restaurantLocation.neighborhood,
+        city: data.localidade || restaurantLocation.city,
+        state: data.uf || restaurantLocation.state,
+      });
+      try {
+        const q = encodeURIComponent(`${data.logradouro || ''}, ${data.bairro || ''}, ${data.localidade || ''}, ${data.uf || ''}, Brasil`);
+        const geo = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=br&q=${q}`);
+        const geoResults = await geo.json();
+        if (Array.isArray(geoResults) && geoResults[0]) {
+          updateLocation({ lat: parseFloat(geoResults[0].lat), lng: parseFloat(geoResults[0].lon) });
+        }
+      } catch {
+        // best-effort — sem lat/lng, os métodos por distância/fórmula só não vão funcionar até isso ser preenchido
+      }
+      playSoundEffect('beep');
+    } catch {
+      setLocCepError('Erro ao consultar CEP.');
+    } finally {
+      setLocCepLoading(false);
+    }
+  };
+
+  const cepRanges = localConfig.cepRanges || [];
+  const saveCepRangeForm = () => {
+    const fee = parseFloat(cepDraft.fee.replace(',', '.'));
+    const startDigits = cepDraft.cepStart.replace(/\D/g, '');
+    const endDigits = cepDraft.cepEnd.replace(/\D/g, '');
+    if (startDigits.length !== 8 || endDigits.length !== 8 || isNaN(fee)) return;
+    if (editingCepRangeId === 'new') {
+      const newRange = { id: `cep-${Date.now()}`, cepStart: startDigits, cepEnd: endDigits, fee, estimatedMinutes: cepDraft.estimatedMinutes.trim() || undefined, active: true };
+      updateConfigField('cepRanges', [...cepRanges, newRange]);
+    } else if (editingCepRangeId) {
+      updateConfigField('cepRanges', cepRanges.map((r) => (r.id === editingCepRangeId ? { ...r, cepStart: startDigits, cepEnd: endDigits, fee, estimatedMinutes: cepDraft.estimatedMinutes.trim() || undefined } : r)));
+    }
+    setEditingCepRangeId(null);
+  };
+  const openCepRangeForm = (r?: typeof cepRanges[number]) => {
+    if (r) {
+      setEditingCepRangeId(r.id);
+      setCepDraft({ cepStart: r.cepStart, cepEnd: r.cepEnd, fee: String(r.fee), estimatedMinutes: r.estimatedMinutes || '' });
+    } else {
+      setEditingCepRangeId('new');
+      setCepDraft({ cepStart: '', cepEnd: '', fee: '', estimatedMinutes: '' });
+    }
+  };
+  const deleteCepRange = (id: string) => {
+    if (!confirm('Excluir essa faixa de CEP?')) return;
+    updateConfigField('cepRanges', cepRanges.filter((r) => r.id !== id));
+  };
+  const toggleCepRangeActive = (id: string) => {
+    updateConfigField('cepRanges', cepRanges.map((r) => (r.id === id ? { ...r, active: r.active === false } : r)));
+  };
+
+  const distanceTiers = localConfig.distanceTiers || [];
+  const saveTierForm = () => {
+    const fromKm = parseFloat(tierDraft.fromKm.replace(',', '.'));
+    const toKm = parseFloat(tierDraft.toKm.replace(',', '.'));
+    const fee = parseFloat(tierDraft.fee.replace(',', '.'));
+    if (isNaN(fromKm) || isNaN(toKm) || isNaN(fee)) return;
+    const prepMinutes = tierDraft.prepMinutes ? parseInt(tierDraft.prepMinutes, 10) : undefined;
+    const deliveryMinutes = tierDraft.deliveryMinutes ? parseInt(tierDraft.deliveryMinutes, 10) : undefined;
+    if (editingTierId === 'new') {
+      const newTier = { id: `tier-${Date.now()}`, fromKm, toKm, fee, prepMinutes, deliveryMinutes, active: true };
+      updateConfigField('distanceTiers', [...distanceTiers, newTier].sort((a, b) => a.fromKm - b.fromKm));
+    } else if (editingTierId) {
+      updateConfigField('distanceTiers', distanceTiers.map((t) => (t.id === editingTierId ? { ...t, fromKm, toKm, fee, prepMinutes, deliveryMinutes } : t)).sort((a, b) => a.fromKm - b.fromKm));
+    }
+    setEditingTierId(null);
+  };
+  const openTierForm = (t?: typeof distanceTiers[number]) => {
+    if (t) {
+      setEditingTierId(t.id);
+      setTierDraft({ fromKm: String(t.fromKm), toKm: String(t.toKm), fee: String(t.fee), prepMinutes: t.prepMinutes != null ? String(t.prepMinutes) : '', deliveryMinutes: t.deliveryMinutes != null ? String(t.deliveryMinutes) : '' });
+    } else {
+      setEditingTierId('new');
+      setTierDraft({ fromKm: '', toKm: '', fee: '', prepMinutes: '', deliveryMinutes: '' });
+    }
+  };
+  const deleteTier = (id: string) => {
+    if (!confirm('Excluir essa faixa de distância?')) return;
+    updateConfigField('distanceTiers', distanceTiers.filter((t) => t.id !== id));
+  };
+  const toggleTierActive = (id: string) => {
+    updateConfigField('distanceTiers', distanceTiers.map((t) => (t.id === id ? { ...t, active: t.active === false } : t)));
+  };
+
+  const HYBRID_METHOD_LABELS: Record<string, string> = { neighborhood: 'Bairro', cep: 'CEP', distance: 'Distância' };
+  const hybridPriority = (localConfig.deliveryHybridPriority || ['cep', 'neighborhood', 'distance']).filter((m) => m !== 'hybrid' && m !== 'formula');
+  const moveHybridPriority = (method: string, dir: -1 | 1) => {
+    const idx = hybridPriority.indexOf(method as any);
+    const targetIdx = idx + dir;
+    if (idx === -1 || targetIdx < 0 || targetIdx >= hybridPriority.length) return;
+    const next = [...hybridPriority];
+    [next[idx], next[targetIdx]] = [next[targetIdx], next[idx]];
+    updateConfigField('deliveryHybridPriority', next as any);
+  };
+
   const handleCopyZonesFromRestaurant = async () => {
     if (!copyZonesSourceSlug) return;
     setCopyZonesLoading(true);
@@ -1923,6 +2061,265 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <span>Adicionar Novo Bairro</span>
                 </button>
               </div>
+            </div>
+
+            {/* ================= Motor de Cálculo de Entrega (Fase 4, itens 9-13) ================= */}
+            <div className="bg-white rounded-2xl border border-stone-200 shadow-xs overflow-hidden">
+              <button onClick={() => setShowDeliveryEngine((v) => !v)} className="w-full flex items-center justify-between p-4">
+                <div className="flex items-center gap-2">
+                  <Navigation className="w-4 h-4 text-stone-500" />
+                  <span className="font-bold text-stone-900 text-sm">Motor de Cálculo de Entrega</span>
+                  <span className="text-[10px] uppercase tracking-wide bg-stone-100 text-stone-600 px-2 py-0.5 rounded-full font-bold">
+                    {localConfig.deliveryCalcMethod ? { neighborhood: 'Bairro', cep: 'CEP', distance: 'Distância', formula: 'Fórmula', hybrid: 'Híbrido' }[localConfig.deliveryCalcMethod] : 'Bairro (padrão)'}
+                  </span>
+                </div>
+                {showDeliveryEngine ? <ChevronUp className="w-4 h-4 text-stone-400" /> : <ChevronDown className="w-4 h-4 text-stone-400" />}
+              </button>
+
+              {showDeliveryEngine && (
+                <div className="border-t border-stone-200 p-4 space-y-5 text-xs sm:text-sm">
+                  <p className="text-[11px] text-stone-500 -mt-1">
+                    Por padrão a taxa é calculada por bairro (como sempre foi). Só mexa aqui se quiser cobrar por CEP, por
+                    distância, por fórmula, ou combinar métodos.
+                  </p>
+
+                  {/* Localização do restaurante */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-stone-800">Localização do Restaurante</h4>
+                    <p className="text-[11px] text-stone-500">Necessária pros métodos por Distância e Fórmula (usada como origem do cálculo).</p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      <div className="col-span-2 sm:col-span-1">
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">CEP</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.cep || ''}
+                          onChange={(e) => updateLocation({ cep: e.target.value })}
+                          onBlur={(e) => handleLocationCepLookup(e.target.value)}
+                          placeholder="00000-000"
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                        {locCepLoading && <p className="text-[10px] text-stone-400 mt-0.5">Buscando…</p>}
+                        {locCepError && <p className="text-[10px] text-rose-600 mt-0.5">{locCepError}</p>}
+                      </div>
+                      <div className="col-span-2 sm:col-span-2">
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">Rua</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.street || ''}
+                          onChange={(e) => updateLocation({ street: e.target.value })}
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">Número</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.number || ''}
+                          onChange={(e) => updateLocation({ number: e.target.value })}
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">Bairro</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.neighborhood || ''}
+                          onChange={(e) => updateLocation({ neighborhood: e.target.value })}
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">Cidade</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.city || ''}
+                          onChange={(e) => updateLocation({ city: e.target.value })}
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-stone-600 mb-1">Estado</label>
+                        <input
+                          type="text"
+                          value={restaurantLocation.state || ''}
+                          onChange={(e) => updateLocation({ state: e.target.value })}
+                          maxLength={2}
+                          className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500 uppercase"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[11px] text-stone-500">
+                      {restaurantLocation.lat != null
+                        ? `📍 Coordenadas encontradas (lat ${restaurantLocation.lat.toFixed(4)}, lng ${restaurantLocation.lng?.toFixed(4)})`
+                        : '📍 Coordenadas ainda não encontradas — preencha o CEP acima pra buscar automaticamente.'}
+                    </p>
+                  </div>
+
+                  {/* Método de cálculo */}
+                  <div className="space-y-2">
+                    <h4 className="font-bold text-stone-800">Método de Cálculo</h4>
+                    <div className="flex flex-wrap gap-1.5">
+                      {([
+                        ['neighborhood', 'Bairro'],
+                        ['cep', 'CEP'],
+                        ['distance', 'Distância'],
+                        ['formula', 'Fórmula'],
+                        ['hybrid', 'Híbrido'],
+                      ] as const).map(([value, label]) => {
+                        const isSelected = (localConfig.deliveryCalcMethod || 'neighborhood') === value;
+                        return (
+                          <button
+                            key={value}
+                            type="button"
+                            onClick={() => updateConfigField('deliveryCalcMethod', value)}
+                            className={`px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
+                              isSelected ? 'bg-amber-500 border-amber-500 text-slate-950' : 'bg-white border-stone-200 text-stone-600 hover:bg-stone-50'
+                            }`}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Raio máximo */}
+                  <div>
+                    <label className="block font-bold text-stone-700 mb-1">Raio máximo de entrega (km)</label>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={localConfig.maxDeliveryRadiusKm ?? ''}
+                      onChange={(e) => updateConfigField('maxDeliveryRadiusKm', e.target.value ? parseFloat(e.target.value) : undefined)}
+                      placeholder="Sem limite"
+                      className="w-40 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    />
+                    <p className="text-[11px] text-stone-500 mt-1">
+                      Endereços além desse raio são recusados como "fora da área", em vez de usar a primeira zona cadastrada.
+                    </p>
+                  </div>
+
+                  {/* Faixas de CEP */}
+                  {localConfig.deliveryCalcMethod === 'cep' && (
+                    <div className="space-y-2">
+                      <h4 className="font-bold text-stone-800">Faixas de CEP</h4>
+                      {cepRanges.map((r) => (
+                        <div key={r.id} className={`flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 ${r.active === false ? 'opacity-50' : ''}`}>
+                          <span className="flex-1 text-xs">{r.cepStart}–{r.cepEnd} · {formatCurrency(r.fee)}{r.estimatedMinutes ? ` · ${r.estimatedMinutes}` : ''}</span>
+                          <button onClick={() => toggleCepRangeActive(r.id)} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-stone-200 text-stone-600">{r.active === false ? 'Oculta' : 'Ativa'}</button>
+                          <button onClick={() => openCepRangeForm(r)} className="p-1.5 text-stone-500 hover:bg-stone-200 rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => deleteCepRange(r.id)} className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))}
+                      {editingCepRangeId ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
+                          <input placeholder="CEP início" value={cepDraft.cepStart} onChange={(e) => setCepDraft({ ...cepDraft, cepStart: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="CEP fim" value={cepDraft.cepEnd} onChange={(e) => setCepDraft({ ...cepDraft, cepEnd: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Taxa R$" value={cepDraft.fee} onChange={(e) => setCepDraft({ ...cepDraft, fee: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Tempo (ex: 30-40 min)" value={cepDraft.estimatedMinutes} onChange={(e) => setCepDraft({ ...cepDraft, estimatedMinutes: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <div className="flex gap-1">
+                            <button onClick={saveCepRangeForm} className="flex-1 px-2 py-1.5 bg-amber-500 text-slate-950 rounded-lg text-xs font-bold">Salvar</button>
+                            <button onClick={() => setEditingCepRangeId(null)} className="px-2 py-1.5 text-stone-500 text-xs font-bold">✕</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => openCepRangeForm()} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 hover:border-amber-400 hover:text-amber-600 text-xs font-bold">
+                          <Plus className="w-3.5 h-3.5" /> Nova faixa de CEP
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Faixas de distância */}
+                  {(localConfig.deliveryCalcMethod === 'distance' || localConfig.deliveryCalcMethod === 'hybrid') && (
+                    <div className="space-y-2">
+                      <h4 className="font-bold text-stone-800">Faixas de Distância (km)</h4>
+                      {distanceTiers.map((t) => (
+                        <div key={t.id} className={`flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200 ${t.active === false ? 'opacity-50' : ''}`}>
+                          <span className="flex-1 text-xs">
+                            {t.fromKm}–{t.toKm}km · {formatCurrency(t.fee)}
+                            {t.prepMinutes != null && t.deliveryMinutes != null ? ` · Preparo ${t.prepMinutes}min + Entrega ${t.deliveryMinutes}min` : ''}
+                          </span>
+                          <button onClick={() => toggleTierActive(t.id)} className="text-[10px] font-bold px-2 py-1 rounded-lg bg-stone-200 text-stone-600">{t.active === false ? 'Oculta' : 'Ativa'}</button>
+                          <button onClick={() => openTierForm(t)} className="p-1.5 text-stone-500 hover:bg-stone-200 rounded-lg"><Edit className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => deleteTier(t.id)} className="p-1.5 text-stone-400 hover:text-rose-600 rounded-lg"><Trash2 className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))}
+                      {editingTierId ? (
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 bg-amber-50 border border-amber-200 p-2.5 rounded-xl">
+                          <input placeholder="De (km)" value={tierDraft.fromKm} onChange={(e) => setTierDraft({ ...tierDraft, fromKm: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Até (km)" value={tierDraft.toKm} onChange={(e) => setTierDraft({ ...tierDraft, toKm: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Taxa R$" value={tierDraft.fee} onChange={(e) => setTierDraft({ ...tierDraft, fee: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Preparo (min)" value={tierDraft.prepMinutes} onChange={(e) => setTierDraft({ ...tierDraft, prepMinutes: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <input placeholder="Entrega (min)" value={tierDraft.deliveryMinutes} onChange={(e) => setTierDraft({ ...tierDraft, deliveryMinutes: e.target.value })} className="px-2 py-1.5 bg-white border border-stone-200 rounded-lg text-xs" />
+                          <div className="flex gap-1 col-span-2 sm:col-span-5">
+                            <button onClick={saveTierForm} className="px-3 py-1.5 bg-amber-500 text-slate-950 rounded-lg text-xs font-bold">Salvar</button>
+                            <button onClick={() => setEditingTierId(null)} className="px-3 py-1.5 text-stone-500 text-xs font-bold">Cancelar</button>
+                          </div>
+                        </div>
+                      ) : (
+                        <button onClick={() => openTierForm()} className="w-full flex items-center justify-center gap-1.5 py-2 rounded-xl border-2 border-dashed border-stone-300 text-stone-500 hover:border-amber-400 hover:text-amber-600 text-xs font-bold">
+                          <Plus className="w-3.5 h-3.5" /> Nova faixa de distância
+                        </button>
+                      )}
+                    </div>
+                  )}
+
+                  {/* Fórmula */}
+                  {localConfig.deliveryCalcMethod === 'formula' && (
+                    <div className="space-y-2">
+                      <h4 className="font-bold text-stone-800">Fórmula por Distância</h4>
+                      <div className="grid grid-cols-3 gap-2">
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Taxa base (R$)</label>
+                          <input
+                            type="number" step="0.01"
+                            value={localConfig.deliveryFormula?.baseFee ?? ''}
+                            onChange={(e) => updateConfigField('deliveryFormula', { baseFee: parseFloat(e.target.value) || 0, includedKm: localConfig.deliveryFormula?.includedKm ?? 0, extraFeePerKm: localConfig.deliveryFormula?.extraFeePerKm ?? 0 })}
+                            className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Km incluído</label>
+                          <input
+                            type="number" step="0.1"
+                            value={localConfig.deliveryFormula?.includedKm ?? ''}
+                            onChange={(e) => updateConfigField('deliveryFormula', { baseFee: localConfig.deliveryFormula?.baseFee ?? 0, includedKm: parseFloat(e.target.value) || 0, extraFeePerKm: localConfig.deliveryFormula?.extraFeePerKm ?? 0 })}
+                            className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold text-stone-600 mb-1">Adicional/km (R$)</label>
+                          <input
+                            type="number" step="0.01"
+                            value={localConfig.deliveryFormula?.extraFeePerKm ?? ''}
+                            onChange={(e) => updateConfigField('deliveryFormula', { baseFee: localConfig.deliveryFormula?.baseFee ?? 0, includedKm: localConfig.deliveryFormula?.includedKm ?? 0, extraFeePerKm: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-2.5 py-2 bg-stone-50 border border-stone-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Prioridade híbrida */}
+                  {localConfig.deliveryCalcMethod === 'hybrid' && (
+                    <div className="space-y-2">
+                      <h4 className="font-bold text-stone-800">Ordem de Prioridade (Híbrido)</h4>
+                      <p className="text-[11px] text-stone-500">O sistema tenta cada método nessa ordem até um resolver o endereço do cliente.</p>
+                      {hybridPriority.map((method, idx) => (
+                        <div key={method} className="flex items-center gap-2 bg-stone-50 p-2 rounded-xl border border-stone-200">
+                          <span className="text-xs font-bold text-stone-400 w-5">{idx + 1}º</span>
+                          <span className="flex-1 text-xs font-semibold">{HYBRID_METHOD_LABELS[method] || method}</span>
+                          <button onClick={() => moveHybridPriority(method, -1)} disabled={idx === 0} className="p-1 text-stone-400 hover:text-stone-700 disabled:opacity-20"><ChevronUp className="w-3.5 h-3.5" /></button>
+                          <button onClick={() => moveHybridPriority(method, 1)} disabled={idx === hybridPriority.length - 1} className="p-1 text-stone-400 hover:text-stone-700 disabled:opacity-20"><ChevronDown className="w-3.5 h-3.5" /></button>
+                        </div>
+                      ))}
+                      <p className="text-[11px] text-stone-400">Configure as faixas de CEP e de Distância acima — o método Bairro usa os bairros já cadastrados nesta aba.</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {isCopyZonesOpen && (
