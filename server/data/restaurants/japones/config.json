@@ -24,5 +24,11 @@
     "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=1400&q=80",
     "https://images.unsplash.com/photo-1611143669185-af224c5e3252?auto=format&fit=crop&w=1400&q=80"
   ],
-  "splashDurationSeconds": 3
+  "splashDurationSeconds": 3,
+  "active": true,
+  "badges": [],
+  "restaurantLocation": null,
+  "deliveryCalcMethod": null,
+  "distanceTiers": [],
+  "maxDeliveryRadiusKm": null
 }
