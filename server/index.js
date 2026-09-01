@@ -245,9 +245,22 @@ app.post('/api/:slug/upload', requireAdmin, (req, res) => {
       return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
     }
     try {
-      const url = isCloudinaryConfigured()
-        ? await uploadImageBuffer(req.file.buffer, slug)
-        : await saveImageToDisk(req.file, slug);
+      let url;
+      if (isCloudinaryConfigured()) {
+        try {
+          url = await uploadImageBuffer(req.file.buffer, slug);
+        } catch (cloudErr) {
+          // Cloudinary configurado mas falhou (chave errada, rede, cota
+          // excedida etc.) — cai pro disco local em vez de devolver erro pro
+          // admin. A foto salva mesmo assim; o problema real do Cloudinary
+          // fica só no log do servidor, pra quem administra o Render corrigir
+          // as variáveis de ambiente sem que isso trave o dia a dia da loja.
+          console.error(`Cloudinary falhou pra ${slug}, usando fallback local:`, cloudErr?.message || cloudErr);
+          url = await saveImageToDisk(req.file, slug);
+        }
+      } else {
+        url = await saveImageToDisk(req.file, slug);
+      }
       res.status(201).json({ ok: true, url });
     } catch (uploadErr) {
       console.error(`Erro ao enviar imagem (${slug}):`, uploadErr);
