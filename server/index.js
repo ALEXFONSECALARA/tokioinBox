@@ -245,21 +245,32 @@ app.post('/api/:slug/upload', requireAdmin, (req, res) => {
       return res.status(400).json({ error: 'Nenhuma imagem enviada.' });
     }
     try {
+      // Em produção nunca damos "sucesso" usando o disco local: no Render ele é
+      // efêmero e faria a foto parecer salva até o próximo restart/deploy.
+      // Portanto, produção exige Cloudinary e qualquer falha vira erro visível
+      // para o admin. Em desenvolvimento local, o fallback em disco continua.
+      if (process.env.NODE_ENV === 'production' && !isCloudinaryConfigured()) {
+        return res.status(503).json({
+          error: 'Armazenamento de imagens não configurado. Configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY e CLOUDINARY_API_SECRET no servidor.',
+        });
+      }
+
       let url;
       if (isCloudinaryConfigured()) {
         try {
           url = await uploadImageBuffer(req.file.buffer, slug);
         } catch (cloudErr) {
-          // Cloudinary configurado mas falhou (chave errada, rede, cota
-          // excedida etc.) — cai pro disco local em vez de devolver erro pro
-          // admin. A foto salva mesmo assim; o problema real do Cloudinary
-          // fica só no log do servidor, pra quem administra o Render corrigir
-          // as variáveis de ambiente sem que isso trave o dia a dia da loja.
-          console.error(`Cloudinary falhou pra ${slug}, usando fallback local:`, cloudErr?.message || cloudErr);
-          url = await saveImageToDisk(req.file, slug);
+          console.error(`Cloudinary falhou pra ${slug}:`, cloudErr?.message || cloudErr);
+          return res.status(502).json({
+            error: 'Não foi possível armazenar a imagem com segurança. A foto não foi considerada salva. Tente novamente.',
+          });
         }
       } else {
         url = await saveImageToDisk(req.file, slug);
+      }
+
+      if (!url) {
+        return res.status(500).json({ error: 'O armazenamento não retornou uma URL válida para a imagem.' });
       }
       res.status(201).json({ ok: true, url });
     } catch (uploadErr) {
