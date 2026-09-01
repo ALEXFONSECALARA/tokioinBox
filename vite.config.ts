@@ -11,6 +11,22 @@ export default defineConfig(() => {
         '@': path.resolve(__dirname, '.'),
       },
     },
+    build: {
+      // Aviso "chunks maiores que 500kB" do Vite: o bundle inteiro (React +
+      // ícones + todas as telas do admin) ia num arquivo .js só. Isso NÃO
+      // afeta o funcionamento — só o tamanho do primeiro download — mas
+      // separar as bibliotecas em chunks próprios deixa o cache do navegador
+      // mais eficiente entre deploys (o vendor não muda a cada correção de
+      // código, então o navegador não precisa rebaixá-lo toda vez).
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'vendor-react': ['react', 'react-dom'],
+            'vendor-icons': ['lucide-react'],
+          },
+        },
+      },
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modifyâfile watching is disabled to prevent flickering during agent edits.
