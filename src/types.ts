@@ -116,6 +116,58 @@ export interface DeliveryZone {
   minOrder?: number;
 }
 
+// Motor de cálculo de entrega (Fase 4, itens 9-13) — o restaurante escolhe
+// COMO a taxa/tempo de entrega são calculados, sem perder o que já
+// configurou. 'neighborhood' (bairro, o sistema de sempre) continua sendo o
+// padrão quando `deliveryCalcMethod` está ausente — nada muda pra quem nunca
+// mexer nisso.
+export type DeliveryCalcMethod = 'neighborhood' | 'cep' | 'distance' | 'formula' | 'hybrid';
+
+// Localização do próprio restaurante — usada como origem pro cálculo de
+// distância (métodos 'distance'/'formula'/'hybrid'). Sem lat/lng aqui, esses
+// métodos simplesmente não conseguem calcular (o motor cai pro próximo
+// método configurado, ou informa que não foi possível calcular).
+export interface RestaurantLocation {
+  cep?: string;
+  street?: string;
+  number?: string;
+  neighborhood?: string;
+  city?: string;
+  state?: string;
+  lat?: number;
+  lng?: number;
+}
+
+// Método 1 (CEP): faixas de CEP com taxa própria, ex. 28890-000 a 28890-050.
+export interface CepRange {
+  id: string;
+  cepStart: string; // 8 dígitos, sem traço
+  cepEnd: string;
+  label?: string;
+  fee: number;
+  estimatedMinutes?: string;
+  active?: boolean;
+}
+
+// Método 3 (Distância): faixas de km com taxa e tempo (preparo + entrega
+// separados — item 13) próprios, ex. 0-2km, 2-4km, 4-6km.
+export interface DistanceTier {
+  id: string;
+  fromKm: number;
+  toKm: number;
+  fee: number;
+  prepMinutes?: number;
+  deliveryMinutes?: number;
+  active?: boolean;
+}
+
+// Método 4 (Fórmula por distância): taxa-base + km incluído + adicional/km.
+export interface DeliveryFormula {
+  baseFee: number;
+  includedKm: number;
+  extraFeePerKm: number;
+}
+
 export interface DeliveryAddress {
   cep?: string;
   street: string;
@@ -242,6 +294,22 @@ export interface RestaurantConfig {
   minimumOrder: number;
   estimatedDeliveryTime: string;
   deliveryZones: DeliveryZone[];
+  // Motor de cálculo de entrega (Fase 4, itens 9-13) — todos opcionais e
+  // aditivos: sem eles, o sistema funciona exatamente como sempre funcionou
+  // (deliveryZones por bairro + deliveryFee/estimatedDeliveryTime padrão).
+  restaurantLocation?: RestaurantLocation;
+  deliveryCalcMethod?: DeliveryCalcMethod; // ausente = 'neighborhood' (comportamento de sempre)
+  // Só usado quando deliveryCalcMethod === 'hybrid' — ordem em que os
+  // métodos são tentados até um resolver o endereço. Ex: ['cep',
+  // 'neighborhood', 'distance']. Ausente = essa ordem padrão.
+  deliveryHybridPriority?: DeliveryCalcMethod[];
+  cepRanges?: CepRange[];
+  distanceTiers?: DistanceTier[];
+  deliveryFormula?: DeliveryFormula;
+  // Raio máximo de entrega em km — além dele, o endereço é recusado
+  // ("fora da área de entrega") em vez de usar a primeira zona cadastrada
+  // como fallback (item 12). Ausente = sem limite de raio.
+  maxDeliveryRadiusKm?: number;
   drivers: DriverInfo[];
   pixKey: string;
   pixKeyType: 'cpf' | 'cnpj' | 'email' | 'phone' | 'random';
