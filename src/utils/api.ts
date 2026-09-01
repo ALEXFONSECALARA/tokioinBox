@@ -68,6 +68,16 @@ export async function fetchPlatformSettings(): Promise<PlatformSettings> {
   return handleResponse<PlatformSettings>(res);
 }
 
+// Consulta leve do ajuste operacional atual (Fase 4, itens 14-16) — usada em
+// polling curto pelo cliente com pedido aberto, pra atualizar a previsão de
+// entrega quase em tempo real sem recarregar o cardápio inteiro.
+export async function fetchOperationalStatus(
+  slug: string
+): Promise<{ operationalStatus: string; operationalAdjustmentMinutes: number }> {
+  const res = await fetch(`${API_BASE}/api/${slug}/operational-status`);
+  return handleResponse(res);
+}
+
 export async function fetchMenu(slug: string): Promise<MenuData> {
   const res = await fetch(`${API_BASE}/api/${slug}/menu`);
   return handleResponse<MenuData>(res);
