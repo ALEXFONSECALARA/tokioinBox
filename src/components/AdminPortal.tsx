@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MenuItem, Category, Order, OrderStatus, RestaurantConfig, DriverInfo } from '../types';
 import {
   adminLogin,
@@ -16,7 +16,7 @@ import {
   RestaurantSummary,
 } from '../utils/api';
 import { AdminDashboard } from './AdminDashboard';
-import { playSoundEffect } from '../utils/helpers';
+import { playSoundEffect, playOrderAlertSound, unlockOrderAlertAudio } from '../utils/helpers';
 import { LAYOUTS } from '../utils/layouts';
 import { LayoutPreviewModal } from './LayoutPreviewModal';
 import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye, Power, AlertTriangle, X } from 'lucide-react';
@@ -35,6 +35,10 @@ const LoginScreen: React.FC<{ onLoggedIn: (token: string) => void }> = ({ onLogg
     try {
       const token = await adminLogin(password);
       sessionStorage.setItem(TOKEN_KEY, token);
+      // Toque no botão de login = gesto do usuário — aproveita pra destravar
+      // o áudio no iOS/Safari antes do primeiro pedido de verdade chegar
+      // (sem isso, o primeiro alerta sonoro pode simplesmente não tocar).
+      unlockOrderAlertAudio();
       onLoggedIn(token);
     } catch (err: any) {
       setError(err?.message || 'Senha incorreta.');
@@ -222,6 +226,28 @@ export const AdminPortal: React.FC = () => {
   const [restaurantConfig, setRestaurantConfig] = useState<RestaurantConfig | null>(null);
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(false);
+  // Alerta sonoro de "pedido chegando" (persistido no dispositivo, não no
+  // restaurante — cada tela/celular na cozinha pode preferir volume/som
+  // diferente). O toggle de ligar/desligar já existia no AdminDashboard mas
+  // não fazia nada de verdade — agora é aqui, junto de quem detecta pedido
+  // novo de fato.
+  const [soundEnabled, setSoundEnabled] = useState(() => {
+    try {
+      return localStorage.getItem('tokioinbox_sound_enabled') !== 'false';
+    } catch {
+      return true;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('tokioinbox_sound_enabled', String(soundEnabled));
+    } catch {
+      // localStorage bloqueado — sem problema, só não persiste entre sessões
+    }
+  }, [soundEnabled]);
+  // IDs de pedidos já vistos, pra tocar o alerta só quando um pedido
+  // GENUINAMENTE novo chega (não em toda troca de status de um já existente).
+  const knownOrderIdsRef = useRef<Set<string> | null>(null);
 
   // Alterações não salvas no formulário de Configurações do restaurante atual
   // (ver AdminDashboard → onDirtyChange). Usado pra confirmar antes de trocar
@@ -316,6 +342,10 @@ export const AdminPortal: React.FC = () => {
         setRestaurantConfig(menu.restaurantConfig);
         setOrders(orderList);
         setLoadedSlug(requestedSlug);
+        // Marca os pedidos já existentes como "conhecidos" ANTES de começar o
+        // polling — sem isso, abrir um restaurante com pedidos pendentes
+        // dispararia o alarme de "pedido novo" pra pedidos que já estavam lá.
+        knownOrderIdsRef.current = new Set(orderList.map((o) => o.id));
       })
       .catch((err: any) => {
         if (latestRequestedSlugRef.current !== requestedSlug) return;
@@ -328,9 +358,12 @@ export const AdminPortal: React.FC = () => {
       });
   }, [token, selectedSlug, handleLogout]);
 
-  // Atualiza os pedidos periodicamente (novo pedido chegando de um cliente).
-  // Descarta a resposta se, entre o disparo e a resposta, o admin já tiver
-  // trocado de restaurante (mesma proteção contra race condition de cima).
+  // Atualiza os pedidos periodicamente (novo pedido chegando de um cliente) e
+  // toca o alerta sonoro quando um pedido GENUINAMENTE novo aparece — o
+  // toggle "Som Ativado" no painel (AdminDashboard) já existia mas não
+  // tocava nada de verdade antes desta correção. Descarta a resposta se,
+  // entre o disparo e a resposta, o admin já tiver trocado de restaurante
+  // (mesma proteção contra race condition de cima).
   useEffect(() => {
     if (!token || !selectedSlug) return;
     const slugAtScheduleTime = selectedSlug;
@@ -338,12 +371,18 @@ export const AdminPortal: React.FC = () => {
       fetchOrdersAdmin(slugAtScheduleTime, token)
         .then((list) => {
           if (latestRequestedSlugRef.current !== slugAtScheduleTime) return;
+          const known = knownOrderIdsRef.current;
+          const newOnes = known ? list.filter((o) => !known.has(o.id)) : [];
+          if (newOnes.length > 0 && soundEnabled) {
+            playOrderAlertSound();
+          }
+          knownOrderIdsRef.current = new Set(list.map((o) => o.id));
           setOrders((prev) => (list.length !== prev.length ? list : prev));
         })
         .catch(() => {});
     }, 8000);
     return () => clearInterval(interval);
-  }, [token, selectedSlug]);
+  }, [token, selectedSlug, soundEnabled]);
 
   if (!token) {
     return <LoginScreen onLoggedIn={setToken} />;
@@ -395,18 +434,22 @@ export const AdminPortal: React.FC = () => {
     );
   };
 
-  const persistMenuItems = (items: MenuItem[]) => {
+  const persistMenuItems = async (items: MenuItem[]): Promise<boolean> => {
     const previous = menuItems; // pra reverter se o servidor recusar/falhar
     setMenuItems(items);
     setIsSaving(true);
     setSaveError(null);
-    saveMenuItems(selectedSlug, token, items)
-      .catch((err) => {
-        console.error('Erro ao salvar itens:', err);
-        setMenuItems(previous); // desfaz a atualização otimista — a tela não mente sobre o que foi salvo
-        setSaveError(err?.message || 'Não foi possível salvar o cardápio. Tente novamente.');
-      })
-      .finally(() => setIsSaving(false));
+    try {
+      await saveMenuItems(selectedSlug, token, items);
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao salvar itens:', err);
+      setMenuItems(previous); // desfaz a atualização otimista — a tela não mente sobre o que foi salvo
+      setSaveError(err?.message || 'Não foi possível salvar o cardápio. Tente novamente.');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleAddMenuItem = (item: MenuItem) => persistMenuItems([item, ...menuItems]);
@@ -418,32 +461,48 @@ export const AdminPortal: React.FC = () => {
     playSoundEffect('beep');
   };
 
-  const persistCategories = (next: Category[]) => {
+  const persistCategories = async (next: Category[]): Promise<boolean> => {
     const previous = categories;
     setCategories(next);
     setIsSaving(true);
     setSaveError(null);
-    saveCategories(selectedSlug, token, next)
-      .catch((err) => {
-        console.error('Erro ao salvar categorias:', err);
-        setCategories(previous);
-        setSaveError(err?.message || 'Não foi possível salvar as categorias. Tente novamente.');
-      })
-      .finally(() => setIsSaving(false));
+    try {
+      await saveCategories(selectedSlug, token, next);
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao salvar categorias:', err);
+      setCategories(previous);
+      setSaveError(err?.message || 'Não foi possível salvar as categorias. Tente novamente.');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
-  const handleUpdateConfig = (config: RestaurantConfig) => {
+  // Retorna Promise<boolean> (salvou ou não) — a maioria dos chamadores (mais
+  // de 20 pontos de auto-save: badges, entrega, ajuste operacional etc.)
+  // ignora o retorno e continua funcionando igual antes. Só os formulários
+  // com modal (prato/motoboy/bairro) usam o retorno pra decidir se fecham o
+  // modal — antes fechavam sempre, mesmo quando o salvamento falhava, e o
+  // admin via a janela sumir como se tivesse dado certo enquanto o erro de
+  // verdade só aparecia depois, num banner lá em cima. Essa foi a causa real
+  // de "Salvar Alterações não funciona" nesta rodada.
+  const handleUpdateConfig = async (config: RestaurantConfig): Promise<boolean> => {
     const previous = restaurantConfig;
     setRestaurantConfig(config);
     setIsSaving(true);
     setSaveError(null);
-    saveRestaurantConfig(selectedSlug, token, config)
-      .catch((err) => {
-        console.error('Erro ao salvar configuração:', err);
-        setRestaurantConfig(previous); // inclui logo/banner/splash/badges/etc — tudo que passa por aqui
-        setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
-      })
-      .finally(() => setIsSaving(false));
+    try {
+      await saveRestaurantConfig(selectedSlug, token, config);
+      return true;
+    } catch (err: any) {
+      console.error('Erro ao salvar configuração:', err);
+      setRestaurantConfig(previous); // inclui logo/banner/splash/badges/etc — tudo que passa por aqui
+      setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -541,6 +600,8 @@ export const AdminPortal: React.FC = () => {
         onUpdateConfig={handleUpdateConfig}
         onCloseAdmin={() => (window.location.href = '/')}
         onDirtyChange={setIsDirty}
+        soundEnabled={soundEnabled}
+        onToggleSound={() => setSoundEnabled((v) => !v)}
       />
     </div>
   );

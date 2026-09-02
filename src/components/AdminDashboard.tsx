@@ -11,7 +11,18 @@ import {
   PromoBadge,
   RestaurantBadge
 } from '../types';
-import { formatCurrency, playSoundEffect, normalizeSplashImage, DEFAULT_BADGES, getBadgeInfo } from '../utils/helpers';
+import {
+  formatCurrency,
+  playSoundEffect,
+  normalizeSplashImage,
+  DEFAULT_BADGES,
+  getBadgeInfo,
+  ORDER_ALERT_SOUNDS,
+  getSelectedOrderAlertSoundId,
+  setSelectedOrderAlertSoundId,
+  playOrderAlertSound,
+  unlockOrderAlertAudio,
+} from '../utils/helpers';
 import { fetchMenu } from '../utils/api';
 import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
@@ -58,7 +69,7 @@ import {
   ChevronDown,
   Copy
 } from 'lucide-react';
-import { Tag } from 'lucide-react';
+import { Tag, Music } from 'lucide-react';
 
 interface AdminDashboardProps {
   // Restaurante sendo administrado e token de sessão do admin — necessários
@@ -73,18 +84,23 @@ interface AdminDashboardProps {
   onUpdateOrderStatus: (orderId: string, status: OrderStatus, driver?: DriverInfo, cancelReason?: string) => void;
   menuItems: MenuItem[];
   categories: Category[];
-  onAddMenuItem: (item: MenuItem) => void;
-  onUpdateMenuItem: (item: MenuItem) => void;
+  onAddMenuItem: (item: MenuItem) => Promise<boolean>;
+  onUpdateMenuItem: (item: MenuItem) => Promise<boolean>;
   onDeleteMenuItem: (id: string) => void;
   onToggleAvailability: (id: string) => void;
   onInjectDemoOrder?: (order: Order) => void;
   onUpdateMenuItems?: (items: MenuItem[]) => void;
   // Salva a lista de categorias (Fase 4 — Categorias por restaurante). Opcional
   // por compatibilidade, mas sempre presente na prática (AdminPortal já passa).
-  onUpdateCategories?: (categories: Category[]) => void;
+  onUpdateCategories?: (categories: Category[]) => Promise<boolean>;
   restaurantConfig: RestaurantConfig;
-  onUpdateConfig: (config: RestaurantConfig) => void;
+  onUpdateConfig: (config: RestaurantConfig) => Promise<boolean>;
   onCloseAdmin: () => void;
+  // Ligar/desligar alerta sonoro de pedido novo (Fase 4) — o estado real
+  // mora no AdminPortal, que é quem detecta o pedido chegando via polling;
+  // aqui só controla o toggle visual e o painel de escolher/testar o som.
+  soundEnabled: boolean;
+  onToggleSound: () => void;
   // Avisa o painel pai (AdminPortal) se existem edições no formulário de
   // Configurações ainda não salvas — usado pra impedir troca de restaurante
   // sem confirmação e perda acidental de alterações.
@@ -109,10 +125,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   restaurantConfig,
   onUpdateConfig,
   onCloseAdmin,
+  soundEnabled,
+  onToggleSound,
   onDirtyChange,
 }) => {
   const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'identity' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
-  const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showSoundPicker, setShowSoundPicker] = useState(false);
+  const [selectedAlertSoundId, setSelectedAlertSoundId] = useState(getSelectedOrderAlertSoundId);
 
   // ---------- Categorias do cardápio (Fase 4) ----------
   const [showCategoryPanel, setShowCategoryPanel] = useState(false);
@@ -126,8 +145,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // (nunca apaga produto junto com a categoria).
   const [categoryPendingDelete, setCategoryPendingDelete] = useState<Category | null>(null);
   const [moveProductsTargetId, setMoveProductsTargetId] = useState('');
+  const [categorySaveError, setCategorySaveError] = useState<string | null>(null);
 
-  const persistCategories = (next: Category[]) => onUpdateCategories?.(next);
+  const persistCategories = (next: Category[]) => onUpdateCategories?.(next) ?? Promise.resolve(true);
 
   const openNewCategoryForm = () => {
     setEditingCategoryId('new');
@@ -141,11 +161,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setCategoryDraftIcon(cat.icon || '');
     setCategoryDraftImage(cat.image || '');
   };
-  const closeCategoryForm = () => setEditingCategoryId(null);
+  const closeCategoryForm = () => {
+    setEditingCategoryId(null);
+    setCategorySaveError(null);
+  };
 
-  const saveCategoryForm = () => {
+  const saveCategoryForm = async () => {
     const name = categoryDraftName.trim();
     if (!name || categoryImageUploading) return; // ver comentário em handleSaveDishSubmit
+    setCategorySaveError(null);
+    let ok: boolean;
     if (editingCategoryId === 'new') {
       const id = name
         .toLowerCase()
@@ -161,17 +186,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         image: categoryDraftImage || undefined,
         active: true,
       };
-      persistCategories([...categories, newCategory]);
+      ok = await persistCategories([...categories, newCategory]);
     } else if (editingCategoryId) {
-      persistCategories(
+      ok = await persistCategories(
         categories.map((c) =>
           c.id === editingCategoryId
             ? { ...c, name, icon: categoryDraftIcon.trim() || c.icon, image: categoryDraftImage || undefined }
             : c
         )
       );
+    } else {
+      return;
     }
-    closeCategoryForm();
+    if (ok) {
+      closeCategoryForm();
+    } else {
+      setCategorySaveError('Não foi possível salvar. Veja o aviso no topo da tela e tente de novo.');
+    }
   };
 
   const moveCategory = (id: string, direction: -1 | 1) => {
@@ -235,6 +266,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const [driverPlate, setDriverPlate] = useState('');
   const [driverPhoto, setDriverPhoto] = useState('https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&q=80');
   const [driverPhotoUploading, setDriverPhotoUploading] = useState(false);
+  const [driverSaving, setDriverSaving] = useState(false);
+  const [driverSaveError, setDriverSaveError] = useState<string | null>(null);
 
   // Order Dispatch Modal (assigning driver)
   const [dispatchOrder, setDispatchOrder] = useState<Order | null>(null);
@@ -258,6 +291,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // sem isso, salvar durante o upload gravava a foto ANTIGA (a nova só
   // chegava depois e ficava perdida, sem nenhum aviso).
   const [dishImageUploading, setDishImageUploading] = useState(false);
+  const [dishSaving, setDishSaving] = useState(false);
+  const [dishSaveError, setDishSaveError] = useState<string | null>(null);
 
   // Config Form State
   const [localConfig, setLocalConfig] = useState<RestaurantConfig>({ ...restaurantConfig });
@@ -315,10 +350,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       setDishServes('1');
       setDishTags(['destaque']);
     }
+    setDishSaveError(null);
     setIsDishModalOpen(true);
   };
 
-  const handleSaveDishSubmit = (e: React.FormEvent) => {
+  const handleSaveDishSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!dishName.trim() || !dishPrice) return;
     if (dishImageUploading) return; // segunda trava — o botão já fica disabled, mas o form pode ser submetido via Enter
@@ -326,6 +362,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     const priceNum = parseFloat(dishPrice.replace(',', '.'));
     const origPriceNum = dishOriginalPrice ? parseFloat(dishOriginalPrice.replace(',', '.')) : undefined;
 
+    setDishSaving(true);
+    setDishSaveError(null);
+    let ok = false;
     if (editingDish) {
       const updated: MenuItem = {
         ...editingDish,
@@ -339,7 +378,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         servesCount: parseInt(dishServes) || 1,
         tags: dishTags,
       };
-      onUpdateMenuItem(updated);
+      ok = await onUpdateMenuItem(updated);
     } else {
       const newDish: MenuItem = {
         id: `item-${Date.now()}`,
@@ -354,11 +393,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         servesCount: parseInt(dishServes) || 1,
         tags: dishTags,
       };
-      onAddMenuItem(newDish);
+      ok = await onAddMenuItem(newDish);
     }
+    setDishSaving(false);
 
-    playSoundEffect('success');
-    setIsDishModalOpen(false);
+    // Só fecha o modal se o servidor confirmou o salvamento — antes o modal
+    // fechava sempre, mesmo quando o PUT falhava, e o admin via a janela
+    // sumir como se tivesse dado certo. Agora, se falhar, o modal continua
+    // aberto com o erro visível bem ao lado do botão (além do banner lá em
+    // cima), pra ficar óbvio que precisa tentar de novo.
+    if (ok) {
+      playSoundEffect('success');
+      setIsDishModalOpen(false);
+    } else {
+      setDishSaveError('Não foi possível salvar. Verifique sua conexão (ou se sua sessão expirou) e tente novamente.');
+    }
   };
 
   // Zone CRUD
@@ -657,7 +706,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     setIsDriverModalOpen(true);
   };
 
-  const handleSaveDriverSubmit = (e: React.FormEvent) => {
+  const handleSaveDriverSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!driverName.trim()) return;
     if (driverPhotoUploading) return; // ver comentário equivalente em handleSaveDishSubmit
@@ -694,9 +743,17 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     const updatedConfig = { ...localConfig, drivers: updatedDrivers };
     setLocalConfig(updatedConfig);
-    onUpdateConfig(updatedConfig);
-    setIsDriverModalOpen(false);
-    playSoundEffect('success');
+    setDriverSaving(true);
+    setDriverSaveError(null);
+    const ok = await onUpdateConfig(updatedConfig);
+    setDriverSaving(false);
+    // Mesma correção do formulário de prato: só fecha se o servidor confirmou.
+    if (ok) {
+      setIsDriverModalOpen(false);
+      playSoundEffect('success');
+    } else {
+      setDriverSaveError('Não foi possível salvar. Verifique sua conexão (ou se sua sessão expirou) e tente novamente.');
+    }
   };
 
   const handleDeleteDriver = (id: string) => {
@@ -916,12 +973,13 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 relative">
             <button
               id="admin-sound-toggle-btn"
               onClick={() => {
-                setSoundEnabled(!soundEnabled);
-                if (!soundEnabled) playSoundEffect('bell');
+                unlockOrderAlertAudio(); // toque = gesto do usuário, aproveita pra destravar áudio no iOS
+                onToggleSound();
+                if (!soundEnabled) playOrderAlertSound(selectedAlertSoundId);
               }}
               className={`p-2 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all ${
                 soundEnabled
@@ -933,6 +991,60 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               {soundEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
               <span className="hidden sm:inline">{soundEnabled ? 'Som Ativado' : 'Sem Som'}</span>
             </button>
+
+            <button
+              id="admin-sound-picker-btn"
+              onClick={() => setShowSoundPicker((v) => !v)}
+              className="p-2 rounded-xl border border-stone-700 bg-stone-800 text-stone-300 hover:text-amber-400 text-xs font-semibold"
+              title="Escolher som de alerta de pedido novo"
+            >
+              <Music className="w-4 h-4" />
+            </button>
+
+            {showSoundPicker && (
+              <div className="absolute top-full right-0 mt-2 w-72 bg-white rounded-2xl border border-stone-200 shadow-xl p-3 z-50 text-stone-900">
+                <p className="text-xs font-bold text-stone-800 mb-0.5">Som de pedido novo</p>
+                <p className="text-[11px] text-stone-500 mb-2">
+                  Toca automaticamente quando um pedido novo chega, em qualquer aparelho (celular ou PC) com o painel aberto.
+                </p>
+                <div className="space-y-1">
+                  {ORDER_ALERT_SOUNDS.map((sound) => (
+                    <div
+                      key={sound.id}
+                      className={`flex items-center gap-2 p-2 rounded-xl border ${
+                        selectedAlertSoundId === sound.id ? 'border-amber-400 bg-amber-50' : 'border-stone-200'
+                      }`}
+                    >
+                      <button
+                        onClick={() => {
+                          setSelectedAlertSoundId(sound.id);
+                          setSelectedOrderAlertSoundId(sound.id);
+                        }}
+                        className="flex-1 text-left text-xs font-semibold"
+                      >
+                        {sound.label}
+                      </button>
+                      <button
+                        onClick={() => {
+                          unlockOrderAlertAudio();
+                          playOrderAlertSound(sound.id);
+                        }}
+                        className="px-2 py-1 rounded-lg bg-stone-900 text-white text-[10px] font-bold hover:bg-stone-700"
+                        title="Testar este som"
+                      >
+                        ▶ Testar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+                <button
+                  onClick={() => setShowSoundPicker(false)}
+                  className="w-full mt-2 py-1.5 text-[11px] font-bold text-stone-500 hover:text-stone-800"
+                >
+                  Fechar
+                </button>
+              </div>
+            )}
 
             <button
               id="admin-return-menu-btn"
@@ -1548,9 +1660,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                               onUploadingChange={setCategoryImageUploading}
                               aspect="wide"
                             />
-                            <div className="flex justify-end items-center gap-2 pt-1">
+                            <div className="flex justify-end items-center gap-2 pt-1 flex-wrap">
                               {categoryImageUploading && (
                                 <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto…</span>
+                              )}
+                              {!categoryImageUploading && categorySaveError && (
+                                <span className="text-[11px] text-rose-600 font-semibold mr-auto">⚠️ {categorySaveError}</span>
                               )}
                               <button onClick={closeCategoryForm} className="px-3 py-1.5 text-xs font-bold text-stone-500 hover:text-stone-800">
                                 Cancelar
@@ -3634,9 +3749,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 />
               </div>
 
-              <div className="pt-3 flex justify-end items-center gap-2">
+              <div className="pt-3 flex justify-end items-center gap-2 flex-wrap">
                 {driverPhotoUploading && (
                   <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto, aguarde…</span>
+                )}
+                {!driverPhotoUploading && driverSaveError && (
+                  <span className="text-[11px] text-rose-600 font-semibold mr-auto">⚠️ {driverSaveError}</span>
                 )}
                 <button
                   type="button"
@@ -3647,10 +3765,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={driverPhotoUploading}
+                  disabled={driverPhotoUploading || driverSaving}
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold text-xs shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Salvar Entregador
+                  {driverSaving ? 'Salvando…' : 'Salvar Entregador'}
                 </button>
               </div>
             </form>
@@ -3812,9 +3930,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
 
-              <div className="pt-3 border-t border-stone-200 flex justify-end items-center gap-2">
+              <div className="pt-3 border-t border-stone-200 flex justify-end items-center gap-2 flex-wrap">
                 {dishImageUploading && (
                   <span className="text-[11px] text-amber-600 font-semibold mr-auto">Enviando foto, aguarde…</span>
+                )}
+                {!dishImageUploading && dishSaveError && (
+                  <span className="text-[11px] text-rose-600 font-semibold mr-auto">⚠️ {dishSaveError}</span>
                 )}
                 <button
                   type="button"
@@ -3825,10 +3946,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </button>
                 <button
                   type="submit"
-                  disabled={dishImageUploading}
+                  disabled={dishImageUploading || dishSaving}
                   className="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold shadow-xs disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {editingDish ? 'Salvar Alterações' : 'Adicionar Prato'}
+                  {dishSaving ? 'Salvando…' : editingDish ? 'Salvar Alterações' : 'Adicionar Prato'}
                 </button>
               </div>
             </form>
