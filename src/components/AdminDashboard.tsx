@@ -23,7 +23,7 @@ import {
   playOrderAlertSound,
   unlockOrderAlertAudio,
 } from '../utils/helpers';
-import { fetchMenu } from '../utils/api';
+import { fetchMenu, uploadImage } from '../utils/api';
 import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
 import { ReceiptPrintModal } from './ReceiptPrintModal';
@@ -3197,6 +3197,52 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {(img.overlay ?? 0) > 0 && (
                             <div className="absolute inset-0 bg-black" style={{ opacity: (img.overlay ?? 0) / 100 }} />
                           )}
+                          <label
+                            htmlFor={`splash-replace-${idx}`}
+                            className="absolute inset-x-1 bottom-1 rounded-md bg-black/75 text-white text-[9px] font-bold text-center py-1 cursor-pointer hover:bg-black/90"
+                            title="Trocar esta foto"
+                          >
+                            Trocar foto
+                          </label>
+                          <input
+                            id={`splash-replace-${idx}`}
+                            type="file"
+                            accept="image/*"
+                            className="hidden"
+                            onChange={async (e) => {
+                              const file = e.target.files?.[0];
+                              e.target.value = '';
+                              if (!file) return;
+                              if (!/^image\//.test(file.type)) {
+                                window.alert('Selecione um arquivo de imagem.');
+                                return;
+                              }
+                              if (file.size > 8 * 1024 * 1024) {
+                                window.alert('A imagem deve ter no máximo 8MB.');
+                                return;
+                              }
+                              try {
+                                const newUrl = await uploadImage(slug, token, file);
+                                const images = (localConfig.splashImages || []).map(normalizeSplashImage);
+                                const previousUrl = images[idx]?.url;
+                                if (!images[idx]) return;
+                                images[idx] = { ...images[idx], url: newUrl };
+                                const updated = { ...localConfig, splashImages: images };
+                                setLocalConfig(updated);
+                                const ok = await onUpdateConfig(updated);
+                                if (!ok) {
+                                  const reverted = images.map((item, imageIdx) =>
+                                    imageIdx === idx ? { ...item, url: previousUrl || item.url } : item
+                                  );
+                                  setLocalConfig((current) => ({ ...current, splashImages: reverted }));
+                                  window.alert('A foto foi enviada, mas não foi possível salvar a sequência. Tente novamente.');
+                                }
+                              } catch (err: any) {
+                                console.error('Falha ao trocar foto da sequência:', err);
+                                window.alert(err?.message || 'Não foi possível trocar a foto.');
+                              }
+                            }}
+                          />
                         </div>
                         <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
                           <label className="text-[10px] font-bold text-stone-600 col-span-2 flex items-center gap-1.5">
