@@ -112,7 +112,18 @@ function requireOwnRestaurant(req, res, next) {
 }
 
 const app = express();
+app.set('trust proxy', 1);
 app.use(cors());
+
+// Compatibilidade com builds antigos que receberam VITE_API_URL já terminado
+// em /api e, por isso, ainda podem chamar /api/api/... durante uma transição
+// de deploy. Normaliza antes das rotas para que esses clientes não recebam 404.
+app.use((req, res, next) => {
+  if (req.url === '/api/api' || req.url.startsWith('/api/api/')) {
+    req.url = req.url.replace(/^\/api\/api(?=\/|$)/, '/api');
+  }
+  next();
+});
 app.use(express.json({ limit: '5mb' }));
 
 // ---------- Upload de fotos (logo, banner, splash, pratos, entregadores) ----------
@@ -465,6 +476,12 @@ app.post('/api/:slug/upload', requireAdmin, requireOwnRestaurant, (req, res) => 
         }
       } else {
         url = await saveImageToDisk(req.file, slug);
+      }
+      // Se o fallback local estiver sendo usado, devolve uma URL absoluta.
+      // Assim o frontend funciona mesmo quando VITE_API_URL está apontando
+      // para outro domínio ou quando o build antigo ainda está em cache.
+      if (url.startsWith('/uploads/')) {
+        url = `${req.protocol}://${req.get('host')}${url}`;
       }
       res.status(201).json({ ok: true, url });
     } catch (uploadErr) {
