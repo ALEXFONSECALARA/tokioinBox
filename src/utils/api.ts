@@ -1,13 +1,10 @@
 import { Category, MenuItem, Order, RestaurantConfig, LayoutId } from '../types';
 
-// Aceita VITE_API_URL tanto como URL do servidor (https://api.exemplo.com)
-// quanto como URL já terminada em /api (https://api.exemplo.com/api).
-// Sem essa normalização, as rotas ficavam /api/api/... e retornavam 404 —
-// inclusive Usuários e Permissões e upload de fotos.
 const API_BASE = String(import.meta.env.VITE_API_URL || '')
   .trim()
   .replace(/\/+$/, '')
   .replace(/\/api$/i, '');
+const API_PREFIX = API_BASE ? `${API_BASE}/api` : '/api';
 
 // Dados usados pela vitrine multi-restaurantes "/". `emoji` é mantido só por
 // compatibilidade retroativa (restaurantes antigos sem foto configurada);
@@ -66,12 +63,12 @@ function authHeaders(token: string): HeadersInit {
 // ---------- Público ----------
 
 export async function fetchRestaurants(): Promise<RestaurantSummary[]> {
-  const res = await fetch(`${API_BASE}/api/restaurants`);
+  const res = await fetch(`${API_PREFIX}/restaurants`);
   return handleResponse<RestaurantSummary[]>(res);
 }
 
 export async function fetchPlatformSettings(): Promise<PlatformSettings> {
-  const res = await fetch(`${API_BASE}/api/platform`);
+  const res = await fetch(`${API_PREFIX}/platform`);
   return handleResponse<PlatformSettings>(res);
 }
 
@@ -81,17 +78,17 @@ export async function fetchPlatformSettings(): Promise<PlatformSettings> {
 export async function fetchOperationalStatus(
   slug: string
 ): Promise<{ operationalStatus: string; operationalAdjustmentMinutes: number }> {
-  const res = await fetch(`${API_BASE}/api/${slug}/operational-status`);
+  const res = await fetch(`${API_PREFIX}/${slug}/operational-status`);
   return handleResponse(res);
 }
 
 export async function fetchMenu(slug: string): Promise<MenuData> {
-  const res = await fetch(`${API_BASE}/api/${slug}/menu`);
+  const res = await fetch(`${API_PREFIX}/${slug}/menu`);
   return handleResponse<MenuData>(res);
 }
 
 export async function createOrder(slug: string, order: Order): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/${slug}/orders`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/orders`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(order),
@@ -100,14 +97,14 @@ export async function createOrder(slug: string, order: Order): Promise<void> {
 }
 
 export async function fetchOrder(slug: string, orderId: string): Promise<Order> {
-  const res = await fetch(`${API_BASE}/api/${slug}/orders/${orderId}`);
+  const res = await fetch(`${API_PREFIX}/${slug}/orders/${orderId}`);
   return handleResponse<Order>(res);
 }
 
 // ---------- Admin (super-admin único, com token) ----------
 
 export async function adminLogin(password: string): Promise<string> {
-  const res = await fetch(`${API_BASE}/api/admin/login`, {
+  const res = await fetch(`${API_PREFIX}/admin/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ password }),
@@ -120,7 +117,7 @@ export async function adminLogin(password: string): Promise<string> {
 // troca do super-admin, que precisa mostrar e permitir reativar restaurantes
 // desativados (diferente de fetchRestaurants, que é pública e só traz ativos).
 export async function fetchRestaurantsAdmin(token: string): Promise<RestaurantSummary[]> {
-  const res = await fetch(`${API_BASE}/api/admin/restaurants`, { headers: authHeaders(token) });
+  const res = await fetch(`${API_PREFIX}/admin/restaurants`, { headers: authHeaders(token) });
   return handleResponse<RestaurantSummary[]>(res);
 }
 
@@ -129,7 +126,7 @@ export async function setRestaurantActive(
   slug: string,
   active: boolean
 ): Promise<RestaurantSummary | null> {
-  const res = await fetch(`${API_BASE}/api/admin/restaurants/${slug}/active`, {
+  const res = await fetch(`${API_PREFIX}/admin/restaurants/${slug}/active`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify({ active }),
@@ -158,7 +155,7 @@ export async function adminUserLogin(
   login: string,
   password: string
 ): Promise<{ token: string; user: AdminUser }> {
-  const res = await fetch(`${API_BASE}/api/admin/users/login`, {
+  const res = await fetch(`${API_PREFIX}/admin/users/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ login, password }),
@@ -167,7 +164,7 @@ export async function adminUserLogin(
 }
 
 export async function fetchAdminUsers(token: string): Promise<AdminUser[]> {
-  const res = await fetch(`${API_BASE}/api/admin/users`, { headers: authHeaders(token) });
+  const res = await fetch(`${API_PREFIX}/admin/users`, { headers: authHeaders(token) });
   return handleResponse<AdminUser[]>(res);
 }
 
@@ -182,7 +179,7 @@ export async function createAdminUser(
     permissions: Record<string, boolean>;
   }
 ): Promise<AdminUser> {
-  const res = await fetch(`${API_BASE}/api/admin/users`, {
+  const res = await fetch(`${API_PREFIX}/admin/users`, {
     method: 'POST',
     headers: authHeaders(token),
     body: JSON.stringify(data),
@@ -203,7 +200,7 @@ export async function updateAdminUser(
     newPassword: string;
   }>
 ): Promise<AdminUser> {
-  const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+  const res = await fetch(`${API_PREFIX}/admin/users/${id}`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(patch),
@@ -213,7 +210,7 @@ export async function updateAdminUser(
 }
 
 export async function fetchOrdersAdmin(slug: string, token: string): Promise<Order[]> {
-  const res = await fetch(`${API_BASE}/api/${slug}/orders`, { headers: authHeaders(token) });
+  const res = await fetch(`${API_PREFIX}/${slug}/orders`, { headers: authHeaders(token) });
   return handleResponse<Order[]>(res);
 }
 
@@ -223,7 +220,7 @@ export async function updateOrderAdmin(
   orderId: string,
   patch: Partial<Order>
 ): Promise<Order> {
-  const res = await fetch(`${API_BASE}/api/${slug}/orders/${orderId}`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/orders/${orderId}`, {
     method: 'PATCH',
     headers: authHeaders(token),
     body: JSON.stringify(patch),
@@ -233,7 +230,7 @@ export async function updateOrderAdmin(
 }
 
 export async function saveMenuItems(slug: string, token: string, menuItems: MenuItem[]): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/${slug}/menu-items`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/menu-items`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(menuItems),
@@ -242,7 +239,7 @@ export async function saveMenuItems(slug: string, token: string, menuItems: Menu
 }
 
 export async function saveCategories(slug: string, token: string, categories: Category[]): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/${slug}/categories`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/categories`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(categories),
@@ -256,7 +253,7 @@ export async function saveCategories(slug: string, token: string, categories: Ca
 export async function uploadImage(slug: string, token: string, file: File): Promise<string> {
   const formData = new FormData();
   formData.append('image', file);
-  const res = await fetch(`${API_BASE}/api/${slug}/upload`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/upload`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` }, // sem Content-Type: o browser define o boundary do multipart
     body: formData,
@@ -267,11 +264,11 @@ export async function uploadImage(slug: string, token: string, file: File): Prom
   // precisa do prefixo do backend quando front e back estão em domínios
   // separados (VITE_API_URL definido).
   const isAbsolute = /^https?:\/\//i.test(data.url);
-  return isAbsolute || !API_BASE ? data.url : `${API_BASE}${data.url}`;
+  return isAbsolute ? data.url : new URL(data.url, API_BASE || window.location.origin).toString();
 }
 
 export async function savePlatformSettings(token: string, settings: PlatformSettings): Promise<PlatformSettings> {
-  const res = await fetch(`${API_BASE}/api/admin/platform`, {
+  const res = await fetch(`${API_PREFIX}/admin/platform`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(settings),
@@ -285,7 +282,7 @@ export async function saveRestaurantConfig(
   token: string,
   config: RestaurantConfig
 ): Promise<void> {
-  const res = await fetch(`${API_BASE}/api/${slug}/config`, {
+  const res = await fetch(`${API_PREFIX}/${slug}/config`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(config),
