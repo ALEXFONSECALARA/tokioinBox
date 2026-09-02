@@ -8,6 +8,8 @@ import { mkdir, writeFile } from 'fs/promises';
 import { existsSync } from 'fs';
 import * as db from './lib/db.js';
 import { isCloudinaryConfigured, uploadImageBuffer } from './lib/cloudinary.js';
+import { hashPassword, verifyPassword } from './lib/passwords.js';
+import { sanitizePermissions } from './lib/permissions.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
@@ -20,33 +22,93 @@ const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123';
 
 // Tokens de sessão do admin ficam em memória (somem se o servidor reiniciar,
 // então o admin só precisa logar de novo — nada grave).
-const adminTokens = new Map(); // token -> expiresAt (timestamp ms)
+//
+// Fase 4 (itens 17-19): cada token agora guarda também QUEM logou.
+// userId === null → login mestre (senha única ADMIN_PASSWORD, comportamento
+// de sempre, acesso total, nada muda pra quem já usa isso). userId
+// preenchido → usuário individual, com permissões e restaurante próprios
+// (ver server/lib/permissions.js e requirePermission/requireOwnRestaurant
+// abaixo).
+const adminTokens = new Map(); // token -> { expiresAt, userId }
 const TOKEN_TTL_MS = 12 * 60 * 60 * 1000; // 12 horas
 
-function issueToken() {
+function issueToken(userId = null) {
   const token = crypto.randomBytes(24).toString('hex');
-  adminTokens.set(token, Date.now() + TOKEN_TTL_MS);
+  adminTokens.set(token, { expiresAt: Date.now() + TOKEN_TTL_MS, userId });
   return token;
 }
 
-function isTokenValid(token) {
-  if (!token) return false;
-  const expiresAt = adminTokens.get(token);
-  if (!expiresAt) return false;
-  if (Date.now() > expiresAt) {
+function getTokenSession(token) {
+  if (!token) return null;
+  const session = adminTokens.get(token);
+  if (!session) return null;
+  if (Date.now() > session.expiresAt) {
     adminTokens.delete(token);
-    return false;
+    return null;
   }
-  return true;
+  return session;
 }
 
-function requireAdmin(req, res, next) {
+// Middleware base: exige um token válido (mestre OU de usuário individual) e
+// popula req.adminUser com o que a rota precisa saber pra decidir permissão/
+// isolamento. Mantém 100% de compatibilidade com o login mestre existente.
+async function requireAdmin(req, res, next) {
   const auth = req.headers.authorization || '';
   const token = auth.startsWith('Bearer ') ? auth.slice(7) : null;
-  if (!isTokenValid(token)) {
+  const session = getTokenSession(token);
+  if (!session) {
     return res.status(401).json({ error: 'Não autorizado. Faça login no admin novamente.' });
   }
-  next();
+  if (session.userId === null) {
+    // Login mestre — acesso total, exatamente como sempre funcionou.
+    req.adminUser = { isMaster: true, permissions: {}, restaurantSlug: null };
+    return next();
+  }
+  try {
+    const user = await db.getAdminUserById(session.userId);
+    if (!user || !user.active) {
+      adminTokens.delete(token);
+      return res.status(401).json({ error: 'Usuário desativado ou não encontrado. Faça login novamente.' });
+    }
+    req.adminUser = {
+      isMaster: false,
+      id: user.id,
+      restaurantSlug: user.restaurantSlug || null,
+      permissions: user.permissions || {},
+    };
+    next();
+  } catch (err) {
+    console.error('Erro ao validar sessão do usuário:', err);
+    res.status(500).json({ error: 'Não foi possível validar a sessão.' });
+  }
+}
+
+function hasPermission(req, key) {
+  return Boolean(req.adminUser?.isMaster || req.adminUser?.permissions?.[key]);
+}
+
+// Exige uma permissão específica (item 18). Login mestre sempre passa.
+function requirePermission(key) {
+  return (req, res, next) => {
+    if (!hasPermission(req, key)) {
+      return res.status(403).json({ error: 'Você não tem permissão para esta ação.' });
+    }
+    next();
+  };
+}
+
+// Isolamento entre restaurantes (itens 19/44): um usuário vinculado a um
+// restaurante não pode mexer em outro, a menos que tenha a permissão
+// admin_gerenciar_restaurantes. Login mestre e usuários sem restaurante
+// fixo (super-admin) não são afetados por essa checagem.
+function requireOwnRestaurant(req, res, next) {
+  const { slug } = req.params;
+  const user = req.adminUser;
+  if (!user || user.isMaster) return next();
+  if (!user.restaurantSlug) return next(); // usuário de escopo super-admin
+  if (user.restaurantSlug === slug) return next();
+  if (hasPermission(req, 'admin_gerenciar_restaurantes')) return next();
+  return res.status(403).json({ error: 'Você não tem acesso a este restaurante.' });
 }
 
 const app = express();
@@ -190,6 +252,145 @@ app.post('/api/admin/login', (req, res) => {
   res.json({ token: issueToken() });
 });
 
+// Login individual (Fase 4, item 17) — login + senha de um usuário criado
+// pelo super-admin em /api/admin/users. Convive com o login mestre acima
+// sem substituí-lo: a tela de login do painel pode continuar usando a senha
+// única, ou usar login+senha de um usuário específico.
+app.post('/api/admin/users/login', async (req, res) => {
+  const { login, password } = req.body || {};
+  if (!login || !password) {
+    return res.status(400).json({ error: 'Informe login e senha.' });
+  }
+  try {
+    const user = await db.getAdminUserByLogin(login);
+    if (!user || !user.active) {
+      return res.status(401).json({ error: 'Login ou senha incorretos.' });
+    }
+    const ok = await verifyPassword(password, user.passwordHash);
+    if (!ok) {
+      return res.status(401).json({ error: 'Login ou senha incorretos.' });
+    }
+    res.json({
+      token: issueToken(user.id),
+      user: {
+        id: user.id,
+        name: user.name,
+        login: user.login,
+        role: user.role,
+        restaurantSlug: user.restaurantSlug,
+        permissions: user.permissions,
+      },
+    });
+  } catch (err) {
+    console.error('Erro no login de usuário:', err);
+    res.status(500).json({ error: 'Não foi possível fazer login.' });
+  }
+});
+
+// ---------- Usuários do painel + permissões granulares (Fase 4, itens 17-19) ----------
+// Sempre exige admin_gerenciar_usuarios (ou restaurante_usuarios pra um
+// usuário mexer só na sua própria lista/restaurante) — login mestre sempre
+// passa, sem mudar nada de como ele já funcionava.
+function canManageUsers(req) {
+  return hasPermission(req, 'admin_gerenciar_usuarios') || hasPermission(req, 'restaurante_usuarios');
+}
+
+// Nunca devolve o hash da senha pro frontend.
+function publicAdminUser(user) {
+  const { passwordHash, ...rest } = user;
+  return rest;
+}
+
+app.get('/api/admin/users', requireAdmin, async (req, res) => {
+  if (!canManageUsers(req)) return res.status(403).json({ error: 'Você não tem permissão para ver usuários.' });
+  try {
+    let users = await db.listAdminUsers();
+    // Usuário sem escopo de super-admin (restaurante_usuarios, não
+    // admin_gerenciar_usuarios) só vê os usuários do próprio restaurante.
+    if (!req.adminUser.isMaster && !hasPermission(req, 'admin_gerenciar_usuarios') && req.adminUser.restaurantSlug) {
+      users = users.filter((u) => u.restaurantSlug === req.adminUser.restaurantSlug);
+    }
+    res.json(users.map(publicAdminUser));
+  } catch (err) {
+    console.error('Erro ao listar usuários:', err);
+    res.status(500).json({ error: 'Não foi possível carregar os usuários.' });
+  }
+});
+
+app.post('/api/admin/users', requireAdmin, async (req, res) => {
+  if (!canManageUsers(req)) return res.status(403).json({ error: 'Você não tem permissão para criar usuários.' });
+  const { name, login, password, restaurantSlug, role, permissions } = req.body || {};
+  if (!name || !login || !password) {
+    return res.status(400).json({ error: 'Nome, login e senha inicial são obrigatórios.' });
+  }
+  // Usuário não-mestre sem escopo global só pode criar usuários pro próprio
+  // restaurante (reforço de isolamento — item 19).
+  let finalRestaurantSlug = restaurantSlug || null;
+  if (!req.adminUser.isMaster && !hasPermission(req, 'admin_gerenciar_usuarios')) {
+    finalRestaurantSlug = req.adminUser.restaurantSlug;
+  }
+  if (finalRestaurantSlug && !(await db.restaurantExists(finalRestaurantSlug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    const passwordHash = await hashPassword(password);
+    const user = await db.createAdminUser({
+      name,
+      login,
+      passwordHash,
+      restaurantSlug: finalRestaurantSlug,
+      role,
+      permissions: sanitizePermissions(permissions),
+    });
+    res.status(201).json({ ok: true, user: publicAdminUser(user) });
+  } catch (err) {
+    if (err.code === 'LOGIN_TAKEN') {
+      return res.status(409).json({ error: 'Já existe um usuário com esse login.' });
+    }
+    console.error('Erro ao criar usuário:', err);
+    res.status(500).json({ error: 'Não foi possível criar o usuário.' });
+  }
+});
+
+// Editar dados, permissões, ativar/desativar e (opcionalmente) redefinir a
+// senha de um usuário. O super-admin nunca vê a senha original — só pode
+// definir uma nova (item 19).
+app.patch('/api/admin/users/:id', requireAdmin, async (req, res) => {
+  if (!canManageUsers(req)) return res.status(403).json({ error: 'Você não tem permissão para editar usuários.' });
+  const { id } = req.params;
+  const existing = await db.getAdminUserById(id).catch(() => null);
+  if (!existing) return res.status(404).json({ error: 'Usuário não encontrado.' });
+  // Isolamento: quem não é mestre/gerenciar_usuarios global só edita usuários
+  // do próprio restaurante.
+  if (
+    !req.adminUser.isMaster &&
+    !hasPermission(req, 'admin_gerenciar_usuarios') &&
+    existing.restaurantSlug !== req.adminUser.restaurantSlug
+  ) {
+    return res.status(403).json({ error: 'Você não tem acesso a este usuário.' });
+  }
+  const { name, restaurantSlug, role, active, permissions, newPassword } = req.body || {};
+  const patch = {};
+  if (name !== undefined) patch.name = name;
+  if (role !== undefined) patch.role = role;
+  if (active !== undefined) patch.active = Boolean(active);
+  if (permissions !== undefined) patch.permissions = sanitizePermissions(permissions);
+  // Só quem tem escopo global pode mudar o restaurante de um usuário.
+  if (restaurantSlug !== undefined && (req.adminUser.isMaster || hasPermission(req, 'admin_gerenciar_usuarios'))) {
+    patch.restaurantSlug = restaurantSlug || null;
+  }
+  if (newPassword) {
+    patch.passwordHash = await hashPassword(newPassword);
+  }
+  try {
+    const updated = await db.updateAdminUser(id, patch);
+    res.json({ ok: true, user: publicAdminUser(updated) });
+  } catch (err) {
+    console.error('Erro ao atualizar usuário:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar o usuário.' });
+  }
+});
+
 // ---------- Rotas do admin (protegidas) ----------
 
 // Lista TODOS os restaurantes (ativos e inativos) — usada pela barra de troca
@@ -207,7 +408,11 @@ app.get('/api/admin/restaurants', requireAdmin, async (req, res) => {
 
 // Ativa/desativa um restaurante. Nunca apaga nada — só some da vitrine
 // pública e passa a recusar novos pedidos (ver POST /api/:slug/orders).
-app.patch('/api/admin/restaurants/:slug/active', requireAdmin, async (req, res) => {
+app.patch(
+  '/api/admin/restaurants/:slug/active',
+  requireAdmin,
+  requirePermission('admin_ativar_desativar_restaurantes'),
+  async (req, res) => {
   const { slug } = req.params;
   const { active } = req.body || {};
   if (typeof active !== 'boolean') {
@@ -229,7 +434,7 @@ app.patch('/api/admin/restaurants/:slug/active', requireAdmin, async (req, res) 
 // do restaurante. Retorna a URL pública já pronta pra salvar no cardápio/config
 // — https permanente do Cloudinary quando configurado, ou /uploads/... local
 // como fallback (ver comentário acima do multer).
-app.post('/api/:slug/upload', requireAdmin, (req, res) => {
+app.post('/api/:slug/upload', requireAdmin, requireOwnRestaurant, (req, res) => {
   const { slug } = req.params;
   imageUpload.single('image')(req, res, async (err) => {
     if (err) {
@@ -269,7 +474,7 @@ app.post('/api/:slug/upload', requireAdmin, (req, res) => {
   });
 });
 
-app.put('/api/:slug/menu-items', requireAdmin, async (req, res) => {
+app.put('/api/:slug/menu-items', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
   const menuItems = req.body;
@@ -283,7 +488,7 @@ app.put('/api/:slug/menu-items', requireAdmin, async (req, res) => {
   }
 });
 
-app.put('/api/:slug/categories', requireAdmin, async (req, res) => {
+app.put('/api/:slug/categories', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
   const categories = req.body;
@@ -318,7 +523,7 @@ app.get('/api/:slug/operational-status', async (req, res) => {
   }
 });
 
-app.put('/api/:slug/config', requireAdmin, async (req, res) => {
+app.put('/api/:slug/config', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
   const incoming = req.body;
@@ -353,7 +558,7 @@ app.put('/api/admin/platform', requireAdmin, async (req, res) => {
 });
 
 // Admin lista todos os pedidos de um restaurante
-app.get('/api/:slug/orders', requireAdmin, async (req, res) => {
+app.get('/api/:slug/orders', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
   try {
@@ -365,7 +570,7 @@ app.get('/api/:slug/orders', requireAdmin, async (req, res) => {
 });
 
 // Admin atualiza um pedido (status, entregador, etc)
-app.patch('/api/:slug/orders/:id', requireAdmin, async (req, res) => {
+app.patch('/api/:slug/orders/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug, id } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
   try {
