@@ -205,6 +205,11 @@ app.get('/api/:slug/menu', async (req, res) => {
     if (!data.restaurantConfig) {
       return res.status(500).json({ error: `Configuração de "${slug}" não encontrada (config.json ausente).` });
     }
+    // A configuração inclui fotos da splash e pode ser alterada pelo admin a qualquer momento.
+    // Não permita que navegador/proxy entregue uma versão antiga depois de uma troca de foto.
+    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    res.set('Pragma', 'no-cache');
+    res.set('Expires', '0');
     res.json(data);
   } catch (err) {
     console.error(`Erro ao ler cardápio de ${slug}:`, err);
@@ -358,8 +363,25 @@ app.post('/api/admin/users', requireAdmin, async (req, res) => {
     if (err.code === 'LOGIN_TAKEN') {
       return res.status(409).json({ error: 'Já existe um usuário com esse login.' });
     }
-    console.error('Erro ao criar usuário:', err);
-    res.status(500).json({ error: 'Não foi possível criar o usuário.' });
+
+    // Supabase: quando a migração 0012 ainda não foi executada, a tabela
+    // admin_users não existe e o erro original acabava escondido atrás de
+    // "Não foi possível criar o usuário". Retornamos uma mensagem acionável
+    // sem expor a chave, SQL ou detalhes internos do banco.
+    if (err.code === '42P01' || /relation .*admin_users.* does not exist/i.test(String(err.message || ''))) {
+      console.error('Tabela admin_users ausente. Execute supabase/migrations/0012_admin_users.sql no Supabase.');
+      return res.status(503).json({
+        error: 'O banco ainda não está preparado para Usuários e Permissões. Execute a migração 0012_admin_users.sql no Supabase e faça um novo deploy.'
+      });
+    }
+
+    console.error('Erro ao criar usuário:', {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+    });
+    res.status(500).json({ error: 'Não foi possível criar o usuário. Verifique o log do servidor para identificar o erro do banco.' });
   }
 });
 
