@@ -3,6 +3,7 @@
 // de comportamento. Continua sendo o fallback automático quando o Supabase
 // não está configurado (ver server/lib/db.js e server/lib/supabaseClient.js).
 import path from 'path';
+import { randomUUID } from 'crypto';
 import { fileURLToPath } from 'url';
 import { readFile, writeFile, mkdir } from 'fs/promises';
 
@@ -10,6 +11,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, '..', 'data');
 const RESTAURANTS_FILE = path.join(DATA_DIR, 'restaurants.json');
 const PLATFORM_FILE = path.join(DATA_DIR, 'platform.json');
+const ADMIN_USERS_FILE = path.join(DATA_DIR, 'admin-users.json');
 
 const DEFAULT_PLATFORM_SETTINGS = {
   landingTitle: 'Escolha seu restaurante',
@@ -188,4 +190,54 @@ export async function updateConfig(slug, incoming) {
   const merged = { ...existing, ...incoming };
   await writeJson(configPath(slug), merged);
   return merged;
+}
+
+// ---------- Usuários do painel + permissões granulares (Fase 4, itens 17-19) ----------
+
+export async function listAdminUsers() {
+  return readJson(ADMIN_USERS_FILE, []);
+}
+
+export async function getAdminUserByLogin(login) {
+  const users = await readJson(ADMIN_USERS_FILE, []);
+  return users.find((u) => u.login === login) || null;
+}
+
+export async function getAdminUserById(id) {
+  const users = await readJson(ADMIN_USERS_FILE, []);
+  return users.find((u) => u.id === id) || null;
+}
+
+export async function createAdminUser({ name, login, passwordHash, restaurantSlug, role, permissions }) {
+  const users = await readJson(ADMIN_USERS_FILE, []);
+  if (users.some((u) => u.login === login)) {
+    const err = new Error('Já existe um usuário com esse login.');
+    err.code = 'LOGIN_TAKEN';
+    throw err;
+  }
+  const now = new Date().toISOString();
+  const user = {
+    id: randomUUID(),
+    name,
+    login,
+    passwordHash,
+    restaurantSlug: restaurantSlug || null,
+    role: role || 'operador',
+    active: true,
+    permissions: permissions || {},
+    createdAt: now,
+    updatedAt: now,
+  };
+  users.push(user);
+  await writeJson(ADMIN_USERS_FILE, users);
+  return user;
+}
+
+export async function updateAdminUser(id, patch) {
+  const users = await readJson(ADMIN_USERS_FILE, []);
+  const idx = users.findIndex((u) => u.id === id);
+  if (idx === -1) return null;
+  users[idx] = { ...users[idx], ...patch, id: users[idx].id, updatedAt: new Date().toISOString() };
+  await writeJson(ADMIN_USERS_FILE, users);
+  return users[idx];
 }

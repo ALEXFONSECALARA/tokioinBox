@@ -30,3 +30,9 @@ export const updateCategories = impl.updateCategories;
 export const updateConfig = impl.updateConfig;
 export const getPlatformSettings = impl.getPlatformSettings;
 export const updatePlatformSettings = impl.updatePlatformSettings;
+// Usuários do painel + permissões granulares (Fase 4, itens 17-19)
+export const listAdminUsers = impl.listAdminUsers;
+export const getAdminUserByLogin = impl.getAdminUserByLogin;
+export const getAdminUserById = impl.getAdminUserById;
+export const createAdminUser = impl.createAdminUser;
+export const updateAdminUser = impl.updateAdminUser;

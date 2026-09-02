@@ -606,3 +606,72 @@ export async function updateConfig(slug, incoming) {
     .maybeSingle();
   return configRowToApi(restaurantRow, fullConfigRow);
 }
+
+// ---------- Usuários do painel + permissões granulares (Fase 4, itens 17-19) ----------
+
+function adminUserRowToApi(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    login: row.login,
+    passwordHash: row.password_hash,
+    restaurantSlug: row.restaurant_slug || null,
+    role: row.role,
+    active: row.active,
+    permissions: row.permissions || {},
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+export async function listAdminUsers() {
+  const { data, error } = await supabase.from('admin_users').select('*').order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(adminUserRowToApi);
+}
+
+export async function getAdminUserByLogin(login) {
+  const { data, error } = await supabase.from('admin_users').select('*').eq('login', login).maybeSingle();
+  if (error) throw error;
+  return data ? adminUserRowToApi(data) : null;
+}
+
+export async function getAdminUserById(id) {
+  const { data, error } = await supabase.from('admin_users').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? adminUserRowToApi(data) : null;
+}
+
+export async function createAdminUser({ name, login, passwordHash, restaurantSlug, role, permissions }) {
+  const row = {
+    name,
+    login,
+    password_hash: passwordHash,
+    restaurant_slug: restaurantSlug || null,
+    role: role || 'operador',
+    permissions: permissions || {},
+  };
+  const { data, error } = await supabase.from('admin_users').insert(row).select('*').single();
+  if (error) {
+    if (error.code === '23505') {
+      const err = new Error('Já existe um usuário com esse login.');
+      err.code = 'LOGIN_TAKEN';
+      throw err;
+    }
+    throw error;
+  }
+  return adminUserRowToApi(data);
+}
+
+export async function updateAdminUser(id, patch) {
+  const row = { updated_at: new Date().toISOString() };
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.restaurantSlug !== undefined) row.restaurant_slug = patch.restaurantSlug;
+  if (patch.role !== undefined) row.role = patch.role;
+  if (patch.active !== undefined) row.active = patch.active;
+  if (patch.permissions !== undefined) row.permissions = patch.permissions;
+  if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
+  const { data, error } = await supabase.from('admin_users').update(row).eq('id', id).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? adminUserRowToApi(data) : null;
+}
