@@ -131,6 +131,80 @@ export async function setRestaurantActive(
   return data.restaurant;
 }
 
+// ---------- Usuários do painel + permissões granulares (Fase 4, itens 17-19) ----------
+
+export interface AdminUser {
+  id: string;
+  name: string;
+  login: string;
+  role: string;
+  active: boolean;
+  restaurantSlug: string | null;
+  permissions: Record<string, boolean>;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// Login individual (login + senha) — alternativa ao adminLogin() por senha
+// única. As duas formas convivem: nenhuma substitui a outra.
+export async function adminUserLogin(
+  login: string,
+  password: string
+): Promise<{ token: string; user: AdminUser }> {
+  const res = await fetch(`${API_BASE}/api/admin/users/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ login, password }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchAdminUsers(token: string): Promise<AdminUser[]> {
+  const res = await fetch(`${API_BASE}/api/admin/users`, { headers: authHeaders(token) });
+  return handleResponse<AdminUser[]>(res);
+}
+
+export async function createAdminUser(
+  token: string,
+  data: {
+    name: string;
+    login: string;
+    password: string;
+    restaurantSlug: string | null;
+    role: string;
+    permissions: Record<string, boolean>;
+  }
+): Promise<AdminUser> {
+  const res = await fetch(`${API_BASE}/api/admin/users`, {
+    method: 'POST',
+    headers: authHeaders(token),
+    body: JSON.stringify(data),
+  });
+  const result = await handleResponse<{ ok: true; user: AdminUser }>(res);
+  return result.user;
+}
+
+export async function updateAdminUser(
+  token: string,
+  id: string,
+  patch: Partial<{
+    name: string;
+    restaurantSlug: string | null;
+    role: string;
+    active: boolean;
+    permissions: Record<string, boolean>;
+    newPassword: string;
+  }>
+): Promise<AdminUser> {
+  const res = await fetch(`${API_BASE}/api/admin/users/${id}`, {
+    method: 'PATCH',
+    headers: authHeaders(token),
+    body: JSON.stringify(patch),
+  });
+  const result = await handleResponse<{ ok: true; user: AdminUser }>(res);
+  return result.user;
+}
+
 export async function fetchOrdersAdmin(slug: string, token: string): Promise<Order[]> {
   const res = await fetch(`${API_BASE}/api/${slug}/orders`, { headers: authHeaders(token) });
   return handleResponse<Order[]>(res);
