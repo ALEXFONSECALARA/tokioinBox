@@ -83,7 +83,7 @@ export async function fetchOperationalStatus(
 }
 
 export async function fetchMenu(slug: string): Promise<MenuData> {
-  const res = await fetch(`${API_PREFIX}/${slug}/menu`);
+  const res = await fetch(`${API_PREFIX}/${slug}/menu`, { cache: 'no-store' });
   return handleResponse<MenuData>(res);
 }
 
