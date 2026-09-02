@@ -1,6 +1,13 @@
 import { Category, MenuItem, Order, RestaurantConfig, LayoutId } from '../types';
 
-const API_BASE = import.meta.env.VITE_API_URL || '';
+// Aceita VITE_API_URL tanto como URL do servidor (https://api.exemplo.com)
+// quanto como URL já terminada em /api (https://api.exemplo.com/api).
+// Sem essa normalização, as rotas ficavam /api/api/... e retornavam 404 —
+// inclusive Usuários e Permissões e upload de fotos.
+const API_BASE = String(import.meta.env.VITE_API_URL || '')
+  .trim()
+  .replace(/\/+$/, '')
+  .replace(/\/api$/i, '');
 
 // Dados usados pela vitrine multi-restaurantes "/". `emoji` é mantido só por
 // compatibilidade retroativa (restaurantes antigos sem foto configurada);
