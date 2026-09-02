@@ -297,6 +297,11 @@ export const AdminPortal: React.FC = () => {
   // IDs de pedidos já vistos, pra tocar o alerta só quando um pedido
   // GENUINAMENTE novo chega (não em toda troca de status de um já existente).
   const knownOrderIdsRef = useRef<Set<string> | null>(null);
+  // Auto-save acontece em muitos campos do painel. Sem uma fila, dois PUTs
+  // simultâneos podem terminar fora de ordem e o segundo salvar uma versão
+  // antiga da configuração — especialmente perceptível ao adicionar fotos
+  // na sequência de abertura.
+  const configSaveQueueRef = useRef<Promise<boolean>>(Promise.resolve(true));
 
   // Alterações não salvas no formulário de Configurações do restaurante atual
   // (ver AdminDashboard → onDirtyChange). Usado pra confirmar antes de trocar
@@ -536,22 +541,32 @@ export const AdminPortal: React.FC = () => {
   // admin via a janela sumir como se tivesse dado certo enquanto o erro de
   // verdade só aparecia depois, num banner lá em cima. Essa foi a causa real
   // de "Salvar Alterações não funciona" nesta rodada.
-  const handleUpdateConfig = async (config: RestaurantConfig): Promise<boolean> => {
-    const previous = restaurantConfig;
+  const handleUpdateConfig = (config: RestaurantConfig): Promise<boolean> => {
     setRestaurantConfig(config);
     setIsSaving(true);
     setSaveError(null);
-    try {
-      await saveRestaurantConfig(selectedSlug, token, config);
-      return true;
-    } catch (err: any) {
-      console.error('Erro ao salvar configuração:', err);
-      setRestaurantConfig(previous); // inclui logo/banner/splash/badges/etc — tudo que passa por aqui
-      setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
-      return false;
-    } finally {
-      setIsSaving(false);
-    }
+
+    // Enfileira os PUTs sem deixar requisições concorrentes sobrescreverem
+    // umas às outras. Cada chamada espera a anterior terminar e envia a
+    // versão que foi criada naquele momento.
+    const operation = configSaveQueueRef.current
+      .catch(() => true)
+      .then(async () => {
+        try {
+          await saveRestaurantConfig(selectedSlug, token, config);
+          return true;
+        } catch (err: any) {
+          console.error('Erro ao salvar configuração:', err);
+          setSaveError(err?.message || 'Não foi possível salvar. Tente novamente.');
+          return false;
+        }
+      });
+
+    configSaveQueueRef.current = operation;
+    operation.finally(() => {
+      if (configSaveQueueRef.current === operation) setIsSaving(false);
+    });
+    return operation;
   };
 
   return (

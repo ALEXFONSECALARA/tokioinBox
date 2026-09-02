@@ -3292,13 +3292,9 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   setLocalConfig(updated);
                   const ok = await onUpdateConfig(updated);
                   if (!ok) {
-                    // O pai desfaz o estado persistido quando o PUT falha.
-                    // Remove só a nova foto do editor, sem apagar as demais.
                     setLocalConfig((current) => ({
                       ...current,
-                      splashImages: (current.splashImages || []).filter(
-                        (img) => normalizeSplashImage(img).url !== url
-                      ),
+                      splashImages: (current.splashImages || []).filter((img) => img.url !== url),
                     }));
                   }
                 }}
