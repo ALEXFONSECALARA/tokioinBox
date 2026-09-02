@@ -12,6 +12,7 @@ export default defineConfig(() => {
       },
     },
     build: {
+      chunkSizeWarningLimit: 1000,
       // Aviso "chunks maiores que 500kB" do Vite: o bundle inteiro (React +
       // ícones + todas as telas do admin) ia num arquivo .js só. Isso NÃO
       // afeta o funcionamento — só o tamanho do primeiro download — mas
