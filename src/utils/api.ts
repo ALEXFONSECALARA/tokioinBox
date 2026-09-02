@@ -151,14 +151,13 @@ export async function updateOrderAdmin(
   return data.order;
 }
 
-export async function saveMenuItems(slug: string, token: string, menuItems: MenuItem[]): Promise<MenuItem[]> {
+export async function saveMenuItems(slug: string, token: string, menuItems: MenuItem[]): Promise<void> {
   const res = await fetch(`${API_BASE}/api/${slug}/menu-items`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(menuItems),
   });
-  const data = await handleResponse<{ menuItems: MenuItem[] }>(res);
-  return data.menuItems;
+  await handleResponse(res);
 }
 
 export async function saveCategories(slug: string, token: string, categories: Category[]): Promise<void> {
@@ -204,12 +203,11 @@ export async function saveRestaurantConfig(
   slug: string,
   token: string,
   config: RestaurantConfig
-): Promise<RestaurantConfig> {
+): Promise<void> {
   const res = await fetch(`${API_BASE}/api/${slug}/config`, {
     method: 'PUT',
     headers: authHeaders(token),
     body: JSON.stringify(config),
   });
-  const data = await handleResponse<{ restaurantConfig: RestaurantConfig }>(res);
-  return data.restaurantConfig;
+  await handleResponse(res);
 }
