@@ -64,6 +64,168 @@ export const getBadgeInfo = (
 };
 
 // Web Audio sound synthesizer for instant alerts
+// ═══════════════════════════════════════════════════════════════════════
+// Alerta sonoro de "pedido chegando" — 5 sons diferentes, o mais alto
+// possível dentro do que a Web Audio API permite (sem depender de arquivo
+// de áudio nenhum, então funciona igual em iOS/Android/PC sem precisar
+// empacotar/baixar nada). Guarda no localStorage do próprio dispositivo —
+// é preferência de quem está com o app aberto na cozinha, não do
+// restaurante como um todo.
+// ═══════════════════════════════════════════════════════════════════════
+
+// iOS/Safari (e a maioria dos navegadores mobile) só deixa o AudioContext
+// tocar de verdade depois de um gesto do usuário (toque na tela) — por isso
+// mantemos UM contexto compartilhado (não recriamos a cada som) e chamamos
+// resume() nele a cada toque, cobrindo o caso do app voltar do segundo
+// plano com o contexto suspenso.
+let sharedAudioCtx: AudioContext | null = null;
+function getSharedAudioContext(): AudioContext | null {
+  const AudioContextClass =
+    typeof window !== 'undefined' &&
+    (window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext);
+  if (!AudioContextClass) return null;
+  if (!sharedAudioCtx) sharedAudioCtx = new AudioContextClass();
+  if (sharedAudioCtx.state === 'suspended') sharedAudioCtx.resume().catch(() => {});
+  return sharedAudioCtx;
+}
+
+// Chame isso uma vez em qualquer gesto do usuário (ex: primeiro clique
+// depois do login do admin) pra "destravar" o áudio no iOS antes do primeiro
+// pedido chegar de verdade — sem isso, o primeiro alerta pode não tocar.
+export function unlockOrderAlertAudio() {
+  getSharedAudioContext();
+}
+
+function beep(ctx: AudioContext, {
+  freq, start, duration, type = 'square', gain = 0.9, freqEnd,
+}: { freq: number; start: number; duration: number; type?: OscillatorType; gain?: number; freqEnd?: number }) {
+  const osc = ctx.createOscillator();
+  const g = ctx.createGain();
+  osc.type = type;
+  osc.connect(g);
+  g.connect(ctx.destination);
+  osc.frequency.setValueAtTime(freq, start);
+  if (freqEnd) osc.frequency.linearRampToValueAtTime(freqEnd, start + duration);
+  // Ataque rápido + release curto no fim de cada nota — evita estalo/clique
+  // do dente-de-serra/quadrada ligando e desligando abrupto, mesmo tocando
+  // no volume máximo permitido.
+  g.gain.setValueAtTime(0.0001, start);
+  g.gain.exponentialRampToValueAtTime(gain, start + 0.015);
+  g.gain.setValueAtTime(gain, start + duration - 0.03);
+  g.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+  osc.start(start);
+  osc.stop(start + duration + 0.02);
+}
+
+export interface OrderAlertSound {
+  id: string;
+  label: string;
+  play: (ctx: AudioContext) => void;
+}
+
+export const ORDER_ALERT_SOUNDS: OrderAlertSound[] = [
+  {
+    id: 'sirene',
+    label: '🚨 Sirene',
+    play: (ctx) => {
+      const now = ctx.currentTime;
+      // Sobe e desce 3 vezes, tipo sirene de ambulância — difícil de ignorar.
+      for (let i = 0; i < 3; i++) {
+        const t = now + i * 0.5;
+        beep(ctx, { freq: 600, freqEnd: 1000, start: t, duration: 0.25, type: 'sawtooth', gain: 0.95 });
+        beep(ctx, { freq: 1000, freqEnd: 600, start: t + 0.25, duration: 0.25, type: 'sawtooth', gain: 0.95 });
+      }
+    },
+  },
+  {
+    id: 'campainha',
+    label: '🔔 Campainha Dupla',
+    play: (ctx) => {
+      const now = ctx.currentTime;
+      // "Ding-dong" clássico, repetido 2x.
+      for (let i = 0; i < 2; i++) {
+        const t = now + i * 0.9;
+        beep(ctx, { freq: 880, start: t, duration: 0.35, type: 'sine', gain: 0.9 });
+        beep(ctx, { freq: 659.25, start: t + 0.3, duration: 0.45, type: 'sine', gain: 0.9 });
+      }
+    },
+  },
+  {
+    id: 'alarme',
+    label: '⚠️ Alarme Urgente',
+    play: (ctx) => {
+      const now = ctx.currentTime;
+      // Bipes curtos e secos em sequência rápida — o mais "alto e incômodo"
+      // dos 5, pensado pra furar barulho de cozinha.
+      for (let i = 0; i < 6; i++) {
+        beep(ctx, { freq: 1200, start: now + i * 0.18, duration: 0.12, type: 'square', gain: 1 });
+      }
+    },
+  },
+  {
+    id: 'sino',
+    label: '🛎️ Sino de Loja',
+    play: (ctx) => {
+      const now = ctx.currentTime;
+      // Acordes tipo sininho de balcão, 3 toques com o tom subindo.
+      const notes = [783.99, 987.77, 1174.66];
+      notes.forEach((f, i) => {
+        const t = now + i * 0.35;
+        beep(ctx, { freq: f, start: t, duration: 0.5, type: 'triangle', gain: 0.85 });
+        beep(ctx, { freq: f * 2, start: t, duration: 0.3, type: 'sine', gain: 0.4 });
+      });
+    },
+  },
+  {
+    id: 'batida',
+    label: '📣 Batida Forte',
+    play: (ctx) => {
+      const now = ctx.currentTime;
+      // Grave forte (chama atenção mesmo em alto-falante pequeno de
+      // celular) + agudo curto por cima — combinação que "corta" melhor
+      // que um tom só.
+      for (let i = 0; i < 3; i++) {
+        const t = now + i * 0.4;
+        beep(ctx, { freq: 150, start: t, duration: 0.2, type: 'square', gain: 1 });
+        beep(ctx, { freq: 1500, start: t + 0.05, duration: 0.1, type: 'square', gain: 0.7 });
+      }
+    },
+  },
+];
+
+const ORDER_ALERT_SOUND_STORAGE_KEY = 'tokioinbox_order_alert_sound';
+
+export function getSelectedOrderAlertSoundId(): string {
+  try {
+    return localStorage.getItem(ORDER_ALERT_SOUND_STORAGE_KEY) || ORDER_ALERT_SOUNDS[0].id;
+  } catch {
+    return ORDER_ALERT_SOUNDS[0].id;
+  }
+}
+
+export function setSelectedOrderAlertSoundId(id: string) {
+  try {
+    localStorage.setItem(ORDER_ALERT_SOUND_STORAGE_KEY, id);
+  } catch {
+    // localStorage pode estar bloqueado (modo privado); sem problema, só
+    // não persiste entre sessões — o som ainda toca normalmente agora.
+  }
+}
+
+// Toca o som de alerta escolhido (ou o passado explicitamente, pra pré-ouvir
+// antes de escolher). Chamado tanto pro pedido de verdade chegando quanto
+// pelo botão "▶ Testar" no painel.
+export function playOrderAlertSound(soundId?: string) {
+  try {
+    const ctx = getSharedAudioContext();
+    if (!ctx) return;
+    const sound = ORDER_ALERT_SOUNDS.find((s) => s.id === (soundId || getSelectedOrderAlertSoundId())) || ORDER_ALERT_SOUNDS[0];
+    sound.play(ctx);
+  } catch {
+    // Silencioso de propósito — um alerta sonoro que falha não pode derrubar o painel.
+  }
+}
+
 export const playSoundEffect = (type: 'beep' | 'success' | 'bell' | 'notification') => {
   try {
     const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
