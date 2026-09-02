@@ -576,8 +576,18 @@ app.put('/api/:slug/config', requireAdmin, requireOwnRestaurant, async (req, res
     const merged = await db.updateConfig(slug, incoming);
     res.json({ ok: true, restaurantConfig: merged });
   } catch (err) {
-    console.error(`Erro ao salvar configuração de ${slug}:`, err);
-    res.status(500).json({ error: 'Não foi possível salvar a configuração.' });
+    // Mantém a mensagem amigável no navegador, mas registra o erro real do
+    // Supabase para diagnosticar rapidamente migrations/colunas/constraints.
+    console.error(`Erro ao salvar configuração de ${slug}:`, {
+      message: err?.message,
+      code: err?.code,
+      details: err?.details,
+      hint: err?.hint,
+    });
+    const detail = err?.code === 'PGRST204'
+      ? 'O banco não reconhece uma coluna da configuração. Execute as migrations pendentes do Supabase.'
+      : undefined;
+    res.status(500).json({ error: detail || 'Não foi possível salvar a configuração.' });
   }
 });
 
