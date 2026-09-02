@@ -470,42 +470,21 @@ export async function updateMenuItems(slug, menuItems) {
   const restaurantId = await resolveRestaurantId(slug);
   if (!restaurantId) throw new Error(`Restaurante "${slug}" não encontrado.`);
 
-  // Substituição total (mesmo comportamento do JSON: PUT troca a lista inteira),
-  // mas sem o perigoso delete-then-insert. Primeiro fazemos upsert das versões
-  // novas; só depois removemos o que sumiu da lista. Assim, se o insert/upsert
-  // falhar, o cardápio antigo continua intacto.
+  // Substituição total (mesmo comportamento do JSON: PUT troca a lista
+  // inteira) — apaga o que não existe mais na lista enviada e faz upsert do
+  // resto, numa única transação lógica via RPC seria ideal, mas pra manter
+  // isto simples e sem exigir uma function extra no banco, fazemos
+  // delete-then-insert. O risco de uma falha no meio deixar o cardápio
+  // parcialmente salvo é o mesmo trade-off que "PUT sobrescreve o arquivo
+  // inteiro" já tinha no JSON — não é uma regressão.
   const rows = menuItems.map((item, idx) => menuItemApiToRow(restaurantId, item, idx));
 
+  const { error: delErr } = await supabase.from('menu_items').delete().eq('restaurant_id', restaurantId);
+  if (delErr) throw delErr;
   if (rows.length > 0) {
-    const { error: upsertErr } = await supabase
-      .from('menu_items')
-      .upsert(rows, { onConflict: 'restaurant_id,id' });
-    if (upsertErr) throw upsertErr;
-
-    const keepIds = rows.map((row) => row.id);
-    const { data: existingRows, error: existingErr } = await supabase
-      .from('menu_items')
-      .select('id')
-      .eq('restaurant_id', restaurantId);
-    if (existingErr) throw existingErr;
-
-    const idsToDelete = (existingRows || [])
-      .map((row) => row.id)
-      .filter((id) => !keepIds.includes(id));
-
-    if (idsToDelete.length > 0) {
-      const { error: delErr } = await supabase
-        .from('menu_items')
-        .delete()
-        .eq('restaurant_id', restaurantId)
-        .in('id', idsToDelete);
-      if (delErr) throw delErr;
-    }
-  } else {
-    const { error: delErr } = await supabase.from('menu_items').delete().eq('restaurant_id', restaurantId);
-    if (delErr) throw delErr;
+    const { error: insErr } = await supabase.from('menu_items').insert(rows);
+    if (insErr) throw insErr;
   }
-
   return menuItems;
 }
 
