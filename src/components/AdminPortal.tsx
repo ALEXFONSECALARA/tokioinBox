@@ -2,6 +2,7 @@ import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { MenuItem, Category, Order, OrderStatus, RestaurantConfig, DriverInfo } from '../types';
 import {
   adminLogin,
+  adminUserLogin,
   fetchRestaurantsAdmin,
   setRestaurantActive,
   fetchMenu,
@@ -16,6 +17,7 @@ import {
   RestaurantSummary,
 } from '../utils/api';
 import { AdminDashboard } from './AdminDashboard';
+import { AdminUsersPanel } from './AdminUsersPanel';
 import { playSoundEffect, playOrderAlertSound, unlockOrderAlertAudio } from '../utils/helpers';
 import { LAYOUTS } from '../utils/layouts';
 import { LayoutPreviewModal } from './LayoutPreviewModal';
@@ -24,24 +26,38 @@ import { Lock, ShieldCheck, Palette, ChevronDown, Check, Eye, Power, AlertTriang
 const TOKEN_KEY = 'super_admin_token';
 
 const LoginScreen: React.FC<{ onLoggedIn: (token: string) => void }> = ({ onLoggedIn }) => {
+  // Fase 4 (item 17): além da senha única de sempre, um usuário individual
+  // (criado em "Usuários e Permissões") pode entrar com login+senha próprios.
+  // As duas formas convivem — nenhuma substitui a outra.
+  const [mode, setMode] = useState<'master' | 'user'>('master');
   const [password, setPassword] = useState('');
+  const [login, setLogin] = useState('');
+  const [userPassword, setUserPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  const finishLogin = (token: string) => {
+    sessionStorage.setItem(TOKEN_KEY, token);
+    // Toque no botão de login = gesto do usuário — aproveita pra destravar
+    // o áudio no iOS/Safari antes do primeiro pedido de verdade chegar
+    // (sem isso, o primeiro alerta sonoro pode simplesmente não tocar).
+    unlockOrderAlertAudio();
+    onLoggedIn(token);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
     try {
-      const token = await adminLogin(password);
-      sessionStorage.setItem(TOKEN_KEY, token);
-      // Toque no botão de login = gesto do usuário — aproveita pra destravar
-      // o áudio no iOS/Safari antes do primeiro pedido de verdade chegar
-      // (sem isso, o primeiro alerta sonoro pode simplesmente não tocar).
-      unlockOrderAlertAudio();
-      onLoggedIn(token);
+      if (mode === 'master') {
+        finishLogin(await adminLogin(password));
+      } else {
+        const { token } = await adminUserLogin(login, userPassword);
+        finishLogin(token);
+      }
     } catch (err: any) {
-      setError(err?.message || 'Senha incorreta.');
+      setError(err?.message || 'Não foi possível entrar.');
     } finally {
       setLoading(false);
     }
@@ -54,24 +70,57 @@ const LoginScreen: React.FC<{ onLoggedIn: (token: string) => void }> = ({ onLogg
           <Lock size={22} />
         </div>
         <h1 className="text-xl font-bold text-stone-900 mb-1">Painel do administrador</h1>
-        <p className="text-sm text-stone-500 mb-6">Acesso único para gerenciar todos os restaurantes</p>
-        <input
-          type="password"
-          autoFocus
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          placeholder="Senha"
-          className="w-full border border-stone-300 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:ring-2 focus:ring-stone-800"
-        />
+        <p className="text-sm text-stone-500 mb-4">
+          {mode === 'master' ? 'Acesso único para gerenciar todos os restaurantes' : 'Entre com seu login individual'}
+        </p>
+
+        {mode === 'master' ? (
+          <input
+            type="password"
+            autoFocus
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            placeholder="Senha"
+            className="w-full border border-stone-300 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:ring-2 focus:ring-stone-800"
+          />
+        ) : (
+          <>
+            <input
+              autoFocus
+              value={login}
+              onChange={(e) => setLogin(e.target.value)}
+              placeholder="Login"
+              className="w-full border border-stone-300 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:ring-2 focus:ring-stone-800"
+            />
+            <input
+              type="password"
+              value={userPassword}
+              onChange={(e) => setUserPassword(e.target.value)}
+              placeholder="Senha"
+              className="w-full border border-stone-300 rounded-xl px-4 py-3 mb-3 focus:outline-none focus:ring-2 focus:ring-stone-800"
+            />
+          </>
+        )}
+
         {error && <p className="text-sm text-red-600 mb-3">{error}</p>}
         <button
           type="submit"
-          disabled={loading || !password}
+          disabled={loading || (mode === 'master' ? !password : !login || !userPassword)}
           className="w-full bg-stone-900 text-white rounded-xl py-3 font-medium disabled:opacity-50"
         >
           {loading ? 'Entrando...' : 'Entrar'}
         </button>
-        <a href="/" className="block text-center text-sm text-stone-500 mt-4 hover:text-stone-800">
+        <button
+          type="button"
+          onClick={() => {
+            setMode(mode === 'master' ? 'user' : 'master');
+            setError(null);
+          }}
+          className="block w-full text-center text-xs text-stone-500 mt-4 hover:text-stone-800"
+        >
+          {mode === 'master' ? 'Entrar com login de usuário →' : '← Entrar com a senha única'}
+        </button>
+        <a href="/" className="block text-center text-sm text-stone-500 mt-2 hover:text-stone-800">
           ← Voltar
         </a>
       </form>
@@ -580,6 +629,7 @@ export const AdminPortal: React.FC = () => {
       </div>
 
       <PlatformSettingsPanel token={token} restaurants={restaurants} />
+      <AdminUsersPanel token={token} restaurants={restaurants} />
 
       <AdminDashboard
         key={selectedSlug}
