@@ -3286,11 +3286,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 token={token}
                 label={`Adicionar foto à sequência${(localConfig.splashImages?.length || 0) > 0 ? ` (${localConfig.splashImages!.length} já cadastradas)` : ''}`}
                 value=""
-                onChange={(url) => {
+                onChange={async (url) => {
                   const newImage = { url, positionX: 50, positionY: 50, zoom: 100, overlay: 0, text: '', enabled: true };
                   const updated = { ...localConfig, splashImages: [...(localConfig.splashImages || []), newImage] };
                   setLocalConfig(updated);
-                  onUpdateConfig(updated);
+                  const ok = await onUpdateConfig(updated);
+                  if (!ok) {
+                    // O pai desfaz o estado persistido quando o PUT falha.
+                    // Remove só a nova foto do editor, sem apagar as demais.
+                    setLocalConfig((current) => ({
+                      ...current,
+                      splashImages: (current.splashImages || []).filter(
+                        (img) => normalizeSplashImage(img).url !== url
+                      ),
+                    }));
+                  }
                 }}
                 aspect="wide"
               />
