@@ -571,10 +571,32 @@ export async function updateConfig(slug, incoming) {
 
   const configRow = configApiToRow(incoming);
   configRow.restaurant_id = restaurantId;
-  const { error: upsertErr } = await supabase
-    .from('restaurant_configs')
-    .upsert(configRow, { onConflict: 'restaurant_id' });
-  if (upsertErr) throw upsertErr;
+
+  // Rede de segurança: se alguma migration da Fase 4 (badges, entrega,
+  // ajuste operacional etc.) ainda não tiver sido aplicada nesse banco
+  // Supabase, a coluna correspondente não existe e o upsert falha inteiro —
+  // TODO o salvamento de configuração quebrava por causa de UM campo novo
+  // que o banco ainda não conhece, mesmo pra edições que nada tinham a ver
+  // com aquele campo (ex: trocar a sequência de fotos falhava por causa de
+  // "badges" ausente). Aqui, se o Postgres reclamar de coluna inexistente
+  // (42703), removemos só aquele campo do payload e tentamos de novo —
+  // várias vezes se precisar — em vez de derrubar o salvamento inteiro.
+  // O campo em si só passa a persistir depois que a migration for aplicada.
+  let attemptRow = { ...configRow };
+  for (let attempt = 0; attempt < 12; attempt++) {
+    const { error: upsertErr } = await supabase
+      .from('restaurant_configs')
+      .upsert(attemptRow, { onConflict: 'restaurant_id' });
+    if (!upsertErr) break;
+    const missingColumnMatch =
+      upsertErr.code === '42703' && upsertErr.message?.match(/column "([a-z_]+)"/i);
+    if (!missingColumnMatch) throw upsertErr;
+    const missingColumn = missingColumnMatch[1];
+    console.error(
+      `⚠️  Coluna "${missingColumn}" não existe em restaurant_configs — rode as migrations pendentes em supabase/migrations/. Salvando sem esse campo por enquanto.`
+    );
+    delete attemptRow[missingColumn];
+  }
 
   const { data: restaurantRow } = await supabase.from('restaurants').select('*').eq('id', restaurantId).maybeSingle();
   const { data: fullConfigRow } = await supabase
