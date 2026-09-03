@@ -23,7 +23,7 @@ import {
   playOrderAlertSound,
   unlockOrderAlertAudio,
 } from '../utils/helpers';
-import { fetchMenu, uploadImage } from '../utils/api';
+import { fetchMenu } from '../utils/api';
 import { LAYOUTS } from '../utils/layouts';
 import { ToolsHub } from './ToolsHub';
 import { ReceiptPrintModal } from './ReceiptPrintModal';
@@ -69,7 +69,7 @@ import {
   ChevronDown,
   Copy
 } from 'lucide-react';
-import { Tag, Music } from 'lucide-react';
+import { Tag, Music, CheckSquare } from 'lucide-react';
 
 interface AdminDashboardProps {
   // Restaurante sendo administrado e token de sessão do admin — necessários
@@ -275,6 +275,18 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   // histórico do pedido — nunca cancela silenciosamente).
   const [cancelOrderTarget, setCancelOrderTarget] = useState<Order | null>(null);
   const [cancelReasonInput, setCancelReasonInput] = useState('');
+
+  // Cancelamento em massa / cancelar todos (Fase 4, itens 24-26). Reaproveita
+  // o mesmo onUpdateOrderStatus(...,'cancelado', motivo) usado no
+  // cancelamento individual — sem endpoint novo, sem duplicar lógica.
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selectedOrderIds, setSelectedOrderIds] = useState<Set<string>>(new Set());
+  const [showBulkCancelModal, setShowBulkCancelModal] = useState(false);
+  const [bulkCancelReasonInput, setBulkCancelReasonInput] = useState('');
+  const [showCancelAllModal, setShowCancelAllModal] = useState(false);
+  const [cancelAllConfirmText, setCancelAllConfirmText] = useState('');
+  const [cancelAllReasonInput, setCancelAllReasonInput] = useState('');
+  const [showCancelledOrders, setShowCancelledOrders] = useState(false);
   const [selectedDriverId, setSelectedDriverId] = useState<string>('');
 
   // Dish Form State
@@ -923,6 +935,43 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     playSoundEffect('beep');
   };
 
+  // Pedidos "atualmente elegíveis" pra cancelamento em massa/cancelar todos —
+  // nunca inclui os que já estão cancelados ou já entregues (item 25).
+  const cancellableOrders = orders.filter((o) => o.status !== 'cancelado' && o.status !== 'entregue');
+  const cancelledOrdersList = orders.filter((o) => o.status === 'cancelado');
+
+  const toggleOrderSelection = (orderId: string) => {
+    setSelectedOrderIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(orderId)) next.delete(orderId);
+      else next.add(orderId);
+      return next;
+    });
+  };
+
+  const handleConfirmBulkCancel = () => {
+    if (!bulkCancelReasonInput.trim() || selectedOrderIds.size === 0) return;
+    selectedOrderIds.forEach((id) => {
+      onUpdateOrderStatus(id, 'cancelado', undefined, bulkCancelReasonInput.trim());
+    });
+    setShowBulkCancelModal(false);
+    setBulkCancelReasonInput('');
+    setSelectedOrderIds(new Set());
+    setSelectionMode(false);
+    playSoundEffect('beep');
+  };
+
+  const handleConfirmCancelAll = () => {
+    if (cancelAllConfirmText.trim().toUpperCase() !== 'CANCELAR' || !cancelAllReasonInput.trim()) return;
+    cancellableOrders.forEach((order) => {
+      onUpdateOrderStatus(order.id, 'cancelado', undefined, cancelAllReasonInput.trim());
+    });
+    setShowCancelAllModal(false);
+    setCancelAllConfirmText('');
+    setCancelAllReasonInput('');
+    playSoundEffect('beep');
+  };
+
   const handleConfirmDispatch = () => {
     if (!dispatchOrder) return;
     const chosenDriver = (localConfig.drivers || []).find((d) => d.id === selectedDriverId);
@@ -1199,6 +1248,87 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </button>
             </div>
 
+            {/* Cancelamento em massa / cancelar todos / ver cancelados (Fase 4, itens 24-26) */}
+            <div className="flex flex-wrap items-center gap-2 -mt-1">
+              <button
+                onClick={() => {
+                  setSelectionMode((v) => !v);
+                  setSelectedOrderIds(new Set());
+                }}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 ${
+                  selectionMode
+                    ? 'bg-stone-900 text-white border-stone-900'
+                    : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'
+                }`}
+              >
+                <CheckSquare className="w-3.5 h-3.5" />
+                {selectionMode ? 'Cancelar seleção' : 'Selecionar pedidos'}
+              </button>
+
+              {selectionMode && (
+                <>
+                  <span className="text-xs text-stone-500">{selectedOrderIds.size} selecionado(s)</span>
+                  <button
+                    onClick={() => setSelectedOrderIds(new Set(cancellableOrders.map((o) => o.id)))}
+                    className="px-2.5 py-1.5 rounded-xl text-[11px] font-bold text-stone-600 hover:bg-stone-100"
+                  >
+                    Selecionar todos elegíveis
+                  </button>
+                  <button
+                    disabled={selectedOrderIds.size === 0}
+                    onClick={() => setShowBulkCancelModal(true)}
+                    className="px-3 py-1.5 rounded-xl bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white text-xs font-bold"
+                  >
+                    Cancelar selecionados ({selectedOrderIds.size})
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={() => setShowCancelledOrders((v) => !v)}
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold border flex items-center gap-1.5 ${
+                  showCancelledOrders
+                    ? 'bg-stone-900 text-white border-stone-900'
+                    : 'bg-white text-stone-600 border-stone-300 hover:bg-stone-50'
+                }`}
+              >
+                ❌ Cancelados ({cancelledOrdersList.length})
+              </button>
+
+              {cancellableOrders.length > 0 && (
+                <button
+                  onClick={() => setShowCancelAllModal(true)}
+                  className="ml-auto px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold"
+                >
+                  ⚠️ Cancelar todos ({cancellableOrders.length})
+                </button>
+              )}
+            </div>
+
+            {/* ❌ Cancelados — nunca some do sistema, só sai das colunas ativas (item 26) */}
+            {showCancelledOrders && (
+              <div className="bg-white rounded-2xl border border-stone-200 p-4 space-y-2">
+                <h3 className="font-extrabold text-stone-800 text-sm mb-1">Pedidos cancelados</h3>
+                {cancelledOrdersList.length === 0 ? (
+                  <p className="text-xs text-stone-400">Nenhum pedido cancelado até agora.</p>
+                ) : (
+                  cancelledOrdersList.map((order) => (
+                    <div
+                      key={order.id}
+                      className="flex flex-wrap items-center justify-between gap-2 text-xs border border-stone-100 rounded-xl p-2.5 bg-stone-50"
+                    >
+                      <span className="font-bold text-stone-800">
+                        #{order.orderNumber} · {order.customer.name} · {formatCurrency(order.total)}
+                      </span>
+                      <span className="text-stone-500 italic">
+                        Motivo: {order.cancelReason || 'não informado'}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            )}
+
             {/* 4-Column Kanban Board */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Column 1: Novos Pedidos */}
@@ -1226,11 +1356,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="bg-white p-3.5 rounded-2xl border border-amber-300 shadow-xs space-y-2.5"
                       >
                         <div className="flex items-start justify-between">
-                          <div>
-                            <span className="text-xs font-black text-amber-700">#{order.orderNumber}</span>
-                            <h4 className="font-bold text-stone-900 text-xs sm:text-sm">
-                              {order.customer.name}
-                            </h4>
+                          <div className="flex items-start gap-2">
+                            {selectionMode && (
+                              <input
+                                type="checkbox"
+                                checked={selectedOrderIds.has(order.id)}
+                                onChange={() => toggleOrderSelection(order.id)}
+                                className="mt-0.5 accent-rose-600"
+                              />
+                            )}
+                            <div>
+                              <span className="text-xs font-black text-amber-700">#{order.orderNumber}</span>
+                              <h4 className="font-bold text-stone-900 text-xs sm:text-sm">
+                                {order.customer.name}
+                              </h4>
+                            </div>
                           </div>
                           <span className="text-[10px] bg-amber-100 text-amber-800 px-2 py-0.5 rounded-md font-black">
                             🛵 Delivery
@@ -1323,9 +1463,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="bg-white p-3.5 rounded-2xl border border-blue-300 shadow-xs space-y-2.5"
                       >
                         <div className="flex items-start justify-between">
-                          <div>
-                            <span className="text-xs font-black text-blue-700">#{order.orderNumber}</span>
-                            <h4 className="font-bold text-stone-900 text-xs">{order.customer.name}</h4>
+                          <div className="flex items-start gap-2">
+                            {selectionMode && (
+                              <input
+                                type="checkbox"
+                                checked={selectedOrderIds.has(order.id)}
+                                onChange={() => toggleOrderSelection(order.id)}
+                                className="mt-0.5 accent-rose-600"
+                              />
+                            )}
+                            <div>
+                              <span className="text-xs font-black text-blue-700">#{order.orderNumber}</span>
+                              <h4 className="font-bold text-stone-900 text-xs">{order.customer.name}</h4>
+                            </div>
                           </div>
                           <span className="text-[10px] bg-blue-100 text-blue-800 px-2 py-0.5 rounded-md font-bold">
                             🛵 {order.customer.address?.neighborhood || 'Delivery'}
@@ -1402,9 +1552,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         className="bg-white p-3.5 rounded-2xl border border-purple-300 shadow-xs space-y-2.5"
                       >
                         <div className="flex items-start justify-between">
-                          <div>
-                            <span className="text-xs font-black text-purple-700">#{order.orderNumber}</span>
-                            <h4 className="font-bold text-stone-900 text-xs">{order.customer.name}</h4>
+                          <div className="flex items-start gap-2">
+                            {selectionMode && (
+                              <input
+                                type="checkbox"
+                                checked={selectedOrderIds.has(order.id)}
+                                onChange={() => toggleOrderSelection(order.id)}
+                                className="mt-0.5 accent-rose-600"
+                              />
+                            )}
+                            <div>
+                              <span className="text-xs font-black text-purple-700">#{order.orderNumber}</span>
+                              <h4 className="font-bold text-stone-900 text-xs">{order.customer.name}</h4>
+                            </div>
                           </div>
                           <div className="flex items-center gap-1.5">
                             <span className="text-[11px] font-black text-stone-900">
@@ -3197,52 +3357,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                           {(img.overlay ?? 0) > 0 && (
                             <div className="absolute inset-0 bg-black" style={{ opacity: (img.overlay ?? 0) / 100 }} />
                           )}
-                          <label
-                            htmlFor={`splash-replace-${idx}`}
-                            className="absolute inset-x-1 bottom-1 rounded-md bg-black/75 text-white text-[9px] font-bold text-center py-1 cursor-pointer hover:bg-black/90"
-                            title="Trocar esta foto"
-                          >
-                            Trocar foto
-                          </label>
-                          <input
-                            id={`splash-replace-${idx}`}
-                            type="file"
-                            accept="image/*"
-                            className="hidden"
-                            onChange={async (e) => {
-                              const file = e.target.files?.[0];
-                              e.target.value = '';
-                              if (!file) return;
-                              if (!/^image\//.test(file.type)) {
-                                window.alert('Selecione um arquivo de imagem.');
-                                return;
-                              }
-                              if (file.size > 8 * 1024 * 1024) {
-                                window.alert('A imagem deve ter no máximo 8MB.');
-                                return;
-                              }
-                              try {
-                                const newUrl = await uploadImage(slug, token, file);
-                                const images = (localConfig.splashImages || []).map(normalizeSplashImage);
-                                const previousUrl = images[idx]?.url;
-                                if (!images[idx]) return;
-                                images[idx] = { ...images[idx], url: newUrl };
-                                const updated = { ...localConfig, splashImages: images };
-                                setLocalConfig(updated);
-                                const ok = await onUpdateConfig(updated);
-                                if (!ok) {
-                                  const reverted = images.map((item, imageIdx) =>
-                                    imageIdx === idx ? { ...item, url: previousUrl || item.url } : item
-                                  );
-                                  setLocalConfig((current) => ({ ...current, splashImages: reverted }));
-                                  window.alert('A foto foi enviada, mas não foi possível salvar a sequência. Tente novamente.');
-                                }
-                              } catch (err: any) {
-                                console.error('Falha ao trocar foto da sequência:', err);
-                                window.alert(err?.message || 'Não foi possível trocar a foto.');
-                              }
-                            }}
-                          />
                         </div>
                         <div className="flex-1 min-w-0 grid grid-cols-2 gap-2">
                           <label className="text-[10px] font-bold text-stone-600 col-span-2 flex items-center gap-1.5">
@@ -3649,6 +3763,110 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               >
                 <X className="w-4 h-4" />
                 <span>Confirmar Cancelamento</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancelar selecionados — item 24 */}
+      {showBulkCancelModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-stone-200 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-black text-base text-stone-900 flex items-center gap-2">
+                <X className="w-5 h-5 text-rose-500" />
+                Cancelar {selectedOrderIds.size} pedido(s)
+              </h3>
+              <button
+                onClick={() => setShowBulkCancelModal(false)}
+                className="p-1 text-stone-400 hover:text-stone-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div>
+              <label className="block font-bold text-stone-700 text-xs mb-1.5">Motivo do cancelamento (obrigatório):</label>
+              <textarea
+                value={bulkCancelReasonInput}
+                onChange={(e) => setBulkCancelReasonInput(e.target.value)}
+                rows={2}
+                placeholder="Descreva o motivo do cancelamento em massa..."
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+            <div className="pt-1 flex justify-end gap-2">
+              <button
+                onClick={() => setShowBulkCancelModal(false)}
+                className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-bold text-xs"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleConfirmBulkCancel}
+                disabled={!bulkCancelReasonInput.trim()}
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-500 disabled:opacity-40 text-white rounded-xl font-bold text-xs"
+              >
+                Confirmar cancelamento
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Cancelar todos — item 25, protegido com confirmação forte */}
+      {showCancelAllModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-3xl p-5 shadow-2xl border border-rose-300 space-y-4">
+            <div className="flex items-center justify-between border-b border-stone-100 pb-3">
+              <h3 className="font-black text-base text-rose-700 flex items-center gap-2">
+                ⚠️ ATENÇÃO — Cancelar todos
+              </h3>
+              <button
+                onClick={() => setShowCancelAllModal(false)}
+                className="p-1 text-stone-400 hover:text-stone-700"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <p className="text-xs text-stone-600 bg-rose-50 border border-rose-200 rounded-xl p-3">
+              Você está prestes a cancelar todos os {cancellableOrders.length} pedidos atualmente elegíveis
+              (não afeta pedidos já entregues ou já cancelados). Esta ação não pode ser desfeita.
+            </p>
+            <div>
+              <label className="block font-bold text-stone-700 text-xs mb-1.5">Motivo do cancelamento (obrigatório):</label>
+              <textarea
+                value={cancelAllReasonInput}
+                onChange={(e) => setCancelAllReasonInput(e.target.value)}
+                rows={2}
+                placeholder="Descreva o motivo..."
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block font-bold text-stone-700 text-xs mb-1.5">
+                Digite <span className="font-black text-rose-700">CANCELAR</span> para confirmar:
+              </label>
+              <input
+                value={cancelAllConfirmText}
+                onChange={(e) => setCancelAllConfirmText(e.target.value)}
+                placeholder="CANCELAR"
+                className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl text-xs focus:ring-2 focus:ring-rose-500 focus:outline-none"
+              />
+            </div>
+            <div className="pt-1 flex justify-end gap-2">
+              <button
+                onClick={() => setShowCancelAllModal(false)}
+                className="px-4 py-2 bg-stone-100 hover:bg-stone-200 text-stone-700 rounded-xl font-bold text-xs"
+              >
+                Voltar
+              </button>
+              <button
+                onClick={handleConfirmCancelAll}
+                disabled={cancelAllConfirmText.trim().toUpperCase() !== 'CANCELAR' || !cancelAllReasonInput.trim()}
+                className="px-4 py-2 bg-rose-700 hover:bg-rose-600 disabled:opacity-40 text-white rounded-xl font-bold text-xs"
+              >
+                Cancelar todos definitivamente
               </button>
             </div>
           </div>
