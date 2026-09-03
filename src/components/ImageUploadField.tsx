@@ -15,9 +15,6 @@ interface ImageUploadFieldProps {
   // chegava depois, e o clique em Salvar já tinha ignorado ela). Foi uma
   // causa real de "troquei a foto e não salvou" encontrada nesta rodada.
   onUploadingChange?: (uploading: boolean) => void;
-  // Galeria de imagens já cadastradas no sistema. Permite reutilizar uma foto
-  // existente sem fazer novo upload.
-  existingImages?: string[];
 }
 
 // Campo de upload de foto local: mostra a prévia da imagem atual, um botão pra
@@ -31,7 +28,6 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
   onChange,
   aspect = 'wide',
   onUploadingChange,
-  existingImages = [],
 }) => {
   const inputId = useId();
   const [uploading, setUploading] = useState(false);
@@ -102,35 +98,6 @@ export const ImageUploadField: React.FC<ImageUploadFieldProps> = ({
         </div>
 
         <div className="flex-1 min-w-0 space-y-1.5">
-          {existingImages.length > 0 && (
-            <div className="mb-2">
-              <div className="flex items-center justify-between gap-2 mb-1.5">
-                <span className="text-[11px] font-bold text-stone-500">Fotos já cadastradas</span>
-                <span className="text-[10px] text-stone-400">Clique para usar</span>
-              </div>
-              <div className="flex gap-1.5 overflow-x-auto pb-1" style={{ scrollbarWidth: 'thin' }}>
-                {existingImages.map((imageUrl, index) => (
-                  <button
-                    key={`${imageUrl}-${index}`}
-                    type="button"
-                    onClick={() => { setError(null); onChange(imageUrl); }}
-                    title="Usar esta foto"
-                    aria-label={`Usar foto ${index + 1}`}
-                    className={`relative shrink-0 w-14 h-14 rounded-lg overflow-hidden border-2 transition-all ${
-                      value === imageUrl
-                        ? 'border-amber-500 ring-2 ring-amber-200 scale-[1.03]'
-                        : 'border-stone-200 hover:border-amber-400'
-                    }`}
-                  >
-                    <img src={imageUrl} alt={`Foto ${index + 1}`} className="w-full h-full object-cover" loading="lazy" referrerPolicy="no-referrer" />
-                    {value === imageUrl && (
-                      <span className="absolute inset-x-0 bottom-0 bg-amber-500/90 text-white text-[8px] font-black py-0.5">ATUAL</span>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
           {/* <label htmlFor=...> é mais confiável que onClick + ref.click()
               pra abrir o seletor de arquivo — funciona mesmo em navegadores/
               extensões que bloqueiam cliques disparados via JavaScript em
