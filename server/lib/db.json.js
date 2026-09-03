@@ -12,6 +12,8 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const RESTAURANTS_FILE = path.join(DATA_DIR, 'restaurants.json');
 const PLATFORM_FILE = path.join(DATA_DIR, 'platform.json');
 const ADMIN_USERS_FILE = path.join(DATA_DIR, 'admin-users.json');
+const CUSTOMERS_FILE = path.join(DATA_DIR, 'customers.json');
+const CUSTOMER_ADDRESSES_FILE = path.join(DATA_DIR, 'customer-addresses.json');
 
 const DEFAULT_PLATFORM_SETTINGS = {
   landingTitle: 'Escolha seu restaurante',
@@ -240,4 +242,182 @@ export async function updateAdminUser(id, patch) {
   users[idx] = { ...users[idx], ...patch, id: users[idx].id, updatedAt: new Date().toISOString() };
   await writeJson(ADMIN_USERS_FILE, users);
   return users[idx];
+}
+
+// ---------- Contas de cliente + endereços salvos (Fase 4, itens 20-22) ----------
+
+export async function createCustomer({ name, phone, email, passwordHash }) {
+  const customers = await readJson(CUSTOMERS_FILE, []);
+  if (customers.some((c) => c.phone === phone)) {
+    const err = new Error('Já existe uma conta com esse telefone.');
+    err.code = 'PHONE_TAKEN';
+    throw err;
+  }
+  const now = new Date().toISOString();
+  const customer = {
+    id: randomUUID(),
+    name,
+    phone,
+    email: email || null,
+    passwordHash,
+    createdAt: now,
+    updatedAt: now,
+  };
+  customers.push(customer);
+  await writeJson(CUSTOMERS_FILE, customers);
+  return customer;
+}
+
+export async function getCustomerByPhone(phone) {
+  const customers = await readJson(CUSTOMERS_FILE, []);
+  return customers.find((c) => c.phone === phone) || null;
+}
+
+export async function getCustomerById(id) {
+  const customers = await readJson(CUSTOMERS_FILE, []);
+  return customers.find((c) => c.id === id) || null;
+}
+
+export async function updateCustomer(id, patch) {
+  const customers = await readJson(CUSTOMERS_FILE, []);
+  const idx = customers.findIndex((c) => c.id === id);
+  if (idx === -1) return null;
+  customers[idx] = { ...customers[idx], ...patch, id: customers[idx].id, updatedAt: new Date().toISOString() };
+  await writeJson(CUSTOMERS_FILE, customers);
+  return customers[idx];
+}
+
+export async function listCustomerAddresses(customerId) {
+  const addresses = await readJson(CUSTOMER_ADDRESSES_FILE, []);
+  return addresses.filter((a) => a.customerId === customerId);
+}
+
+export async function createCustomerAddress(customerId, data) {
+  const addresses = await readJson(CUSTOMER_ADDRESSES_FILE, []);
+  const address = { id: randomUUID(), customerId, ...data, createdAt: new Date().toISOString() };
+  addresses.push(address);
+  await writeJson(CUSTOMER_ADDRESSES_FILE, addresses);
+  return address;
+}
+
+export async function updateCustomerAddress(id, customerId, patch) {
+  const addresses = await readJson(CUSTOMER_ADDRESSES_FILE, []);
+  const idx = addresses.findIndex((a) => a.id === id && a.customerId === customerId);
+  if (idx === -1) return null;
+  addresses[idx] = { ...addresses[idx], ...patch, id: addresses[idx].id, customerId };
+  await writeJson(CUSTOMER_ADDRESSES_FILE, addresses);
+  return addresses[idx];
+}
+
+export async function deleteCustomerAddress(id, customerId) {
+  const addresses = await readJson(CUSTOMER_ADDRESSES_FILE, []);
+  const idx = addresses.findIndex((a) => a.id === id && a.customerId === customerId);
+  if (idx === -1) return false;
+  addresses.splice(idx, 1);
+  await writeJson(CUSTOMER_ADDRESSES_FILE, addresses);
+  return true;
+}
+
+// Histórico entre restaurantes (item 22) — no backend JSON, cada restaurante
+// tem seu próprio arquivo de pedidos, então varremos a lista de restaurantes
+// e juntamos os que pertencem a este cliente.
+export async function listCustomerOrders(customerId) {
+  const restaurants = await readJson(RESTAURANTS_FILE, []);
+  const results = [];
+  for (const r of restaurants) {
+    const orders = await readJson(ordersPath(r.slug), []);
+    for (const o of orders) {
+      if (o.customerId === customerId) {
+        results.push({ ...o, restaurantSlug: r.slug, restaurantName: r.name });
+      }
+    }
+  }
+  results.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+  return results;
+}
+
+// ---------- Notificações push + campanhas automáticas (Fase 4, itens 27-30) ----------
+
+const PUSH_SUBSCRIPTIONS_FILE = path.join(DATA_DIR, 'push-subscriptions.json');
+const NOTIFICATION_CAMPAIGNS_FILE = path.join(DATA_DIR, 'notification-campaigns.json');
+
+export async function createPushSubscription({ restaurantSlug, customerId, endpoint, p256dh, auth }) {
+  const subs = await readJson(PUSH_SUBSCRIPTIONS_FILE, []);
+  const existingIdx = subs.findIndex((s) => s.endpoint === endpoint);
+  const record = {
+    id: existingIdx >= 0 ? subs[existingIdx].id : randomUUID(),
+    restaurantSlug,
+    customerId: customerId || null,
+    endpoint,
+    p256dh,
+    auth,
+    createdAt: new Date().toISOString(),
+  };
+  if (existingIdx >= 0) subs[existingIdx] = record;
+  else subs.push(record);
+  await writeJson(PUSH_SUBSCRIPTIONS_FILE, subs);
+  return record;
+}
+
+export async function deletePushSubscriptionByEndpoint(endpoint) {
+  const subs = await readJson(PUSH_SUBSCRIPTIONS_FILE, []);
+  const filtered = subs.filter((s) => s.endpoint !== endpoint);
+  await writeJson(PUSH_SUBSCRIPTIONS_FILE, filtered);
+  return filtered.length !== subs.length;
+}
+
+export async function deletePushSubscriptionsByIds(ids) {
+  if (!ids || ids.length === 0) return;
+  const idSet = new Set(ids);
+  const subs = await readJson(PUSH_SUBSCRIPTIONS_FILE, []);
+  await writeJson(PUSH_SUBSCRIPTIONS_FILE, subs.filter((s) => !idSet.has(s.id)));
+}
+
+export async function listPushSubscriptions(restaurantSlug, { onlyCustomers = false } = {}) {
+  const subs = await readJson(PUSH_SUBSCRIPTIONS_FILE, []);
+  return subs.filter((s) => s.restaurantSlug === restaurantSlug && (!onlyCustomers || Boolean(s.customerId)));
+}
+
+export async function listNotificationCampaigns(restaurantSlug) {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  return campaigns.filter((c) => c.restaurantSlug === restaurantSlug);
+}
+
+// Usado pelo agendador (varre TODAS as campanhas ativas de TODOS os
+// restaurantes a cada tick, não só de um restaurante por vez).
+export async function listAllActiveCampaigns() {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  return campaigns.filter((c) => c.active);
+}
+
+export async function createNotificationCampaign(restaurantSlug, data) {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  const campaign = {
+    id: randomUUID(),
+    restaurantSlug,
+    active: true,
+    lastSentAt: null,
+    lastSentWindow: null,
+    createdAt: new Date().toISOString(),
+    ...data,
+  };
+  campaigns.push(campaign);
+  await writeJson(NOTIFICATION_CAMPAIGNS_FILE, campaigns);
+  return campaign;
+}
+
+export async function updateNotificationCampaign(id, patch) {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  const idx = campaigns.findIndex((c) => c.id === id);
+  if (idx === -1) return null;
+  campaigns[idx] = { ...campaigns[idx], ...patch, id: campaigns[idx].id };
+  await writeJson(NOTIFICATION_CAMPAIGNS_FILE, campaigns);
+  return campaigns[idx];
+}
+
+export async function deleteNotificationCampaign(id) {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  const filtered = campaigns.filter((c) => c.id !== id);
+  await writeJson(NOTIFICATION_CAMPAIGNS_FILE, filtered);
+  return filtered.length !== campaigns.length;
 }

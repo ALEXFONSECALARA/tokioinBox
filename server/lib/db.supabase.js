@@ -222,6 +222,7 @@ function orderRowToApi(orderRow, itemRows) {
     total: Number(orderRow.total),
     orderType: orderRow.order_type,
     customer: orderRow.customer,
+    customerId: orderRow.customer_id ?? undefined,
     paymentMethod: orderRow.payment_method,
     cardBrand: orderRow.card_brand || undefined,
     cashChangeFor: orderRow.cash_change_for != null ? Number(orderRow.cash_change_for) : undefined,
@@ -380,6 +381,7 @@ export async function createOrder(slug, order) {
     order_type: order.orderType,
     status: order.status || 'recebido',
     customer: order.customer,
+    customer_id: order.customerId ?? null,
     subtotal: order.subtotal,
     delivery_fee: order.deliveryFee,
     discount: order.discount,
@@ -680,4 +682,291 @@ export async function updateAdminUser(id, patch) {
   const { data, error } = await supabase.from('admin_users').update(row).eq('id', id).select('*').maybeSingle();
   if (error) throw error;
   return data ? adminUserRowToApi(data) : null;
+}
+
+// ---------- Contas de cliente + endereços salvos (Fase 4, itens 20-22) ----------
+
+function customerRowToApi(row) {
+  return {
+    id: row.id,
+    name: row.name,
+    phone: row.phone,
+    email: row.email || undefined,
+    passwordHash: row.password_hash,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function customerAddressRowToApi(row) {
+  return {
+    id: row.id,
+    customerId: row.customer_id,
+    label: row.label,
+    cep: row.cep || undefined,
+    street: row.street,
+    number: row.number,
+    neighborhood: row.neighborhood,
+    city: row.city || undefined,
+    state: row.state || undefined,
+    unit: row.unit || undefined,
+    complement: row.complement || undefined,
+    reference: row.reference || undefined,
+    lat: row.lat ?? undefined,
+    lng: row.lng ?? undefined,
+    isDefault: row.is_default,
+  };
+}
+
+export async function createCustomer({ name, phone, email, passwordHash }) {
+  const row = { name, phone, email: email || null, password_hash: passwordHash };
+  const { data, error } = await supabase.from('customers').insert(row).select('*').single();
+  if (error) {
+    if (error.code === '23505') {
+      const err = new Error('Já existe uma conta com esse telefone.');
+      err.code = 'PHONE_TAKEN';
+      throw err;
+    }
+    throw error;
+  }
+  return customerRowToApi(data);
+}
+
+export async function getCustomerByPhone(phone) {
+  const { data, error } = await supabase.from('customers').select('*').eq('phone', phone).maybeSingle();
+  if (error) throw error;
+  return data ? customerRowToApi(data) : null;
+}
+
+export async function getCustomerById(id) {
+  const { data, error } = await supabase.from('customers').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? customerRowToApi(data) : null;
+}
+
+export async function updateCustomer(id, patch) {
+  const row = { updated_at: new Date().toISOString() };
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.email !== undefined) row.email = patch.email;
+  if (patch.passwordHash !== undefined) row.password_hash = patch.passwordHash;
+  const { data, error } = await supabase.from('customers').update(row).eq('id', id).select('*').maybeSingle();
+  if (error) throw error;
+  return data ? customerRowToApi(data) : null;
+}
+
+export async function listCustomerAddresses(customerId) {
+  const { data, error } = await supabase
+    .from('customer_addresses')
+    .select('*')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(customerAddressRowToApi);
+}
+
+export async function createCustomerAddress(customerId, addr) {
+  const row = {
+    customer_id: customerId,
+    label: addr.label || 'Casa',
+    cep: addr.cep || null,
+    street: addr.street,
+    number: addr.number,
+    neighborhood: addr.neighborhood,
+    city: addr.city || null,
+    state: addr.state || null,
+    unit: addr.unit || null,
+    complement: addr.complement || null,
+    reference: addr.reference || null,
+    lat: addr.lat ?? null,
+    lng: addr.lng ?? null,
+    is_default: Boolean(addr.isDefault),
+  };
+  const { data, error } = await supabase.from('customer_addresses').insert(row).select('*').single();
+  if (error) throw error;
+  return customerAddressRowToApi(data);
+}
+
+export async function updateCustomerAddress(id, customerId, patch) {
+  const row = {};
+  if (patch.label !== undefined) row.label = patch.label;
+  if (patch.cep !== undefined) row.cep = patch.cep;
+  if (patch.street !== undefined) row.street = patch.street;
+  if (patch.number !== undefined) row.number = patch.number;
+  if (patch.neighborhood !== undefined) row.neighborhood = patch.neighborhood;
+  if (patch.city !== undefined) row.city = patch.city;
+  if (patch.state !== undefined) row.state = patch.state;
+  if (patch.unit !== undefined) row.unit = patch.unit;
+  if (patch.complement !== undefined) row.complement = patch.complement;
+  if (patch.reference !== undefined) row.reference = patch.reference;
+  if (patch.lat !== undefined) row.lat = patch.lat;
+  if (patch.lng !== undefined) row.lng = patch.lng;
+  if (patch.isDefault !== undefined) row.is_default = patch.isDefault;
+  const { data, error } = await supabase
+    .from('customer_addresses')
+    .update(row)
+    .eq('id', id)
+    .eq('customer_id', customerId)
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  return data ? customerAddressRowToApi(data) : null;
+}
+
+export async function deleteCustomerAddress(id, customerId) {
+  const { error } = await supabase.from('customer_addresses').delete().eq('id', id).eq('customer_id', customerId);
+  if (error) throw error;
+  return true;
+}
+
+export async function listCustomerOrders(customerId) {
+  const { data: orderRows, error } = await supabase
+    .from('orders')
+    .select('*, restaurants(slug, name)')
+    .eq('customer_id', customerId)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  if (!orderRows || orderRows.length === 0) return [];
+
+  const { data: itemRows, error: itemErr } = await supabase
+    .from('order_items')
+    .select('*')
+    .in('order_id', orderRows.map((o) => o.id));
+  if (itemErr) throw itemErr;
+
+  const itemsByOrder = new Map();
+  for (const it of itemRows || []) {
+    if (!itemsByOrder.has(it.order_id)) itemsByOrder.set(it.order_id, []);
+    itemsByOrder.get(it.order_id).push(it);
+  }
+  return orderRows.map((o) => ({
+    ...orderRowToApi(o, itemsByOrder.get(o.id)),
+    restaurantSlug: o.restaurants?.slug,
+    restaurantName: o.restaurants?.name,
+  }));
+}
+
+// ---------- Notificações push + campanhas automáticas (Fase 4, itens 27-30) ----------
+
+function pushSubscriptionRowToApi(row) {
+  return {
+    id: row.id,
+    restaurantSlug: row.restaurant_slug,
+    customerId: row.customer_id || null,
+    endpoint: row.endpoint,
+    p256dh: row.p256dh,
+    auth: row.auth,
+    createdAt: row.created_at,
+  };
+}
+
+function campaignRowToApi(row) {
+  return {
+    id: row.id,
+    restaurantSlug: row.restaurant_slug,
+    name: row.name,
+    title: row.title,
+    message: row.message,
+    imageUrl: row.image_url || undefined,
+    audience: row.audience,
+    schedule: row.schedule || {},
+    active: row.active,
+    lastSentAt: row.last_sent_at || null,
+    lastSentWindow: row.last_sent_window || null,
+    createdAt: row.created_at,
+  };
+}
+
+export async function createPushSubscription({ restaurantSlug, customerId, endpoint, p256dh, auth }) {
+  const row = {
+    restaurant_slug: restaurantSlug,
+    customer_id: customerId || null,
+    endpoint,
+    p256dh,
+    auth,
+  };
+  const { data, error } = await supabase
+    .from('push_subscriptions')
+    .upsert(row, { onConflict: 'endpoint' })
+    .select('*')
+    .single();
+  if (error) throw error;
+  return pushSubscriptionRowToApi(data);
+}
+
+export async function deletePushSubscriptionByEndpoint(endpoint) {
+  const { error } = await supabase.from('push_subscriptions').delete().eq('endpoint', endpoint);
+  if (error) throw error;
+  return true;
+}
+
+export async function deletePushSubscriptionsByIds(ids) {
+  if (!ids || ids.length === 0) return;
+  const { error } = await supabase.from('push_subscriptions').delete().in('id', ids);
+  if (error) throw error;
+}
+
+export async function listPushSubscriptions(restaurantSlug, { onlyCustomers = false } = {}) {
+  let query = supabase.from('push_subscriptions').select('*').eq('restaurant_slug', restaurantSlug);
+  if (onlyCustomers) query = query.not('customer_id', 'is', null);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(pushSubscriptionRowToApi);
+}
+
+export async function listNotificationCampaigns(restaurantSlug) {
+  const { data, error } = await supabase
+    .from('notification_campaigns')
+    .select('*')
+    .eq('restaurant_slug', restaurantSlug)
+    .order('created_at', { ascending: false });
+  if (error) throw error;
+  return (data || []).map(campaignRowToApi);
+}
+
+export async function listAllActiveCampaigns() {
+  const { data, error } = await supabase.from('notification_campaigns').select('*').eq('active', true);
+  if (error) throw error;
+  return (data || []).map(campaignRowToApi);
+}
+
+export async function createNotificationCampaign(restaurantSlug, data) {
+  const row = {
+    restaurant_slug: restaurantSlug,
+    name: data.name,
+    title: data.title,
+    message: data.message,
+    image_url: data.imageUrl || null,
+    audience: data.audience || 'all',
+    schedule: data.schedule || {},
+  };
+  const { data: created, error } = await supabase.from('notification_campaigns').insert(row).select('*').single();
+  if (error) throw error;
+  return campaignRowToApi(created);
+}
+
+export async function updateNotificationCampaign(id, patch) {
+  const row = {};
+  if (patch.name !== undefined) row.name = patch.name;
+  if (patch.title !== undefined) row.title = patch.title;
+  if (patch.message !== undefined) row.message = patch.message;
+  if (patch.imageUrl !== undefined) row.image_url = patch.imageUrl;
+  if (patch.audience !== undefined) row.audience = patch.audience;
+  if (patch.schedule !== undefined) row.schedule = patch.schedule;
+  if (patch.active !== undefined) row.active = patch.active;
+  if (patch.lastSentAt !== undefined) row.last_sent_at = patch.lastSentAt;
+  if (patch.lastSentWindow !== undefined) row.last_sent_window = patch.lastSentWindow;
+  const { data, error } = await supabase
+    .from('notification_campaigns')
+    .update(row)
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  return data ? campaignRowToApi(data) : null;
+}
+
+export async function deleteNotificationCampaign(id) {
+  const { error } = await supabase.from('notification_campaigns').delete().eq('id', id);
+  if (error) throw error;
+  return true;
 }

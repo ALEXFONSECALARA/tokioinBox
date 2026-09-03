@@ -36,3 +36,23 @@ export const getAdminUserByLogin = impl.getAdminUserByLogin;
 export const getAdminUserById = impl.getAdminUserById;
 export const createAdminUser = impl.createAdminUser;
 export const updateAdminUser = impl.updateAdminUser;
+// Contas de cliente + endereços salvos (Fase 4, itens 20-22)
+export const createCustomer = impl.createCustomer;
+export const getCustomerByPhone = impl.getCustomerByPhone;
+export const getCustomerById = impl.getCustomerById;
+export const updateCustomer = impl.updateCustomer;
+export const listCustomerAddresses = impl.listCustomerAddresses;
+export const createCustomerAddress = impl.createCustomerAddress;
+export const updateCustomerAddress = impl.updateCustomerAddress;
+export const deleteCustomerAddress = impl.deleteCustomerAddress;
+export const listCustomerOrders = impl.listCustomerOrders;
+// Notificações push + campanhas automáticas (Fase 4, itens 27-30)
+export const createPushSubscription = impl.createPushSubscription;
+export const deletePushSubscriptionByEndpoint = impl.deletePushSubscriptionByEndpoint;
+export const deletePushSubscriptionsByIds = impl.deletePushSubscriptionsByIds;
+export const listPushSubscriptions = impl.listPushSubscriptions;
+export const listNotificationCampaigns = impl.listNotificationCampaigns;
+export const listAllActiveCampaigns = impl.listAllActiveCampaigns;
+export const createNotificationCampaign = impl.createNotificationCampaign;
+export const updateNotificationCampaign = impl.updateNotificationCampaign;
+export const deleteNotificationCampaign = impl.deleteNotificationCampaign;
