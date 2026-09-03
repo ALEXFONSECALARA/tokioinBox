@@ -588,8 +588,14 @@ export async function updateConfig(slug, incoming) {
       .from('restaurant_configs')
       .upsert(attemptRow, { onConflict: 'restaurant_id' });
     if (!upsertErr) break;
+    // PostgreSQL usa 42703; PostgREST normalmente devolve PGRST204
+    // quando a coluna não está no schema cache. Em ambos os casos,
+    // extraímos o nome da coluna e tentamos novamente sem ela.
     const missingColumnMatch =
-      upsertErr.code === '42703' && upsertErr.message?.match(/column "([a-z_]+)"/i);
+      (upsertErr.code === '42703' && upsertErr.message?.match(/column "([a-z_]+)"/i)) ||
+      (upsertErr.code === 'PGRST204' &&
+        (upsertErr.message?.match(/Could not find the '([a-z_]+)' column/i) ||
+         upsertErr.message?.match(/column "([a-z_]+)"/i)));
     if (!missingColumnMatch) throw upsertErr;
     const missingColumn = missingColumnMatch[1];
     console.error(
