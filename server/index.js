@@ -10,6 +10,8 @@ import * as db from './lib/db.js';
 import { isCloudinaryConfigured, uploadImageBuffer } from './lib/cloudinary.js';
 import { hashPassword, verifyPassword } from './lib/passwords.js';
 import { sanitizePermissions } from './lib/permissions.js';
+import { getVapidPublicKey, sendPushToMany } from './lib/webPush.js';
+import { isCampaignDueNow, currentWindowKey } from './lib/campaignScheduler.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
@@ -109,6 +111,51 @@ function requireOwnRestaurant(req, res, next) {
   if (user.restaurantSlug === slug) return next();
   if (hasPermission(req, 'admin_gerenciar_restaurantes')) return next();
   return res.status(403).json({ error: 'Você não tem acesso a este restaurante.' });
+}
+
+// ---------- Sessão do CLIENTE final (Fase 4, itens 20-22) ----------
+// Autenticação separada da do painel (adminTokens) — token mais duradouro
+// (cliente não quer logar de novo a cada pedido) e sem nenhuma noção de
+// permissão/restaurante: uma conta de cliente é global à plataforma.
+const customerTokens = new Map(); // token -> { expiresAt, customerId }
+const CUSTOMER_TOKEN_TTL_MS = 90 * 24 * 60 * 60 * 1000; // 90 dias
+
+function issueCustomerToken(customerId) {
+  const token = crypto.randomBytes(24).toString('hex');
+  customerTokens.set(token, { expiresAt: Date.now() + CUSTOMER_TOKEN_TTL_MS, customerId });
+  return token;
+}
+
+function getCustomerSession(token) {
+  if (!token) return null;
+  const session = customerTokens.get(token);
+  if (!session) return null;
+  if (Date.now() > session.expiresAt) {
+    customerTokens.delete(token);
+    return null;
+  }
+  return session;
+}
+
+function bearerToken(req) {
+  const auth = req.headers.authorization || '';
+  return auth.startsWith('Bearer ') ? auth.slice(7) : null;
+}
+
+// Exige cliente logado.
+function requireCustomer(req, res, next) {
+  const session = getCustomerSession(bearerToken(req));
+  if (!session) {
+    return res.status(401).json({ error: 'Faça login para continuar.' });
+  }
+  req.customerId = session.customerId;
+  next();
+}
+
+// Nunca devolve o hash da senha.
+function publicCustomer(customer) {
+  const { passwordHash, ...rest } = customer;
+  return rest;
 }
 
 const app = express();
@@ -229,6 +276,12 @@ app.post('/api/:slug/orders', async (req, res) => {
     if (!order || !order.id) {
       return res.status(400).json({ error: 'Pedido inválido.' });
     }
+    // Vincula o pedido ao cliente logado (item 20/22) — nunca confia num
+    // customerId enviado pelo corpo da requisição, sempre deriva do token.
+    // Pedido de visitante sem conta continua funcionando normalmente
+    // (customerId fica undefined, exatamente como sempre foi).
+    const session = getCustomerSession(bearerToken(req));
+    order.customerId = session ? session.customerId : undefined;
     const saved = await db.createOrder(slug, order);
     res.status(201).json({ ok: true, order: saved });
   } catch (err) {
@@ -236,6 +289,325 @@ app.post('/api/:slug/orders', async (req, res) => {
     res.status(500).json({ error: 'Não foi possível registrar o pedido.' });
   }
 });
+
+// ---------- Contas de cliente + endereços salvos (Fase 4, itens 20-22) ----------
+
+app.post('/api/customers/register', async (req, res) => {
+  const { name, phone, email, password } = req.body || {};
+  if (!name || !phone || !password) {
+    return res.status(400).json({ error: 'Nome, telefone e senha são obrigatórios.' });
+  }
+  try {
+    const passwordHash = await hashPassword(password);
+    const customer = await db.createCustomer({ name, phone, email, passwordHash });
+    res.status(201).json({ token: issueCustomerToken(customer.id), customer: publicCustomer(customer) });
+  } catch (err) {
+    if (err.code === 'PHONE_TAKEN') {
+      return res.status(409).json({ error: 'Já existe uma conta com esse telefone.' });
+    }
+    console.error('Erro ao criar conta de cliente:', err);
+    res.status(500).json({ error: 'Não foi possível criar a conta.' });
+  }
+});
+
+app.post('/api/customers/login', async (req, res) => {
+  const { phone, password } = req.body || {};
+  if (!phone || !password) {
+    return res.status(400).json({ error: 'Informe telefone e senha.' });
+  }
+  try {
+    const customer = await db.getCustomerByPhone(phone);
+    if (!customer) return res.status(401).json({ error: 'Telefone ou senha incorretos.' });
+    const ok = await verifyPassword(password, customer.passwordHash);
+    if (!ok) return res.status(401).json({ error: 'Telefone ou senha incorretos.' });
+    res.json({ token: issueCustomerToken(customer.id), customer: publicCustomer(customer) });
+  } catch (err) {
+    console.error('Erro no login de cliente:', err);
+    res.status(500).json({ error: 'Não foi possível fazer login.' });
+  }
+});
+
+app.get('/api/customers/me', requireCustomer, async (req, res) => {
+  try {
+    const customer = await db.getCustomerById(req.customerId);
+    if (!customer) return res.status(404).json({ error: 'Conta não encontrada.' });
+    res.json(publicCustomer(customer));
+  } catch (err) {
+    console.error('Erro ao buscar cliente:', err);
+    res.status(500).json({ error: 'Não foi possível carregar a conta.' });
+  }
+});
+
+app.patch('/api/customers/me', requireCustomer, async (req, res) => {
+  const { name, email, newPassword } = req.body || {};
+  const patch = {};
+  if (name !== undefined) patch.name = name;
+  if (email !== undefined) patch.email = email;
+  if (newPassword) patch.passwordHash = await hashPassword(newPassword);
+  try {
+    const updated = await db.updateCustomer(req.customerId, patch);
+    res.json(publicCustomer(updated));
+  } catch (err) {
+    console.error('Erro ao atualizar cliente:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar a conta.' });
+  }
+});
+
+// 🏠 Casa / 🏢 Trabalho / 📍 Outro — vários endereços por cliente (item 21)
+app.get('/api/customers/me/addresses', requireCustomer, async (req, res) => {
+  try {
+    res.json(await db.listCustomerAddresses(req.customerId));
+  } catch (err) {
+    console.error('Erro ao listar endereços:', err);
+    res.status(500).json({ error: 'Não foi possível carregar os endereços.' });
+  }
+});
+
+app.post('/api/customers/me/addresses', requireCustomer, async (req, res) => {
+  const { label, cep, street, number, neighborhood, city, state, unit, complement, reference, lat, lng, isDefault } =
+    req.body || {};
+  if (!street || !number || !neighborhood) {
+    return res.status(400).json({ error: 'Rua, número e bairro são obrigatórios.' });
+  }
+  try {
+    const address = await db.createCustomerAddress(req.customerId, {
+      label,
+      cep,
+      street,
+      number,
+      neighborhood,
+      city,
+      state,
+      unit,
+      complement,
+      reference,
+      lat,
+      lng,
+      isDefault,
+    });
+    res.status(201).json(address);
+  } catch (err) {
+    console.error('Erro ao criar endereço:', err);
+    res.status(500).json({ error: 'Não foi possível salvar o endereço.' });
+  }
+});
+
+app.patch('/api/customers/me/addresses/:id', requireCustomer, async (req, res) => {
+  try {
+    const updated = await db.updateCustomerAddress(req.params.id, req.customerId, req.body || {});
+    if (!updated) return res.status(404).json({ error: 'Endereço não encontrado.' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar endereço:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar o endereço.' });
+  }
+});
+
+app.delete('/api/customers/me/addresses/:id', requireCustomer, async (req, res) => {
+  try {
+    const deleted = await db.deleteCustomerAddress(req.params.id, req.customerId);
+    if (!deleted) return res.status(404).json({ error: 'Endereço não encontrado.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao excluir endereço:', err);
+    res.status(500).json({ error: 'Não foi possível excluir o endereço.' });
+  }
+});
+
+// Histórico entre restaurantes (item 22) — pedidos, produtos, valores,
+// desconto, taxa, pagamento, restaurante, endereço, data/hora e status já
+// vêm de dentro do próprio pedido salvo; aqui só juntamos e ordenamos.
+app.get('/api/customers/me/orders', requireCustomer, async (req, res) => {
+  try {
+    res.json(await db.listCustomerOrders(req.customerId));
+  } catch (err) {
+    console.error('Erro ao buscar histórico do cliente:', err);
+    res.status(500).json({ error: 'Não foi possível carregar o histórico de pedidos.' });
+  }
+});
+
+// ---------- Notificações push (Fase 4, itens 27-30) — lado público ----------
+
+// Chave pública VAPID pra o frontend poder chamar pushManager.subscribe(...).
+// Vem vazia se as variáveis de ambiente não estiverem configuradas — o
+// frontend trata isso mostrando "notificações indisponíveis" em vez de quebrar.
+app.get('/api/push/vapid-public-key', (req, res) => {
+  res.json({ publicKey: getVapidPublicKey() });
+});
+
+app.post('/api/:slug/push/subscribe', async (req, res) => {
+  const { slug } = req.params;
+  const { endpoint, keys } = req.body?.subscription || req.body || {};
+  if (!endpoint || !keys?.p256dh || !keys?.auth) {
+    return res.status(400).json({ error: 'Inscrição de push inválida.' });
+  }
+  if (!(await db.restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    // Se o visitante estiver logado (item 27, segmento "clientes
+    // cadastrados"), vincula a inscrição à conta dele.
+    const session = getCustomerSession(bearerToken(req));
+    const saved = await db.createPushSubscription({
+      restaurantSlug: slug,
+      customerId: session ? session.customerId : null,
+      endpoint,
+      p256dh: keys.p256dh,
+      auth: keys.auth,
+    });
+    res.status(201).json({ ok: true, id: saved.id });
+  } catch (err) {
+    console.error('Erro ao salvar inscrição de push:', err);
+    res.status(500).json({ error: 'Não foi possível ativar as notificações.' });
+  }
+});
+
+app.post('/api/:slug/push/unsubscribe', async (req, res) => {
+  const { endpoint } = req.body || {};
+  if (!endpoint) return res.status(400).json({ error: 'Informe o endpoint da inscrição.' });
+  try {
+    await db.deletePushSubscriptionByEndpoint(endpoint);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao remover inscrição de push:', err);
+    res.status(500).json({ error: 'Não foi possível desativar as notificações.' });
+  }
+});
+
+// ---------- Notificações push + campanhas (Fase 4, itens 27-30) — painel ----------
+// Ação de restaurante (não de plataforma inteira): exige acesso àquele
+// restaurante (requireOwnRestaurant), sem uma permissão granular própria —
+// o catálogo de permissões do item 18 não previu uma categoria específica
+// de "notificações", então por ora qualquer usuário com acesso ao
+// restaurante pode enviar/agendar, igual já podia mexer no cardápio dele.
+
+app.get('/api/admin/:slug/push/campaigns', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  try {
+    res.json(await db.listNotificationCampaigns(req.params.slug));
+  } catch (err) {
+    console.error('Erro ao listar campanhas:', err);
+    res.status(500).json({ error: 'Não foi possível carregar as campanhas.' });
+  }
+});
+
+app.post('/api/admin/:slug/push/campaigns', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  const { name, title, message, imageUrl, audience, schedule } = req.body || {};
+  if (!name || !title || !message) {
+    return res.status(400).json({ error: 'Nome, título e mensagem são obrigatórios.' });
+  }
+  try {
+    const campaign = await db.createNotificationCampaign(req.params.slug, {
+      name,
+      title,
+      message,
+      imageUrl,
+      audience: audience === 'customers' ? 'customers' : 'all',
+      schedule: schedule || {},
+    });
+    res.status(201).json(campaign);
+  } catch (err) {
+    console.error('Erro ao criar campanha:', err);
+    res.status(500).json({ error: 'Não foi possível criar a campanha.' });
+  }
+});
+
+app.patch('/api/admin/:slug/push/campaigns/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  try {
+    const updated = await db.updateNotificationCampaign(req.params.id, req.body || {});
+    if (!updated) return res.status(404).json({ error: 'Campanha não encontrada.' });
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar campanha:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar a campanha.' });
+  }
+});
+
+app.delete('/api/admin/:slug/push/campaigns/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  try {
+    await db.deleteNotificationCampaign(req.params.id);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao excluir campanha:', err);
+    res.status(500).json({ error: 'Não foi possível excluir a campanha.' });
+  }
+});
+
+// Disparo manual imediato ("enviar agora", item 29) — reaproveita a mesma
+// função de envio que o agendador usa pras campanhas recorrentes.
+app.post('/api/admin/:slug/push/send', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  const { title, message, imageUrl, audience } = req.body || {};
+  if (!title || !message) {
+    return res.status(400).json({ error: 'Título e mensagem são obrigatórios.' });
+  }
+  try {
+    const result = await sendNotificationToRestaurant(req.params.slug, {
+      title,
+      message,
+      imageUrl,
+      audience: audience === 'customers' ? 'customers' : 'all',
+    });
+    res.json({ ok: true, ...result });
+  } catch (err) {
+    console.error('Erro ao enviar notificação:', err);
+    res.status(500).json({ error: 'Não foi possível enviar a notificação.' });
+  }
+});
+
+// Função compartilhada entre o envio manual e o agendador de campanhas —
+// busca as inscrições do restaurante (todas ou só de clientes cadastrados,
+// item 27), envia, e já limpa do banco as inscrições que o navegador
+// cancelou (push expirado/desinstalado).
+async function sendNotificationToRestaurant(slug, { title, message, imageUrl, audience }) {
+  const subscriptions = await db.listPushSubscriptions(slug, { onlyCustomers: audience === 'customers' });
+  if (subscriptions.length === 0) return { sentCount: 0, totalCount: 0 };
+  const { sentCount, totalCount, expiredIds } = await sendPushToMany(subscriptions, {
+    title,
+    body: message,
+    image: imageUrl || undefined,
+  });
+  if (expiredIds.length > 0) {
+    await db.deletePushSubscriptionsByIds(expiredIds);
+  }
+  return { sentCount, totalCount };
+}
+
+// Agendador de campanhas (itens 29-30) — roda a cada minuto, verifica todas
+// as campanhas ativas de todos os restaurantes e dispara as que estiverem
+// na janela certa. Processo simples em memória (setInterval): funciona bem
+// pro volume de campanhas de um sistema deste porte, sem precisar de fila
+// externa (Redis/cron job separado) neste estágio do projeto.
+async function runCampaignScheduler() {
+  if (!isPushConfiguredForScheduler()) return;
+  try {
+    const campaigns = await db.listAllActiveCampaigns();
+    const now = new Date();
+    for (const campaign of campaigns) {
+      if (!isCampaignDueNow(campaign, now)) continue;
+      try {
+        await sendNotificationToRestaurant(campaign.restaurantSlug, {
+          title: campaign.title,
+          message: campaign.message,
+          imageUrl: campaign.imageUrl,
+          audience: campaign.audience,
+        });
+        await db.updateNotificationCampaign(campaign.id, {
+          lastSentAt: now.toISOString(),
+          lastSentWindow: currentWindowKey(now),
+        });
+      } catch (err) {
+        console.error(`Erro ao disparar a campanha "${campaign.name}":`, err);
+      }
+    }
+  } catch (err) {
+    console.error('Erro no agendador de campanhas:', err);
+  }
+}
+
+function isPushConfiguredForScheduler() {
+  return Boolean(process.env.VAPID_PUBLIC_KEY && process.env.VAPID_PRIVATE_KEY);
+}
+
+setInterval(runCampaignScheduler, 60 * 1000);
 
 // Cliente consulta o status do próprio pedido (id é praticamente impossível de adivinhar)
 app.get('/api/:slug/orders/:id', async (req, res) => {
