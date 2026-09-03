@@ -69,7 +69,8 @@ import {
   ChevronDown,
   Copy
 } from 'lucide-react';
-import { Tag, Music, CheckSquare } from 'lucide-react';
+import { Tag, Music, CheckSquare, Bell } from 'lucide-react';
+import { NotificationsPanel } from './NotificationsPanel';
 
 interface AdminDashboardProps {
   // Restaurante sendo administrado e token de sessão do admin — necessários
@@ -129,7 +130,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onToggleSound,
   onDirtyChange,
 }) => {
-  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'identity' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools'>('orders');
+  const [activeTab, setActiveTab] = useState<'orders' | 'menu' | 'identity' | 'zones' | 'drivers' | 'config' | 'metrics' | 'tools' | 'notifications'>('orders');
   const [showSoundPicker, setShowSoundPicker] = useState(false);
   const [selectedAlertSoundId, setSelectedAlertSoundId] = useState(getSelectedOrderAlertSoundId);
 
@@ -1215,6 +1216,19 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           >
             <Wrench className="w-4 h-4" />
             <span>Ferramentas & CMV</span>
+          </button>
+
+          <button
+            id="tab-admin-notifications"
+            onClick={() => setActiveTab('notifications')}
+            className={`px-3.5 py-2 rounded-xl text-xs font-bold flex items-center gap-2 transition-all whitespace-nowrap ${
+              activeTab === 'notifications'
+                ? 'bg-amber-500 text-slate-950 shadow-sm font-extrabold'
+                : 'text-stone-300 hover:bg-stone-800 hover:text-white'
+            }`}
+          >
+            <Bell className="w-4 h-4" />
+            <span>Notificações</span>
           </button>
         </div>
       </header>
@@ -3630,6 +3644,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             onUpdateMenuItems={onUpdateMenuItems}
           />
         )}
+
+        {activeTab === 'notifications' && <NotificationsPanel slug={slug} token={token} />}
       </main>
 
       {/* Dispatch Modal: Assign Driver */}

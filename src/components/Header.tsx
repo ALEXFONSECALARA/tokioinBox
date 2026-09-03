@@ -13,7 +13,10 @@ import {
   X,
   ChevronRight,
   ShieldCheck,
-  Percent
+  Percent,
+  User,
+  Bell,
+  BellRing
 } from 'lucide-react';
 
 interface HeaderProps {
@@ -26,6 +29,18 @@ interface HeaderProps {
   onOpenAddressModal: () => void;
   favoritesCount: number;
   onOpenFavorites: () => void;
+  // Já eram passadas pelo App.tsx, mas não existiam nesta interface (bug
+  // pré-existente, sem relação com a Fase 4) — corrigido aqui de passagem.
+  activeOrdersCount?: number;
+  onOpenOrders?: () => void;
+  // Conta do cliente (Fase 4, itens 20-22) — opcional: some do header se o
+  // App.tsx não passar (sem quebrar nenhum uso existente do componente).
+  isCustomerLoggedIn?: boolean;
+  onOpenAccount?: () => void;
+  // Notificações push (Fase 4, item 27) — opcional, some do header se o
+  // App.tsx não passar (sem quebrar nenhum uso existente do componente).
+  isPushOn?: boolean;
+  onTogglePush?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -38,6 +53,12 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAddressModal,
   favoritesCount,
   onOpenFavorites,
+  activeOrdersCount = 0,
+  onOpenOrders,
+  isCustomerLoggedIn = false,
+  onOpenAccount,
+  isPushOn = false,
+  onTogglePush,
 }) => {
   // Find current zone
   const activeZone = currentAddress
@@ -126,6 +147,33 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           <div className="pointer-events-auto flex items-center gap-2">
+            {onTogglePush && (
+              <button
+                id="header-push-btn"
+                onClick={onTogglePush}
+                className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-all border border-white/20 relative"
+                title={isPushOn ? 'Notificações ativadas' : 'Ativar notificações'}
+              >
+                {isPushOn ? (
+                  <BellRing className="w-4 h-4 text-amber-400" />
+                ) : (
+                  <Bell className="w-4 h-4 text-white" />
+                )}
+              </button>
+            )}
+            {onOpenAccount && (
+              <button
+                id="header-account-btn"
+                onClick={onOpenAccount}
+                className="bg-black/50 backdrop-blur-md text-white p-2 rounded-full hover:bg-black/70 transition-all border border-white/20 relative"
+                title="Minha Conta"
+              >
+                <User className={`w-4 h-4 ${isCustomerLoggedIn ? 'text-emerald-400' : 'text-white'}`} />
+                {isCustomerLoggedIn && (
+                  <span className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full bg-emerald-400 border border-black/50" />
+                )}
+              </button>
+            )}
             <button
               id="header-favorites-btn"
               onClick={onOpenFavorites}
