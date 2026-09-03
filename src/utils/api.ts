@@ -1,4 +1,4 @@
-import { Category, MenuItem, Order, RestaurantConfig, LayoutId } from '../types';
+import { Category, MenuItem, Order, RestaurantConfig, LayoutId, CustomerAccount, SavedAddress } from '../types';
 
 const API_BASE = String(import.meta.env.VITE_API_URL || '')
   .trim()
@@ -87,10 +87,13 @@ export async function fetchMenu(slug: string): Promise<MenuData> {
   return handleResponse<MenuData>(res);
 }
 
-export async function createOrder(slug: string, order: Order): Promise<void> {
+export async function createOrder(slug: string, order: Order, customerToken?: string): Promise<void> {
   const res = await fetch(`${API_PREFIX}/${slug}/orders`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      ...(customerToken ? { Authorization: `Bearer ${customerToken}` } : {}),
+    },
     body: JSON.stringify(order),
   });
   await handleResponse(res);
@@ -288,4 +291,100 @@ export async function saveRestaurantConfig(
     body: JSON.stringify(config),
   });
   await handleResponse(res);
+}
+
+// ---------- Conta do cliente + endereços salvos (Fase 4, itens 20-22) ----------
+// Autenticação própria, separada da do painel (adminLogin/adminUserLogin) —
+// aqui é o cliente final, não um usuário do painel.
+
+function customerAuthHeaders(token: string): HeadersInit {
+  return { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` };
+}
+
+export async function registerCustomer(data: {
+  name: string;
+  phone: string;
+  email?: string;
+  password: string;
+}): Promise<{ token: string; customer: CustomerAccount }> {
+  const res = await fetch(`${API_PREFIX}/customers/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  });
+  return handleResponse(res);
+}
+
+export async function loginCustomer(
+  phone: string,
+  password: string
+): Promise<{ token: string; customer: CustomerAccount }> {
+  const res = await fetch(`${API_PREFIX}/customers/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone, password }),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchCustomerProfile(token: string): Promise<CustomerAccount> {
+  const res = await fetch(`${API_PREFIX}/customers/me`, { headers: customerAuthHeaders(token) });
+  return handleResponse(res);
+}
+
+export async function updateCustomerProfile(
+  token: string,
+  patch: Partial<{ name: string; email: string; newPassword: string }>
+): Promise<CustomerAccount> {
+  const res = await fetch(`${API_PREFIX}/customers/me`, {
+    method: 'PATCH',
+    headers: customerAuthHeaders(token),
+    body: JSON.stringify(patch),
+  });
+  return handleResponse(res);
+}
+
+export async function fetchCustomerAddresses(token: string): Promise<SavedAddress[]> {
+  const res = await fetch(`${API_PREFIX}/customers/me/addresses`, { headers: customerAuthHeaders(token) });
+  return handleResponse(res);
+}
+
+export async function saveCustomerAddress(
+  token: string,
+  address: Omit<SavedAddress, 'id' | 'customerId'>
+): Promise<SavedAddress> {
+  const res = await fetch(`${API_PREFIX}/customers/me/addresses`, {
+    method: 'POST',
+    headers: customerAuthHeaders(token),
+    body: JSON.stringify(address),
+  });
+  return handleResponse(res);
+}
+
+export async function updateCustomerAddress(
+  token: string,
+  id: string,
+  patch: Partial<Omit<SavedAddress, 'id' | 'customerId'>>
+): Promise<SavedAddress> {
+  const res = await fetch(`${API_PREFIX}/customers/me/addresses/${id}`, {
+    method: 'PATCH',
+    headers: customerAuthHeaders(token),
+    body: JSON.stringify(patch),
+  });
+  return handleResponse(res);
+}
+
+export async function deleteCustomerAddress(token: string, id: string): Promise<void> {
+  const res = await fetch(`${API_PREFIX}/customers/me/addresses/${id}`, {
+    method: 'DELETE',
+    headers: customerAuthHeaders(token),
+  });
+  await handleResponse(res);
+}
+
+export async function fetchCustomerOrders(
+  token: string
+): Promise<(Order & { restaurantSlug: string; restaurantName: string })[]> {
+  const res = await fetch(`${API_PREFIX}/customers/me/orders`, { headers: customerAuthHeaders(token) });
+  return handleResponse(res);
 }
