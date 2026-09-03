@@ -205,11 +205,6 @@ app.get('/api/:slug/menu', async (req, res) => {
     if (!data.restaurantConfig) {
       return res.status(500).json({ error: `Configuração de "${slug}" não encontrada (config.json ausente).` });
     }
-    // A configuração inclui fotos da splash e pode ser alterada pelo admin a qualquer momento.
-    // Não permita que navegador/proxy entregue uma versão antiga depois de uma troca de foto.
-    res.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
-    res.set('Pragma', 'no-cache');
-    res.set('Expires', '0');
     res.json(data);
   } catch (err) {
     console.error(`Erro ao ler cardápio de ${slug}:`, err);
@@ -576,18 +571,8 @@ app.put('/api/:slug/config', requireAdmin, requireOwnRestaurant, async (req, res
     const merged = await db.updateConfig(slug, incoming);
     res.json({ ok: true, restaurantConfig: merged });
   } catch (err) {
-    // Mantém a mensagem amigável no navegador, mas registra o erro real do
-    // Supabase para diagnosticar rapidamente migrations/colunas/constraints.
-    console.error(`Erro ao salvar configuração de ${slug}:`, {
-      message: err?.message,
-      code: err?.code,
-      details: err?.details,
-      hint: err?.hint,
-    });
-    const detail = err?.code === 'PGRST204'
-      ? 'O banco não reconhece uma coluna da configuração. Execute as migrations pendentes do Supabase.'
-      : undefined;
-    res.status(500).json({ error: detail || 'Não foi possível salvar a configuração.' });
+    console.error(`Erro ao salvar configuração de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível salvar a configuração.' });
   }
 });
 
@@ -622,6 +607,12 @@ app.get('/api/:slug/orders', requireAdmin, requireOwnRestaurant, async (req, res
 app.patch('/api/:slug/orders/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
   const { slug, id } = req.params;
   if (!(await db.restaurantExists(slug))) return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  // Cancelamento é uma ação sensível (item 18/23-25): exige a permissão
+  // específica, mesmo que o usuário já tenha acesso de escrita ao pedido.
+  // Login mestre continua com acesso total, sem mudança de comportamento.
+  if (req.body?.status === 'cancelado' && !hasPermission(req, 'cancelar_pedido')) {
+    return res.status(403).json({ error: 'Você não tem permissão para cancelar pedidos.' });
+  }
   try {
     const order = await db.updateOrder(slug, id, req.body);
     if (!order) return res.status(404).json({ error: 'Pedido não encontrado.' });
