@@ -14,7 +14,7 @@ import {
   INITIAL_RESTAURANT_CONFIG 
 } from './data/initialData';
 import { fetchMenu, createOrder, fetchOrder, fetchOperationalStatus } from './utils/api';
-import { formatCurrency, playSoundEffect, COUPONS, normalizeSplashImage } from './utils/helpers';
+import { formatCurrency, playSoundEffect, COUPONS } from './utils/helpers';
 import { SplashScreen } from './components/SplashScreen';
 import { Header } from './components/Header';
 import { CategoryNav } from './components/CategoryNav';
@@ -216,16 +216,18 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
     return () => { cancelled = true; };
   }, [restaurantSlug]);
 
-  // Decide se mostra a splash screen: sempre que o app/cardápio é aberto,
-  // desde que o admin tenha ativado a sequência e existam fotos ativas.
-  // Não usamos sessionStorage aqui: isso impedia testar uma foto nova após
-  // salvar, porque a mesma aba já tinha marcado a splash como "vista".
+  // Decide se mostra a splash screen: só se o admin ativou e cadastrou fotos,
+  // e só uma vez por sessão do navegador (não repete a cada nova aba/recarregar
+  // fica marcado em sessionStorage — mas volta a aparecer numa sessão nova).
   useEffect(() => {
     if (isMenuLoading) return;
-    const hasSplashContent =
-      !!restaurantConfig.splashEnabled &&
-      (restaurantConfig.splashImages || []).some((raw) => normalizeSplashImage(raw).enabled !== false && !!normalizeSplashImage(raw).url);
-    setShowSplash(hasSplashContent);
+    const splashSeenKey = `cardapio_splash_seen_${restaurantSlug}`;
+    const alreadySeen = sessionStorage.getItem(splashSeenKey);
+    const hasSplashContent = restaurantConfig.splashEnabled && (restaurantConfig.splashImages?.length || 0) > 0;
+    if (hasSplashContent && !alreadySeen) {
+      setShowSplash(true);
+      sessionStorage.setItem(splashSeenKey, '1');
+    }
   }, [isMenuLoading, restaurantSlug, restaurantConfig.splashEnabled, restaurantConfig.splashImages]);
 
   // Mantém uma cópia local (cache/offline) do cardápio. Quem realmente salva as
