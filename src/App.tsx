@@ -6,14 +6,17 @@ import {
   Order, 
   RestaurantConfig, 
   DietaryTag,
-  DeliveryAddress
+  DeliveryAddress,
+  CustomerAccount,
+  SavedAddress
 } from './types';
 import { 
   INITIAL_CATEGORIES, 
   INITIAL_MENU_ITEMS, 
   INITIAL_RESTAURANT_CONFIG 
 } from './data/initialData';
-import { fetchMenu, createOrder, fetchOrder, fetchOperationalStatus } from './utils/api';
+import { fetchMenu, createOrder, fetchOrder, fetchOperationalStatus, fetchCustomerProfile } from './utils/api';
+import { isPushSubscribed, subscribeToPush, unsubscribeFromPush } from './utils/push';
 import { formatCurrency, playSoundEffect, COUPONS } from './utils/helpers';
 import { SplashScreen } from './components/SplashScreen';
 import { Header } from './components/Header';
@@ -25,6 +28,7 @@ import { CheckoutModal } from './components/CheckoutModal';
 import { OrderStatusModal } from './components/OrderStatusModal';
 import { DeliveryAddressModal } from './components/DeliveryAddressModal';
 import { FavoritesModal } from './components/FavoritesModal';
+import { CustomerAccountModal } from './components/CustomerAccountModal';
 import { 
   ShoppingBag, 
   Bike,
@@ -143,6 +147,72 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
       cep: '01310-200'
     };
   });
+
+  // Conta do cliente (Fase 4, itens 20-22) — GLOBAL, não isolada por
+  // restaurante como o carrinho/pedidos: o mesmo cliente pede em qualquer
+  // loja da plataforma com a mesma conta, por isso a chave do localStorage
+  // aqui não usa storageKey().
+  const CUSTOMER_TOKEN_KEY = 'tokioinbox_customer_token';
+  const [customerToken, setCustomerToken] = useState<string | null>(() =>
+    localStorage.getItem(CUSTOMER_TOKEN_KEY)
+  );
+  const [customerAccount, setCustomerAccount] = useState<CustomerAccount | null>(null);
+  const [isAccountModalOpen, setIsAccountModalOpen] = useState(false);
+
+  useEffect(() => {
+    if (!customerToken) {
+      setCustomerAccount(null);
+      return;
+    }
+    fetchCustomerProfile(customerToken)
+      .then(setCustomerAccount)
+      .catch(() => {
+        // Token expirado/inválido — desloga silenciosamente, sem travar o app.
+        localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+        setCustomerToken(null);
+        setCustomerAccount(null);
+      });
+  }, [customerToken]);
+
+  const handleCustomerLoggedIn = (token: string, account: CustomerAccount) => {
+    localStorage.setItem(CUSTOMER_TOKEN_KEY, token);
+    setCustomerToken(token);
+    setCustomerAccount(account);
+  };
+
+  const handleCustomerLoggedOut = () => {
+    localStorage.removeItem(CUSTOMER_TOKEN_KEY);
+    setCustomerToken(null);
+    setCustomerAccount(null);
+    setIsAccountModalOpen(false);
+  };
+
+  // "Usar este endereço" (item 21) — reaproveita o mesmo estado/persistência
+  // de endereço que o checkout já lê via prop `currentAddress`, sem precisar
+  // duplicar lógica de preenchimento dentro do CheckoutModal.
+  const handleUseSavedAddress = (address: SavedAddress) => {
+    const { id, customerId, isDefault, label, ...deliveryFields } = address;
+    setDeliveryAddress(deliveryFields);
+    setIsAccountModalOpen(false);
+  };
+
+  // Notificações push (Fase 4, item 27) — estado só reflete se JÁ existe uma
+  // inscrição ativa neste navegador; o pedido de permissão só acontece
+  // quando o cliente clica no sino, nunca automaticamente.
+  const [isPushOn, setIsPushOn] = useState(false);
+  useEffect(() => {
+    isPushSubscribed().then(setIsPushOn);
+  }, []);
+
+  const handleTogglePush = async () => {
+    if (isPushOn) {
+      await unsubscribeFromPush(restaurantSlug);
+      setIsPushOn(false);
+    } else {
+      const ok = await subscribeToPush(restaurantSlug, customerToken || undefined);
+      setIsPushOn(ok);
+    }
+  };
 
   // UI state
   const [searchQuery, setSearchQuery] = useState('');
@@ -398,7 +468,7 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
       setIsOrderStatusOpen(true);
     }
     // Envia o pedido pro backend, pra aparecer no painel do admin (super-admin)
-    createOrder(restaurantSlug, order).catch((err) => {
+    createOrder(restaurantSlug, order, customerToken || undefined).catch((err) => {
       console.error('Não foi possível enviar o pedido ao servidor:', err);
     });
   };
@@ -526,6 +596,10 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
           onOpenOrders={() => setIsOrderStatusOpen(true)}
           favoritesCount={favorites.length}
           onOpenFavorites={() => setIsFavoritesOpen(true)}
+          isCustomerLoggedIn={Boolean(customerAccount)}
+          onOpenAccount={() => setIsAccountModalOpen(true)}
+          isPushOn={isPushOn}
+          onTogglePush={handleTogglePush}
         />
 
         {/* "Você possui um pedido em andamento" — reaparece se o cliente
@@ -858,6 +932,17 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
         onRemoveFavorite={(id) =>
           setFavorites((prev) => prev.filter((favId) => favId !== id))
         }
+      />
+
+      {/* Minha Conta — login/cadastro, endereços salvos, histórico (Fase 4, itens 20-22) */}
+      <CustomerAccountModal
+        isOpen={isAccountModalOpen}
+        onClose={() => setIsAccountModalOpen(false)}
+        token={customerToken}
+        customer={customerAccount}
+        onLoggedIn={handleCustomerLoggedIn}
+        onLoggedOut={handleCustomerLoggedOut}
+        onUseAddress={handleUseSavedAddress}
       />
     </div>
   );

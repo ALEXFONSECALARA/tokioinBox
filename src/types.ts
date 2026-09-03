@@ -201,6 +201,25 @@ export interface DeliveryAddress {
   lng?: number;
 }
 
+// Conta permanente do cliente + endereços salvos (Fase 4, itens 20-22).
+export interface CustomerAccount {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+// 🏠 Casa / 🏢 Trabalho / 📍 Outro — mesmos campos do DeliveryAddress, mais
+// um rótulo e um id próprio pra poder editar/excluir.
+export interface SavedAddress extends DeliveryAddress {
+  id: string;
+  customerId: string;
+  label: string;
+  isDefault?: boolean;
+}
+
 export interface DriverInfo {
   id: string;
   name: string;
@@ -231,6 +250,10 @@ export interface Order {
   total: number;
   orderType: OrderType;
   customer: OrderCustomer;
+  // Preenchido pelo backend a partir do token de sessão quando o pedido é
+  // feito por um cliente logado (Fase 4, itens 20-22) — nunca confiar num
+  // valor vindo do próprio cliente sem validação de token.
+  customerId?: string;
   paymentMethod: PaymentMethod;
   cardBrand?: string;
   cashChangeFor?: number;
