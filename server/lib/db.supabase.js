@@ -944,6 +944,12 @@ export async function createNotificationCampaign(restaurantSlug, data) {
   return campaignRowToApi(created);
 }
 
+export async function getNotificationCampaignById(id) {
+  const { data, error } = await supabase.from('notification_campaigns').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? campaignRowToApi(data) : null;
+}
+
 export async function updateNotificationCampaign(id, patch) {
   const row = {};
   if (patch.name !== undefined) row.name = patch.name;
@@ -969,4 +975,99 @@ export async function deleteNotificationCampaign(id) {
   const { error } = await supabase.from('notification_campaigns').delete().eq('id', id);
   if (error) throw error;
   return true;
+}
+
+// ---------- Assistente de atendimento com IA (Fase 4, itens 32-39) ----------
+
+function conversationRowToApi(row) {
+  return {
+    id: row.id,
+    restaurantSlug: row.restaurant_slug,
+    customerId: row.customer_id || null,
+    sessionId: row.session_id || null,
+    status: row.status,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+function aiMessageRowToApi(row) {
+  return {
+    id: row.id,
+    conversationId: row.conversation_id,
+    role: row.role,
+    content: row.content,
+    createdAt: row.created_at,
+  };
+}
+
+export async function findOrCreateAiConversation({ restaurantSlug, customerId, sessionId }) {
+  let query = supabase
+    .from('ai_conversations')
+    .select('*')
+    .eq('restaurant_slug', restaurantSlug)
+    .neq('status', 'closed');
+  if (customerId) query = query.eq('customer_id', customerId);
+  else if (sessionId) query = query.eq('session_id', sessionId);
+  const { data: existingRows, error: findErr } = await query.limit(1);
+  if (findErr) throw findErr;
+  if (existingRows && existingRows.length > 0) return conversationRowToApi(existingRows[0]);
+
+  const row = { restaurant_slug: restaurantSlug, customer_id: customerId || null, session_id: sessionId || null };
+  const { data, error } = await supabase.from('ai_conversations').insert(row).select('*').single();
+  if (error) throw error;
+  return conversationRowToApi(data);
+}
+
+export async function getAiConversation(id) {
+  const { data, error } = await supabase.from('ai_conversations').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  return data ? conversationRowToApi(data) : null;
+}
+
+export async function listAiConversations(restaurantSlug, { status } = {}) {
+  let query = supabase
+    .from('ai_conversations')
+    .select('*')
+    .eq('restaurant_slug', restaurantSlug)
+    .order('updated_at', { ascending: false });
+  if (status) query = query.eq('status', status);
+  const { data, error } = await query;
+  if (error) throw error;
+  return (data || []).map(conversationRowToApi);
+}
+
+export async function updateAiConversationStatus(id, status) {
+  const { data, error } = await supabase
+    .from('ai_conversations')
+    .update({ status, updated_at: new Date().toISOString() })
+    .eq('id', id)
+    .select('*')
+    .maybeSingle();
+  if (error) throw error;
+  return data ? conversationRowToApi(data) : null;
+}
+
+export async function addAiMessage(conversationId, role, content) {
+  const { data, error } = await supabase
+    .from('ai_messages')
+    .insert({ conversation_id: conversationId, role, content })
+    .select('*')
+    .single();
+  if (error) throw error;
+  await supabase
+    .from('ai_conversations')
+    .update({ updated_at: data.created_at })
+    .eq('id', conversationId);
+  return aiMessageRowToApi(data);
+}
+
+export async function listAiMessages(conversationId) {
+  const { data, error } = await supabase
+    .from('ai_messages')
+    .select('*')
+    .eq('conversation_id', conversationId)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  return (data || []).map(aiMessageRowToApi);
 }

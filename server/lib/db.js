@@ -52,7 +52,15 @@ export const deletePushSubscriptionByEndpoint = impl.deletePushSubscriptionByEnd
 export const deletePushSubscriptionsByIds = impl.deletePushSubscriptionsByIds;
 export const listPushSubscriptions = impl.listPushSubscriptions;
 export const listNotificationCampaigns = impl.listNotificationCampaigns;
+export const getNotificationCampaignById = impl.getNotificationCampaignById;
 export const listAllActiveCampaigns = impl.listAllActiveCampaigns;
 export const createNotificationCampaign = impl.createNotificationCampaign;
 export const updateNotificationCampaign = impl.updateNotificationCampaign;
 export const deleteNotificationCampaign = impl.deleteNotificationCampaign;
+// Assistente de atendimento com IA (Fase 4, itens 32-39)
+export const findOrCreateAiConversation = impl.findOrCreateAiConversation;
+export const getAiConversation = impl.getAiConversation;
+export const listAiConversations = impl.listAiConversations;
+export const updateAiConversationStatus = impl.updateAiConversationStatus;
+export const addAiMessage = impl.addAiMessage;
+export const listAiMessages = impl.listAiMessages;

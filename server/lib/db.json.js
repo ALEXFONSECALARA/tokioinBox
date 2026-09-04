@@ -406,6 +406,11 @@ export async function createNotificationCampaign(restaurantSlug, data) {
   return campaign;
 }
 
+export async function getNotificationCampaignById(id) {
+  const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
+  return campaigns.find((c) => c.id === id) || null;
+}
+
 export async function updateNotificationCampaign(id, patch) {
   const campaigns = await readJson(NOTIFICATION_CAMPAIGNS_FILE, []);
   const idx = campaigns.findIndex((c) => c.id === id);
@@ -420,4 +425,79 @@ export async function deleteNotificationCampaign(id) {
   const filtered = campaigns.filter((c) => c.id !== id);
   await writeJson(NOTIFICATION_CAMPAIGNS_FILE, filtered);
   return filtered.length !== campaigns.length;
+}
+
+// ---------- Assistente de atendimento com IA (Fase 4, itens 32-39) ----------
+
+const AI_CONVERSATIONS_FILE = path.join(DATA_DIR, 'ai-conversations.json');
+const AI_MESSAGES_FILE = path.join(DATA_DIR, 'ai-messages.json');
+
+// Reaproveita a conversa em aberto do mesmo cliente/sessão neste restaurante
+// (se existir) em vez de começar do zero a cada mensagem — é isso que dá
+// contexto de conversa e permite retomar o histórico (item 39).
+export async function findOrCreateAiConversation({ restaurantSlug, customerId, sessionId }) {
+  const conversations = await readJson(AI_CONVERSATIONS_FILE, []);
+  const existing = conversations.find(
+    (c) =>
+      c.restaurantSlug === restaurantSlug &&
+      c.status !== 'closed' &&
+      ((customerId && c.customerId === customerId) || (sessionId && c.sessionId === sessionId))
+  );
+  if (existing) return existing;
+
+  const now = new Date().toISOString();
+  const conversation = {
+    id: randomUUID(),
+    restaurantSlug,
+    customerId: customerId || null,
+    sessionId: sessionId || null,
+    status: 'bot',
+    createdAt: now,
+    updatedAt: now,
+  };
+  conversations.push(conversation);
+  await writeJson(AI_CONVERSATIONS_FILE, conversations);
+  return conversation;
+}
+
+export async function getAiConversation(id) {
+  const conversations = await readJson(AI_CONVERSATIONS_FILE, []);
+  return conversations.find((c) => c.id === id) || null;
+}
+
+export async function listAiConversations(restaurantSlug, { status } = {}) {
+  const conversations = await readJson(AI_CONVERSATIONS_FILE, []);
+  return conversations
+    .filter((c) => c.restaurantSlug === restaurantSlug && (!status || c.status === status))
+    .sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+}
+
+export async function updateAiConversationStatus(id, status) {
+  const conversations = await readJson(AI_CONVERSATIONS_FILE, []);
+  const idx = conversations.findIndex((c) => c.id === id);
+  if (idx === -1) return null;
+  conversations[idx] = { ...conversations[idx], status, updatedAt: new Date().toISOString() };
+  await writeJson(AI_CONVERSATIONS_FILE, conversations);
+  return conversations[idx];
+}
+
+export async function addAiMessage(conversationId, role, content) {
+  const messages = await readJson(AI_MESSAGES_FILE, []);
+  const message = { id: randomUUID(), conversationId, role, content, createdAt: new Date().toISOString() };
+  messages.push(message);
+  await writeJson(AI_MESSAGES_FILE, messages);
+  // Marca a conversa como recém-atualizada, pra ordenar a lista do admin
+  // pelas mais recentes primeiro.
+  const conversations = await readJson(AI_CONVERSATIONS_FILE, []);
+  const idx = conversations.findIndex((c) => c.id === conversationId);
+  if (idx !== -1) {
+    conversations[idx].updatedAt = message.createdAt;
+    await writeJson(AI_CONVERSATIONS_FILE, conversations);
+  }
+  return message;
+}
+
+export async function listAiMessages(conversationId) {
+  const messages = await readJson(AI_MESSAGES_FILE, []);
+  return messages.filter((m) => m.conversationId === conversationId);
 }
