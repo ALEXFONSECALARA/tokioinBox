@@ -12,6 +12,8 @@ import { hashPassword, verifyPassword } from './lib/passwords.js';
 import { sanitizePermissions } from './lib/permissions.js';
 import { getVapidPublicKey, sendPushToMany } from './lib/webPush.js';
 import { isCampaignDueNow, currentWindowKey } from './lib/campaignScheduler.js';
+import { buildRestaurantContext, buildOrderContext } from './lib/aiContext.js';
+import { generateChatReply, generateCampaignSuggestion, generateSalesAnalysis, isAiConfigured } from './lib/aiAssistant.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_DIR = path.join(__dirname, 'data');
@@ -513,8 +515,16 @@ app.post('/api/admin/:slug/push/campaigns', requireAdmin, requireOwnRestaurant, 
 
 app.patch('/api/admin/:slug/push/campaigns/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
   try {
+    // Reforço de isolamento (item 19/44): o :slug da URL já foi validado
+    // por requireOwnRestaurant, mas isso não garante que o :id pertence a
+    // ESTE restaurante — sem esta checagem, um usuário restrito a um
+    // restaurante poderia mexer na campanha de outro só adivinhando/testando
+    // ids. Aqui confirmamos posse antes de qualquer alteração.
+    const existing = await db.getNotificationCampaignById(req.params.id);
+    if (!existing || existing.restaurantSlug !== req.params.slug) {
+      return res.status(404).json({ error: 'Campanha não encontrada.' });
+    }
     const updated = await db.updateNotificationCampaign(req.params.id, req.body || {});
-    if (!updated) return res.status(404).json({ error: 'Campanha não encontrada.' });
     res.json(updated);
   } catch (err) {
     console.error('Erro ao atualizar campanha:', err);
@@ -524,6 +534,10 @@ app.patch('/api/admin/:slug/push/campaigns/:id', requireAdmin, requireOwnRestaur
 
 app.delete('/api/admin/:slug/push/campaigns/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
   try {
+    const existing = await db.getNotificationCampaignById(req.params.id);
+    if (!existing || existing.restaurantSlug !== req.params.slug) {
+      return res.status(404).json({ error: 'Campanha não encontrada.' });
+    }
     await db.deleteNotificationCampaign(req.params.id);
     res.json({ ok: true });
   } catch (err) {
@@ -608,6 +622,214 @@ function isPushConfiguredForScheduler() {
 }
 
 setInterval(runCampaignScheduler, 60 * 1000);
+
+// ---------- Assistente de atendimento com IA (Fase 4, itens 32-39) — lado público ----------
+
+app.post('/api/:slug/ai/chat', async (req, res) => {
+  const { slug } = req.params;
+  const { sessionId, message, orderId } = req.body || {};
+  if (!message || !message.trim()) {
+    return res.status(400).json({ error: 'Mensagem vazia.' });
+  }
+  if (!(await db.restaurantExists(slug))) {
+    return res.status(404).json({ error: 'Restaurante não encontrado.' });
+  }
+  try {
+    const session = getCustomerSession(bearerToken(req));
+    const customerId = session ? session.customerId : null;
+    if (!customerId && !sessionId) {
+      return res.status(400).json({ error: 'Informe sessionId (visitante sem conta) ou faça login.' });
+    }
+
+    const conversation = await db.findOrCreateAiConversation({ restaurantSlug: slug, customerId, sessionId });
+    await db.addAiMessage(conversation.id, 'user', message.trim());
+
+    // Transferido pra humano (item 38): a IA para de responder — só
+    // registra a mensagem, o atendente vê e responde pelo painel.
+    if (conversation.status === 'human') {
+      return res.json({ conversationId: conversation.id, status: 'human', reply: null });
+    }
+
+    const priorMessages = await db.listAiMessages(conversation.id);
+    const history = priorMessages
+      .slice(0, -1) // a última é a que acabamos de salvar — vai como userMessage separado
+      .filter((m) => m.role === 'user' || m.role === 'assistant')
+      .map((m) => ({ role: m.role, content: m.content }));
+
+    const [restaurantContext, orderContext] = await Promise.all([
+      buildRestaurantContext(slug),
+      buildOrderContext(slug, orderId),
+    ]);
+
+    const result = await generateChatReply({
+      restaurantContext,
+      orderContext,
+      history,
+      userMessage: message.trim(),
+    });
+
+    await db.addAiMessage(conversation.id, 'assistant', result.reply);
+
+    if (result.requestHumanHandoff) {
+      await db.updateAiConversationStatus(conversation.id, 'human');
+    }
+
+    res.json({
+      conversationId: conversation.id,
+      status: result.requestHumanHandoff ? 'human' : 'bot',
+      reply: result.reply,
+      cartAction: result.cartAction,
+    });
+  } catch (err) {
+    console.error(`Erro no assistente de IA de ${slug}:`, err);
+    res.status(500).json({ error: 'Não foi possível falar com o assistente agora.' });
+  }
+});
+
+// "👨‍💼 Falar com atendente" (item 38) — o próprio cliente pode pedir a
+// transferência por um botão, sem precisar escrever isso na conversa.
+app.post('/api/:slug/ai/handoff', async (req, res) => {
+  const { conversationId } = req.body || {};
+  if (!conversationId) return res.status(400).json({ error: 'Informe conversationId.' });
+  try {
+    const updated = await db.updateAiConversationStatus(conversationId, 'human');
+    if (!updated) return res.status(404).json({ error: 'Conversa não encontrada.' });
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('Erro ao transferir conversa:', err);
+    res.status(500).json({ error: 'Não foi possível transferir a conversa.' });
+  }
+});
+
+app.get('/api/:slug/ai/conversations/:id/messages', async (req, res) => {
+  // Consulta pública do próprio histórico (item 39) — o id da conversa é um
+  // UUID praticamente impossível de adivinhar, mesmo padrão já usado pra
+  // consulta pública de pedidos neste arquivo.
+  try {
+    res.json(await db.listAiMessages(req.params.id));
+  } catch (err) {
+    console.error('Erro ao buscar histórico da conversa:', err);
+    res.status(500).json({ error: 'Não foi possível carregar o histórico.' });
+  }
+});
+
+// ---------- IA — painel administrativo (itens 31, 38, 40) ----------
+
+app.get('/api/admin/:slug/ai/conversations', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  try {
+    res.json(await db.listAiConversations(req.params.slug, { status: req.query.status }));
+  } catch (err) {
+    console.error('Erro ao listar conversas:', err);
+    res.status(500).json({ error: 'Não foi possível carregar as conversas.' });
+  }
+});
+
+app.get('/api/admin/:slug/ai/conversations/:id/messages', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  try {
+    // Mesmo reforço de isolamento explicado na rota de campanhas acima —
+    // o :id de uma conversa de outro restaurante nunca deve ser legível
+    // só porque o admin tem acesso a ESTE restaurante.
+    const conversation = await db.getAiConversation(req.params.id);
+    if (!conversation || conversation.restaurantSlug !== req.params.slug) {
+      return res.status(404).json({ error: 'Conversa não encontrada.' });
+    }
+    res.json(await db.listAiMessages(req.params.id));
+  } catch (err) {
+    console.error('Erro ao buscar mensagens:', err);
+    res.status(500).json({ error: 'Não foi possível carregar as mensagens.' });
+  }
+});
+
+// Atendente humano assume e responde (item 38) — a partir daqui a IA já
+// parou de responder sozinha (status já virou 'human' na hora do handoff).
+app.post('/api/admin/:slug/ai/conversations/:id/reply', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  const { message } = req.body || {};
+  if (!message || !message.trim()) return res.status(400).json({ error: 'Mensagem vazia.' });
+  try {
+    const conversation = await db.getAiConversation(req.params.id);
+    if (!conversation || conversation.restaurantSlug !== req.params.slug) {
+      return res.status(404).json({ error: 'Conversa não encontrada.' });
+    }
+    const saved = await db.addAiMessage(req.params.id, 'human_agent', message.trim());
+    res.status(201).json(saved);
+  } catch (err) {
+    console.error('Erro ao responder conversa:', err);
+    res.status(500).json({ error: 'Não foi possível enviar a resposta.' });
+  }
+});
+
+// Devolve a conversa pra IA responder de novo sozinha.
+app.patch('/api/admin/:slug/ai/conversations/:id', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  const { status } = req.body || {};
+  if (!['bot', 'human', 'closed'].includes(status)) {
+    return res.status(400).json({ error: 'Status inválido.' });
+  }
+  try {
+    const conversation = await db.getAiConversation(req.params.id);
+    if (!conversation || conversation.restaurantSlug !== req.params.slug) {
+      return res.status(404).json({ error: 'Conversa não encontrada.' });
+    }
+    const updated = await db.updateAiConversationStatus(req.params.id, status);
+    res.json(updated);
+  } catch (err) {
+    console.error('Erro ao atualizar conversa:', err);
+    res.status(500).json({ error: 'Não foi possível atualizar a conversa.' });
+  }
+});
+
+// "✨ Criar campanha com IA" (item 31) — só sugere, nunca envia sozinha; o
+// resultado preenche o formulário de campanha pro dono revisar e decidir.
+app.post('/api/admin/:slug/ai/campaign-suggest', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  const { brief } = req.body || {};
+  if (!brief || !brief.trim()) return res.status(400).json({ error: 'Descreva o que você quer divulgar.' });
+  if (!isAiConfigured()) {
+    return res.status(503).json({ error: 'IA não configurada neste servidor (falta GEMINI_API_KEY).' });
+  }
+  try {
+    const restaurantContext = await buildRestaurantContext(req.params.slug);
+    const suggestion = await generateCampaignSuggestion(brief.trim(), restaurantContext);
+    res.json(suggestion);
+  } catch (err) {
+    console.error('Erro ao gerar sugestão de campanha:', err);
+    res.status(500).json({ error: 'Não foi possível gerar a sugestão agora.' });
+  }
+});
+
+// IA administrativa (item 40) — só analisa pedidos reais e sugere; nunca
+// altera preço, produto, promoção ou configuração sozinha.
+app.get('/api/admin/:slug/ai/analyze', requireAdmin, requireOwnRestaurant, async (req, res) => {
+  if (!isAiConfigured()) {
+    return res.status(503).json({ error: 'IA não configurada neste servidor (falta GEMINI_API_KEY).' });
+  }
+  try {
+    const orders = await db.listOrders(req.params.slug);
+    const delivered = orders.filter((o) => o.status !== 'cancelado');
+    const totalRevenue = delivered.reduce((sum, o) => sum + Number(o.total || 0), 0);
+    const avgTicket = delivered.length ? totalRevenue / delivered.length : 0;
+    const cancelledCount = orders.length - delivered.length;
+    const itemCounts = new Map();
+    for (const order of delivered) {
+      for (const item of order.items || []) {
+        const name = item.menuItem?.name || item.name || 'item';
+        itemCounts.set(name, (itemCounts.get(name) || 0) + (item.quantity || 1));
+      }
+    }
+    const topItems = [...itemCounts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 5);
+
+    const summary = `
+Total de pedidos: ${orders.length} (${cancelledCount} cancelados)
+Faturamento (excluindo cancelados): R$ ${totalRevenue.toFixed(2).replace('.', ',')}
+Ticket médio: R$ ${avgTicket.toFixed(2).replace('.', ',')}
+Produtos mais pedidos: ${topItems.map(([name, qty]) => `${name} (${qty}x)`).join(', ') || 'sem dados suficientes'}
+`.trim();
+
+    const analysis = await generateSalesAnalysis(summary);
+    res.json({ summary, analysis });
+  } catch (err) {
+    console.error('Erro na análise administrativa de IA:', err);
+    res.status(500).json({ error: 'Não foi possível gerar a análise agora.' });
+  }
+});
 
 // Cliente consulta o status do próprio pedido (id é praticamente impossível de adivinhar)
 app.get('/api/:slug/orders/:id', async (req, res) => {
