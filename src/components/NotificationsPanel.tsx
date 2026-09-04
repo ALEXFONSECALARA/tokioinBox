@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Send, Plus, Trash2, Power, Loader2, Bell } from 'lucide-react';
+import { Send, Plus, Trash2, Power, Loader2, Bell, Sparkles } from 'lucide-react';
 
 // Espelha o formato salvo em notification_campaigns.schedule (ver
 // server/lib/campaignScheduler.js) — mantido aqui em vez de em types.ts
@@ -60,6 +60,12 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ slug, to
   const [showNewCampaign, setShowNewCampaign] = useState(false);
   const [form, setForm] = useState({ ...EMPTY_CAMPAIGN });
   const [savingCampaign, setSavingCampaign] = useState(false);
+
+  // "✨ Criar campanha com IA" (item 31) — só preenche o formulário acima
+  // com uma sugestão; quem revisa, edita e decide enviar é sempre o dono.
+  const [aiBrief, setAiBrief] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const API_BASE = String((import.meta as any).env.VITE_API_URL || '')
     .trim()
@@ -152,6 +158,34 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ slug, to
     loadCampaigns();
   };
 
+  const handleAiSuggest = async () => {
+    if (!aiBrief.trim()) return;
+    setAiLoading(true);
+    setAiError(null);
+    try {
+      const res = await fetch(`${API_PREFIX}/admin/${slug}/ai/campaign-suggest`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ brief: aiBrief.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Falha ao gerar sugestão.');
+      setShowNewCampaign(true);
+      setForm((f) => ({
+        ...f,
+        name: aiBrief.trim().slice(0, 40),
+        title: data.title,
+        message: data.message,
+        time: data.suggestedTime || f.time,
+        audience: data.suggestedAudience || f.audience,
+      }));
+    } catch (err: any) {
+      setAiError(err.message || 'Não foi possível gerar a sugestão.');
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   const describeSchedule = (s: CampaignSchedule) => {
     if (s.repeat === 'daily') return `Todo dia às ${s.time}`;
     if (s.repeat === 'weekly') return `Toda ${(s.days || []).map((d) => WEEKDAYS[d]).join(', ')} às ${s.time}`;
@@ -217,6 +251,24 @@ export const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ slug, to
             <Plus className="w-3.5 h-3.5" /> Nova campanha
           </button>
         </div>
+
+        <div className="flex gap-1.5">
+          <input
+            value={aiBrief}
+            onChange={(e) => setAiBrief(e.target.value)}
+            placeholder="✨ Ex: Quero divulgar o rodízio de hoje"
+            className="flex-1 border border-stone-200 rounded-xl px-3 py-2 text-xs"
+          />
+          <button
+            onClick={handleAiSuggest}
+            disabled={aiLoading || !aiBrief.trim()}
+            className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white text-xs font-bold disabled:opacity-50 whitespace-nowrap"
+          >
+            {aiLoading ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Sparkles className="w-3.5 h-3.5" />}
+            Criar com IA
+          </button>
+        </div>
+        {aiError && <p className="text-[11px] text-red-500">{aiError}</p>}
 
         {showNewCampaign && (
           <div className="border border-stone-200 rounded-xl p-3 space-y-2">
