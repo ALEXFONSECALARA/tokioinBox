@@ -29,6 +29,7 @@ import { OrderStatusModal } from './components/OrderStatusModal';
 import { DeliveryAddressModal } from './components/DeliveryAddressModal';
 import { FavoritesModal } from './components/FavoritesModal';
 import { CustomerAccountModal } from './components/CustomerAccountModal';
+import { AssistantChat } from './components/AssistantChat';
 import { 
   ShoppingBag, 
   Bike,
@@ -400,6 +401,21 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
         return updated;
       }
       return [...prev, newItem];
+    });
+  };
+
+  // Usado pelo assistente de IA (Fase 4, item 34) — monta um CartItem básico
+  // (sem escolhas/extras, que a IA não tem como saber escolher sozinha) e
+  // reaproveita a mesma função de adicionar ao carrinho de sempre.
+  const handleAiAddToCart = (item: MenuItem, quantity: number) => {
+    handleAddToCart({
+      id: `${item.id}-${Date.now()}`,
+      menuItem: item,
+      quantity,
+      selectedChoices: [],
+      selectedExtras: [],
+      unitPrice: item.price,
+      totalPrice: item.price * quantity,
     });
   };
 
@@ -943,6 +959,16 @@ export default function App({ restaurantSlug, onExit }: AppProps) {
         onLoggedIn={handleCustomerLoggedIn}
         onLoggedOut={handleCustomerLoggedOut}
         onUseAddress={handleUseSavedAddress}
+      />
+
+      {/* 🤖 Assistente do Restaurante (Fase 4, itens 32-38) */}
+      <AssistantChat
+        slug={restaurantSlug}
+        restaurantName={restaurantConfig.name}
+        customerToken={customerToken}
+        activeOrderId={activeOrderId}
+        menuItems={menuItems}
+        onAddItemToCart={handleAiAddToCart}
       />
     </div>
   );
